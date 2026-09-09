@@ -1,32 +1,22 @@
-# React + TypeScript + Vite
+# Planmoy
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Kişisel yaşam asistanı + işletme randevu/CRM SaaS'ı. Web, iOS, Android (Capacitor).
 
-Currently, two official plugins are available:
+## Kurulum
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+1. `npm install`
+2. Planmoy'a özel (Planmany'den AYRI) bir Supabase projesi oluştur, `supabase/migrations/0001_core_schema.sql`'i çalıştır
+3. `.env.example`'ı `.env.local` olarak kopyala, Supabase URL + anon key'i doldur
+4. `npm run dev` (web) veya Android Studio ile `android/` klasörünü aç
 
-## React Compiler
+## Android'de canlı test
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```
+npm run build
+npx cap sync android
+npx cap open android
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Android Studio açıldığında bir emülatör veya USB bağlı cihazla Run'a bas.
+
+Bkz. `PROJECT_RULES.md` — Planmany'den çıkarılan dersler, her fazda kontrol edilir.
