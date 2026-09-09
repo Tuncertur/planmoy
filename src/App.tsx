@@ -11,24 +11,87 @@ import {
   Settings,
   Flame,
 } from "lucide-react";
+import { tt, type Dict } from "./lib/i18n";
 
 type Mode = "personal" | "business";
 
-const personalModules = [
-  { icon: CalendarDays, title: "Zaman Akışı", desc: "Randevular ve takvim tek yerde." },
-  { icon: CheckSquare, title: "Yapılacaklar", desc: "Günlük ve haftalık görevler." },
-  { icon: Sparkles, title: "StyleSync", desc: "Kombin ve stil önerileri." },
-  { icon: Compass, title: "Keşfet", desc: "Yakındaki mekan ve etkinlikler." },
-  { icon: StickyNote, title: "Boş Alan", desc: "Aklına geleni buraya yaz." },
+type ModuleDef = { icon: typeof CalendarDays; title: Dict; desc: Dict };
+
+const personalModules: ModuleDef[] = [
+  {
+    icon: CalendarDays,
+    title: { tr: "Zaman Akışı", en: "Time Flow" },
+    desc: { tr: "Randevular ve takvim tek yerde.", en: "Appointments and calendar in one place." },
+  },
+  {
+    icon: CheckSquare,
+    title: { tr: "Yapılacaklar", en: "To-Do" },
+    desc: { tr: "Günlük ve haftalık görevler.", en: "Daily and weekly tasks." },
+  },
+  {
+    icon: Sparkles,
+    title: { tr: "StyleSync", en: "StyleSync" },
+    desc: { tr: "Kombin ve stil önerileri.", en: "Outfit and style suggestions." },
+  },
+  {
+    icon: Compass,
+    title: { tr: "Keşfet", en: "Discover" },
+    desc: { tr: "Yakındaki mekan ve etkinlikler.", en: "Nearby places and events." },
+  },
+  {
+    icon: StickyNote,
+    title: { tr: "Boş Alan", en: "Open Space" },
+    desc: { tr: "Aklına geleni buraya yaz.", en: "Write down whatever's on your mind." },
+  },
 ];
 
-const businessModules = [
-  { icon: CalendarDays, title: "Randevu Takvimi", desc: "Personel bazlı görünüm." },
-  { icon: Users, title: "Müşteriler", desc: "CRM ve randevu geçmişi." },
-  { icon: Megaphone, title: "Pazarlama", desc: "Kampanya ve hatırlatmalar." },
-  { icon: BarChart3, title: "Raporlar", desc: "Doluluk, ciro, performans." },
-  { icon: Settings, title: "İşletme Ayarları", desc: "Saatler, hizmetler, fiyatlar." },
+const businessModules: ModuleDef[] = [
+  {
+    icon: CalendarDays,
+    title: { tr: "Randevu Takvimi", en: "Appointment Calendar" },
+    desc: { tr: "Personel bazlı görünüm.", en: "Staff-based view." },
+  },
+  {
+    icon: Users,
+    title: { tr: "Müşteriler", en: "Customers" },
+    desc: { tr: "CRM ve randevu geçmişi.", en: "CRM and appointment history." },
+  },
+  {
+    icon: Megaphone,
+    title: { tr: "Pazarlama", en: "Marketing" },
+    desc: { tr: "Kampanya ve hatırlatmalar.", en: "Campaigns and reminders." },
+  },
+  {
+    icon: BarChart3,
+    title: { tr: "Raporlar", en: "Reports" },
+    desc: { tr: "Doluluk, ciro, performans.", en: "Occupancy, revenue, performance." },
+  },
+  {
+    icon: Settings,
+    title: { tr: "İşletme Ayarları", en: "Business Settings" },
+    desc: { tr: "Saatler, hizmetler, fiyatlar.", en: "Hours, services, prices." },
+  },
 ];
+
+const copy = {
+  modeSwitchPersonal: { tr: "Kişisel", en: "Personal" } satisfies Dict,
+  modeSwitchBusiness: { tr: "İşletme", en: "Business" } satisfies Dict,
+  eyebrowPersonal: { tr: "Bugün için akışın hazır", en: "Your flow is ready for today" } satisfies Dict,
+  eyebrowBusiness: { tr: "İşletmen bugün nasıl gidiyor?", en: "How's your business doing today?" } satisfies Dict,
+  headlinePersonal: { tr: "Hayatının akışı, tek noktada.", en: "The flow of your life, in one place." } satisfies Dict,
+  headlineBusiness: {
+    tr: "Randevuların ve müşterilerin, tek panelde.",
+    en: "Your appointments and customers, in one panel.",
+  } satisfies Dict,
+  subPersonal: {
+    tr: "Takvim, görevler ve öneriler bir arada; hangi cihazdan girersen gir aynı yerden devam edersin.",
+    en: "Calendar, tasks, and suggestions together — pick up where you left off on any device.",
+  } satisfies Dict,
+  subBusiness: {
+    tr: "Randevu, müşteri ve ekip yönetimi bir arada; demo veri yok, her rakam gerçek hesabından gelir.",
+    en: "Appointments, customers, and team management together — no demo data, every number comes from your real account.",
+  } satisfies Dict,
+};
 
 function App() {
   const [mode, setMode] = useState<Mode>("personal");
@@ -38,7 +101,6 @@ function App() {
     <>
       <div className="starfield" aria-hidden="true" />
 
-      {/* Single deliberate orbital motif — anchors the hero, not repeated elsewhere */}
       <div
         className="orbit-ring orbit-spin"
         style={{ width: 720, height: 720, top: -260, right: -220 }}
@@ -68,7 +130,7 @@ function App() {
                   : "text-[var(--color-mist-300)] hover:text-[var(--color-mist-100)]"
               }`}
             >
-              Kişisel
+              {tt(copy.modeSwitchPersonal)}
             </button>
             <button
               onClick={() => setMode("business")}
@@ -78,39 +140,35 @@ function App() {
                   : "text-[var(--color-mist-300)] hover:text-[var(--color-mist-100)]"
               }`}
             >
-              İşletme
+              {tt(copy.modeSwitchBusiness)}
             </button>
           </div>
         </header>
 
         <section className="mt-16 sm:mt-24 max-w-2xl rise-in" style={{ animationDelay: "80ms" }}>
           <p className="text-sm font-medium text-[var(--color-cyan-300)]">
-            {mode === "personal" ? "Bugün için akışın hazır" : "İşletmen bugün nasıl gidiyor?"}
+            {mode === "personal" ? tt(copy.eyebrowPersonal) : tt(copy.eyebrowBusiness)}
           </p>
           <h1 className="mt-3 text-4xl sm:text-5xl font-semibold tracking-tight leading-[1.1]">
-            {mode === "personal"
-              ? "Hayatının akışı, tek noktada."
-              : "Randevuların ve müşterilerin, tek panelde."}
+            {mode === "personal" ? tt(copy.headlinePersonal) : tt(copy.headlineBusiness)}
           </h1>
           <p className="mt-4 text-[var(--color-mist-300)] text-base leading-relaxed">
-            {mode === "personal"
-              ? "Takvim, görevler ve öneriler bir arada; hangi cihazdan girersen gir aynı yerden devam edersin."
-              : "Randevu, müşteri ve ekip yönetimi bir arada; demo veri yok, her rakam gerçek hesabından gelir."}
+            {mode === "personal" ? tt(copy.subPersonal) : tt(copy.subBusiness)}
           </p>
         </section>
 
         <section className="mt-12 grid grid-cols-1 sm:grid-cols-2 gap-4">
           {modules.map(({ icon: Icon, title, desc }, i) => (
             <div
-              key={title}
+              key={tt(title)}
               className="orbit-card rise-in p-5 hover:border-[var(--color-cyan-400)]/40 transition-colors"
               style={{ animationDelay: `${140 + i * 60}ms` }}
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--color-cyan-400)]/12">
                 <Icon size={20} className="text-[var(--color-cyan-300)]" strokeWidth={2} />
               </div>
-              <h3 className="mt-4 font-medium">{title}</h3>
-              <p className="mt-1 text-sm text-[var(--color-mist-500)]">{desc}</p>
+              <h3 className="mt-4 font-medium">{tt(title)}</h3>
+              <p className="mt-1 text-sm text-[var(--color-mist-500)]">{tt(desc)}</p>
             </div>
           ))}
         </section>
