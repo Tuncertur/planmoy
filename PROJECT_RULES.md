@@ -98,3 +98,20 @@ girildiği an uygulanır.
 - Kritik adımdan (imzalama, sır kaydetme) önce "güvenli yere not alın"
   uyarısı
 - "Yayınla" denmeden hiçbir şey canlıya alınmaz
+
+## Açık kalan işler (bir sonraki oturumda buradan devam)
+
+- [ ] Auth ekranı (telefon/Google/e-posta/demo) koda eklendi, demo/e-posta
+      test edilmeye çalışıldı ama "email not confirmed" hatası ile
+      uğraşıldı — Supabase'de Confirm email kapatıldı, Anonymous
+      Sign-Ins açıldı; SONUÇ DOĞRULANMADI, ilk iş bunu bitirmek
+- [ ] Google girişi için Capacitor deep-link (App eklentisi +
+      AndroidManifest intent-filter) henüz kurulmadı — buton şu an
+      web akışına gidiyor, native geri dönüş çalışmaz
+- [ ] Telefon/SMS girişi için Supabase'e Twilio bağlanmadı (Planmany'de
+      zaten bir Twilio hesabı var, oradaki deneyim kullanılabilir)
+- [ ] Faz 2 (gerçek randevu takvimi, StyleSync, Keşfet ekranları) henüz
+      başlamadı — sadece Personal moddaki Yapılacaklar gerçek DB'ye
+      bağlı, diğer modüller hâlâ statik kart
+- [ ] iOS tarafı hiç denenmedi (Mac/cloud build servisi gerekecek)
+
