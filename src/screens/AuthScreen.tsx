@@ -42,8 +42,8 @@ export function AuthScreen() {
   return (
     <div className="relative z-10 mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">
       <div className="mb-8 flex items-center gap-2">
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[var(--color-ember-500)] to-[var(--color-gold-400)]">
-          <Flame size={18} className="text-space-950" strokeWidth={2.5} />
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#38a9d4] to-[#756fe2]">
+          <Flame size={18} className="text-white" strokeWidth={2.5} />
         </div>
         <span className="text-lg font-semibold tracking-tight">Planmoy</span>
       </div>
@@ -78,7 +78,7 @@ export function AuthScreen() {
           </label>
 
           {error && (
-            <p className="text-sm text-[var(--color-ember-600)]" role="alert">
+            <p className="text-sm text-[#ff8a80]" role="alert">
               {error}
             </p>
           )}
@@ -86,7 +86,7 @@ export function AuthScreen() {
           <button
             type="submit"
             disabled={busy}
-            className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[var(--color-ember-500)] to-[var(--color-gold-400)] py-2.5 font-medium text-[var(--color-space-950)] transition-opacity disabled:opacity-60"
+            className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#38a9d4] to-[#756fe2] py-2.5 font-medium text-white transition-opacity disabled:opacity-60"
           >
             {busy && <Loader2 size={16} className="animate-spin" />}
             {mode === "up" ? tt(copy.submitUp) : tt(copy.submitIn)}

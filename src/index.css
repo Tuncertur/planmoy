@@ -13,25 +13,24 @@
 @theme {
   --font-sans: "Geist Sans", ui-sans-serif, system-ui, sans-serif;
 
-  /* Atmosphere */
-  --color-space-950: #070b16;
+  /* Atmosphere — FireVibe'ın gerçek space-theme.css'inden birebir alındı */
+  --color-space-950: #070b18;
   --color-space-900: #0b1220;
-  --color-space-800: #101a2e;
-  --color-space-700: #16243d;
-  --color-space-600: #1e3153;
+  --color-space-800: #0e1528;
+  --color-space-700: #111c34;
+  --color-space-600: #334665;
 
-  /* Orbit accents */
-  --color-cyan-400: #4dd8f0;
-  --color-cyan-300: #7ee6f7;
-  --color-gold-400: #ffd700;
-  --color-gold-300: #ffe45c;
-  --color-ember-500: #ff4500;
-  --color-ember-600: #dc143c;
+  /* Orbit accents — gerçek değerler */
+  --color-cyan-400: #70d6ff;
+  --color-cyan-300: #9ee4ff;
+  --color-violet-400: #9a8cff;
+  --color-gold-400: #ffd36a;
+  --color-gold-300: #ffe19a;
 
   /* Text */
-  --color-mist-100: #eef3fb;
-  --color-mist-300: #aab8d1;
-  --color-mist-500: #6c7c9c;
+  --color-mist-100: #f3f7ff;
+  --color-mist-300: #b8c9e2;
+  --color-mist-500: #7f93b3;
 }
 
 html {

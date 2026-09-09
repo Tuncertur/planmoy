@@ -141,8 +141,8 @@ export function Dashboard({ userId }: { userId: string }) {
       <div className="relative z-10 mx-auto max-w-5xl px-6 py-10 sm:py-14">
         <header className="flex items-center justify-between rise-in">
           <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[var(--color-ember-500)] to-[var(--color-gold-400)]">
-              <Flame size={18} className="text-space-950" strokeWidth={2.5} />
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#38a9d4] to-[#756fe2]">
+              <Flame size={18} className="text-white" strokeWidth={2.5} />
             </div>
             <span className="text-lg font-semibold tracking-tight">Planmoy</span>
           </div>
