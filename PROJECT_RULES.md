@@ -147,6 +147,11 @@ kararlar:
 - [x] StyleSync ekranı kuruldu (madde 1) — gardırop, fotoğraf depolama, Gemini ile kombin/deneme önerisi
 - [x] Keşfet'e ikinci kategori seti eklendi (madde 2) — kafe/bar/sinema/tiyatro/konser
 - [ ] GEMINI_API_KEY henüz Supabase'e eklenmedi — kullanıcı anahtarı
+      aldığında `supabase secrets set GEMINI_API_KEY=...` ile eklenecek.
+      ÖNEMLİ: Google Cloud Console'da Planmany'nin eski projesi
+      (`planmany-cadc7`, `turhantuncer9-org` altında) SEÇİLMEYECEK —
+      Gemini ve Maps anahtarları için yepyeni bir proje (`planmoy`)
+      oluşturulacak, karışmayacak
       aldığında `supabase secrets set GEMINI_API_KEY=...` ile eklenecek
 - [ ] İşletme tarafı (Lokasyon→Takvim→CRM→Öneriler sırasıyla) hiç
       başlamadı — SIRADAKİ İŞ: önce Lokasyon modülü
