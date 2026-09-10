@@ -117,19 +117,46 @@ kararlar:
   gönderilmiyordu — sadece isim/kategori/renk metni. Birebir taşınacak
   (metin tabanlı), gerçek görsel analiz sonradan ayrı bir karar
 
+## Kullanıcının kesinleştirdiği kararlar (planmoy_tasarim.txt raporu sonrası)
+
+1. StyleSync ekranı kurulacak (metin tabanlı, görsel AI analizi yok —
+   FireVibe'da da yoktu)
+2. Keşfet'te İKİ kategori seti de kalacak: gerçek FireVibe işletme
+   kategorileri (manikür, masaj, hamam vb.) VE orijinal belgedeki
+   restoran/etkinlik keşfi
+3. AI sağlayıcı OpenAI DEĞİL, Google Gemini — tek yerden ödeme istendi.
+   supabase/functions/ai-suggest kuruldu (GEMINI_API_KEY bekliyor),
+   ilk kullanım: Akışım sayfasındaki "Yapay zeka önerisi al" butonu
+4. İşletme eksik listesi önceliği: Lokasyon → Takvim → CRM → Öneriler.
+   Ödeme/checkout HİÇ eklenmeyecek (bilinçli karar)
+5. Sidebar modülleri kullanıcı tarafından sürükle-bırakla
+   yeniden sıralanabilir olmalı — YAPILDI (user_preferences tablosu,
+   Dashboard'da drag&drop), Ayarlar açıklamasına ipucu metni eklendi
+6. Animasyon efektleri aktif edilecek — CSS dosyaları zaten gerçek
+   FireVibe animasyonlarını içeriyor (ember-pulse, envelope-drop,
+   flame-stroke, spark-pop vb.); .focus-envelope zaten kullanılıyor,
+   personal-tools (fire-score-band) ve personal-assistant (assistant-fab)
+   bileşenleri StyleSync ile birlikte kurulacak
+7. Hukuki metinler: taslak Gizlilik/Koşullar sayfası (LegalScreen) ve
+   auth'ta açık onay kutusu eklendi, çerez bildirimi eklendi — GERÇEK
+   YAYINDAN ÖNCE MUTLAKA AVUKAT İNCELEMESİ GEREKİR, bu taslak hukuki
+   tavsiye değildir
+
 ## Açık kalan işler (bir sonraki oturumda buradan devam)
 
-- [ ] Auth ekranı (telefon/Google/e-posta/demo) koda eklendi, demo/e-posta
-      test edilmeye çalışıldı ama "email not confirmed" hatası ile
-      uğraşıldı — Supabase'de Confirm email kapatıldı, Anonymous
-      Sign-Ins açıldı; SONUÇ DOĞRULANMADI, ilk iş bunu bitirmek
-- [ ] Google girişi için Capacitor deep-link (App eklentisi +
-      AndroidManifest intent-filter) henüz kurulmadı — buton şu an
-      web akışına gidiyor, native geri dönüş çalışmaz
-- [ ] Telefon/SMS girişi için Supabase'e Twilio bağlanmadı (Planmany'de
-      zaten bir Twilio hesabı var, oradaki deneyim kullanılabilir)
-- [ ] Faz 2 (gerçek randevu takvimi, StyleSync, Keşfet ekranları) henüz
-      başlamadı — sadece Personal moddaki Yapılacaklar gerçek DB'ye
-      bağlı, diğer modüller hâlâ statik kart
-- [ ] iOS tarafı hiç denenmedi (Mac/cloud build servisi gerekecek)
+- [ ] StyleSync ekranı henüz kurulmadı (madde 1) — sırada ilk iş
+- [ ] Keşfet'e ikinci kategori seti (restoran/etkinlik) eklenmedi (madde 2)
+- [ ] GEMINI_API_KEY henüz Supabase'e eklenmedi — kullanıcı anahtarı
+      aldığında `supabase secrets set GEMINI_API_KEY=...` ile eklenecek
+- [ ] İşletme tarafı (Lokasyon→Takvim→CRM→Öneriler sırasıyla) hiç
+      başlamadı
+- [ ] fire-score-band ve assistant-fab bileşenleri (madde 6) StyleSync
+      ile birlikte kurulacak
+- [ ] Auth ekranı demo/e-posta girişi "email not confirmed" hatasından
+      sonra hiç doğrulanmadı — bir dahaki testte kontrol edilmeli
+- [ ] Google girişi için Capacitor deep-link henüz kurulmadı
+- [ ] Telefon/SMS girişi için Twilio bağlanmadı
+- [ ] iOS tarafı hiç denenmedi
+- [ ] ÖNEMLİ: Kullanıcı zip'i artık kendisi istemeden SUNMA (present_files
+      çağırma) — Planmany'deki gibi, sadece açıkça istediğinde ver
 
