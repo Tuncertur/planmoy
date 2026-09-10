@@ -378,12 +378,35 @@ function BusinessView() {
   );
 }
 
+// Görev kategorileri — planmoy_tasarim.txt Bölüm 2 taksonomisiyle VE
+// FireVibe'ın gerçek src/routes/tasks.tsx dosyasındaki taskCategories
+// listesiyle birebir aynı. Belgede "EKSİK YAPMA!" diye özellikle
+// işaretlenmiş bir bölümdü.
+const taskCategories = [
+  "İş görevleri",
+  "Ev görevleri",
+  "Kişisel görevler",
+  "Sosyal görevler",
+  "Sağlık görevleri",
+  "Yapay zeka önerileri",
+] as const;
+type TaskPeriod = "today" | "week" | "month";
+
 function TasksInline({ userId }: { userId: string }) {
-  const [tasks, setTasks] = useState<{ id: string; title: string; completed: boolean }[]>([]);
+  const [tasks, setTasks] = useState<
+    { id: string; title: string; completed: boolean; category: string; period: string; pinned: boolean }[]
+  >([]);
   const [draft, setDraft] = useState("");
+  const [newCategory, setNewCategory] = useState<(typeof taskCategories)[number]>("Kişisel görevler");
+  const [filter, setFilter] = useState<TaskPeriod>("today");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
 
   async function load() {
-    const { data } = await supabase.from("tasks").select("id, title, completed").order("created_at", { ascending: false });
+    const { data } = await supabase
+      .from("tasks")
+      .select("id, title, completed, category, period, pinned")
+      .order("pinned", { ascending: false })
+      .order("created_at", { ascending: false });
     setTasks(data ?? []);
   }
   useEffect(() => {
@@ -393,7 +416,7 @@ function TasksInline({ userId }: { userId: string }) {
   async function add(e: React.FormEvent) {
     e.preventDefault();
     if (!draft.trim()) return;
-    await supabase.from("tasks").insert({ title: draft.trim(), user_id: userId });
+    await supabase.from("tasks").insert({ title: draft.trim(), user_id: userId, category: newCategory, period: filter });
     setDraft("");
     load();
   }
@@ -401,22 +424,55 @@ function TasksInline({ userId }: { userId: string }) {
     await supabase.from("tasks").update({ completed: !completed }).eq("id", id);
     load();
   }
+  async function pin(id: string, pinned: boolean) {
+    await supabase.from("tasks").update({ pinned: !pinned }).eq("id", id);
+    load();
+  }
+
+  const visible = tasks.filter((t) => t.period === filter && (categoryFilter === "all" || t.category === categoryFilter));
 
   return (
     <section className="panel tasks-panel">
       <PanelHeading eyebrow={tt({ tr: "Yapılacaklar", en: "Tasks" })} title={tt({ tr: "Bugünün küçük adımları", en: "Today's small steps" })} />
+
+      <div className="task-filter">
+        <button className={filter === "today" ? "selected" : ""} onClick={() => setFilter("today")}>{tt({ tr: "Bugün", en: "Today" })}</button>
+        <button className={filter === "week" ? "selected" : ""} onClick={() => setFilter("week")}>{tt({ tr: "Hafta", en: "Week" })}</button>
+        <button className={filter === "month" ? "selected" : ""} onClick={() => setFilter("month")}>{tt({ tr: "Ay", en: "Month" })}</button>
+      </div>
+
       <form onSubmit={add} className="inline-add">
         <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={tt({ tr: "Yeni görev ekle", en: "Add a new task" })} />
+        <select value={newCategory} onChange={(e) => setNewCategory(e.target.value as (typeof taskCategories)[number])}>
+          {taskCategories.map((c) => <option key={c}>{c}</option>)}
+        </select>
         <button aria-label="Görev ekle"><Plus size={17} /></button>
       </form>
-      <div className="task-list">
-        {tasks.map((task) => (
-          <button key={task.id} className={`task ${task.completed ? "is-done" : ""}`} onClick={() => toggle(task.id, task.completed)}>
-            <span className="task-check">{task.completed && <Check size={13} />}</span>
-            <span>{task.title}</span>
-          </button>
+
+      <div className="task-controls">
+        <label>
+          {tt({ tr: "Görev kategorisi", en: "Task category" })}
+          <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+            <option value="all">{tt({ tr: "Tüm kategoriler", en: "All categories" })}</option>
+            {taskCategories.map((c) => <option key={c}>{c}</option>)}
+          </select>
+        </label>
+      </div>
+
+      <div className="task-list task-page-list">
+        {visible.map((task) => (
+          <div key={task.id} className={`task ${task.completed ? "is-done" : ""}`}>
+            <button className="task-toggle" onClick={() => toggle(task.id, task.completed)}>
+              <span className="task-check">{task.completed && <Check size={13} />}</span>
+              <span>{task.title}</span>
+            </button>
+            <small>{task.category}</small>
+            <button className={`task-pin ${task.pinned ? "is-pinned" : ""}`} onClick={() => pin(task.id, task.pinned)} aria-label="Sabitle">
+              📌
+            </button>
+          </div>
         ))}
-        {tasks.length === 0 && <p className="task-empty"><span>{tt({ tr: "Henüz görev yok.", en: "No tasks yet." })}</span></p>}
+        {visible.length === 0 && <p className="task-empty"><span>{tt({ tr: "Bu dönemde görev yok.", en: "No tasks in this period." })}</span></p>}
       </div>
     </section>
   );
