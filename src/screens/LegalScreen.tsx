@@ -30,7 +30,11 @@ export function LegalScreen({ onBack }: { onBack: () => void }) {
               })}
             </p>
             <p className="legal-contact">
-              Tuncer Turhan (şahıs, tüzel kişilik bulunmamaktadır)
+              Planmoy
+              <br />
+              <span style={{ fontSize: 11, opacity: 0.85 }}>
+                {tt({ tr: "(Tuncer Turhan tarafından işletilmektedir — şahıs, tüzel kişilik bulunmamaktadır)", en: "(operated by Tuncer Turhan — sole individual, no registered company)" })}
+              </span>
               <br />
               {tt({ tr: "E-posta", en: "Email" })}: destek@planmoy.app
             </p>
