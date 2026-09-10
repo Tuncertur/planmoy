@@ -12,6 +12,10 @@ import { NotesScreen } from "./NotesScreen";
 import { DiscoverScreen } from "./DiscoverScreen";
 import { StyleSyncScreen } from "./StyleSyncScreen";
 import { ComingSoon } from "../components/ComingSoon";
+import {
+  StaffPanel, InventoryPanel, ReportsPanel, MarketingPanel, BusinessSettingsPanel,
+  LoyaltyPanel, CompetitionPanel, PerformancePanel, SupplyPanel, PricingPanel,
+} from "./BusinessExtras";
 
 // Bu ekran FireVibe'ın gerçek src/routes/index.tsx dosyasından (Home
 // bileşeni) birebir taşınmıştır — class isimleri, bölüm sırası ve kopya
@@ -49,6 +53,11 @@ const businessNavItems: { id: ViewId; icon: React.ReactNode; label: Dict }[] = [
   { id: "biz-reports", icon: <Brain size={17} />, label: { tr: "Raporlar", en: "Reports" } },
   { id: "biz-marketing", icon: <Sparkles size={17} />, label: { tr: "Pazarlama", en: "Marketing" } },
   { id: "biz-settings", icon: <Settings2 size={17} />, label: { tr: "İşletme ayarları", en: "Settings" } },
+  { id: "biz-loyalty", icon: <Users size={17} />, label: { tr: "Sadakat programı", en: "Loyalty" } },
+  { id: "biz-competition", icon: <Compass size={17} />, label: { tr: "Rekabet analizi", en: "Competition" } },
+  { id: "biz-performance", icon: <Dumbbell size={17} />, label: { tr: "Çalışan performansı", en: "Performance" } },
+  { id: "biz-supply", icon: <FileText size={17} />, label: { tr: "Tedarik zinciri", en: "Supply chain" } },
+  { id: "biz-pricing", icon: <Brain size={17} />, label: { tr: "Kar marjı & fiyat", en: "Pricing" } },
 ];
 
 function NavItem({
@@ -273,9 +282,21 @@ export function Dashboard({ userId }: { userId: string }) {
         {view === "biz-appointments" && <PanelWrap><BusinessAppointmentsPanel userId={userId} /></PanelWrap>}
         {view === "biz-customers" && <PanelWrap><BusinessCustomersPanel userId={userId} /></PanelWrap>}
         {view === "biz-suggestions" && <PanelWrap><BusinessSuggestionsPanel /></PanelWrap>}
+        {view === "biz-staff" && <PanelWrap><StaffPanel /></PanelWrap>}
+        {view === "biz-inventory" && <PanelWrap><InventoryPanel /></PanelWrap>}
+        {view === "biz-reports" && <PanelWrap><ReportsPanel /></PanelWrap>}
+        {view === "biz-marketing" && <PanelWrap><MarketingPanel /></PanelWrap>}
+        {view === "biz-settings" && <PanelWrap><BusinessSettingsPanel /></PanelWrap>}
+        {view === "biz-loyalty" && <PanelWrap><LoyaltyPanel /></PanelWrap>}
+        {view === "biz-competition" && <PanelWrap><CompetitionPanel /></PanelWrap>}
+        {view === "biz-performance" && <PanelWrap><PerformancePanel /></PanelWrap>}
+        {view === "biz-supply" && <PanelWrap><SupplyPanel /></PanelWrap>}
+        {view === "biz-pricing" && <PanelWrap><PricingPanel /></PanelWrap>}
         {![
           "flow", "tasks", "notes", "discover", "stylesync",
           "biz-location", "biz-appointments", "biz-customers", "biz-suggestions",
+          "biz-staff", "biz-inventory", "biz-reports", "biz-marketing", "biz-settings",
+          "biz-loyalty", "biz-competition", "biz-performance", "biz-supply", "biz-pricing",
         ].includes(view) && (
           <PanelWrap>
             <ComingSoon label={tt(currentNavItems.find((n) => n.id === view)?.label ?? { tr: "", en: "" })} />
