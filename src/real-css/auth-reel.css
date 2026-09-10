@@ -1,0 +1,79 @@
+/* Lightweight multilingual reel: the committed silent clip loops while readable language-native scenes carry the story. */
+.intro-video { isolation:isolate; }
+.intro-video-player { opacity:.2; }
+.video-shade { background:linear-gradient(90deg,#071936f5 0%,#071936d9 52%,#071936b8 100%); }
+.video-shade { position:absolute; inset:0; z-index:1; background:linear-gradient(90deg,#071936e8 0%,#07193682 52%,#07193620 100%); pointer-events:none; }
+.video-scene { position:absolute; z-index:2; left:22px; top:22px; width:min(76%,330px); display:grid; gap:8px; animation:reel-scene-in .45s ease both; pointer-events:none; }
+.video-scene span { color:#8fd5ff; font-size:9px; font-weight:850; letter-spacing:.14em; text-transform:uppercase; }
+.video-scene strong { color:#fff; font-size:clamp(17px,2.3vw,24px); line-height:1.08; letter-spacing:-.045em; }
+.video-scene small { color:#d6edff; font-size:10px; line-height:1.45; }
+.video-progress { position:absolute; z-index:3; left:22px; right:22px; bottom:48px; height:3px; overflow:hidden; border-radius:99px; background:#ffffff40; pointer-events:none; }
+.video-progress i { display:block; height:100%; border-radius:inherit; background:#8fd5ff; transition:width .35s ease; }
+.video-caption { z-index:3; bottom:16px; }
+.auth-feature-list { display:grid; gap:11px; margin-top:21px; }
+.auth-feature-list > div { display:flex; align-items:center; gap:11px; color:#537594; font-size:12px; }
+.auth-feature-list b { font-weight:650; }
+.auth-feature-icon { position:relative; display:grid; place-items:center; width:42px; height:42px; flex:none; border-radius:13px; }
+.auth-feature-icon svg:last-child { position:absolute; right:-2px; bottom:-2px; padding:2px; width:16px; height:16px; border:2px solid #edf7ff; border-radius:50%; color:#fff; background:#247dcc; }
+.auth-feature-icon.cyan { color:#147da5; background:#dff7ff; }
+.auth-feature-icon.violet { color:#6859bd; background:#eeeaff; }
+.auth-feature-icon.violet svg:last-child { background:#6859bd; }
+.auth-feature-icon.mint { color:#238e7f; background:#dff7f0; }
+.auth-feature-icon.mint svg:last-child { background:#238e7f; }
+@keyframes reel-scene-in { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+@media (max-width:760px) { .video-scene { left:17px; top:18px; width:78%; }.video-scene strong { font-size:18px; }.video-progress { left:17px; right:17px; } }
+/* Bigger icon rhythm across the product, without adding image weight. */
+.overview-blue .nav-item svg { width:19px; height:19px; }
+.overview-blue .mode-icon { width:48px; height:48px; border-radius:14px; box-shadow:0 6px 14px #247dcc18; }
+.overview-blue .mode-icon svg { width:23px; height:23px; }
+.overview-blue .stat-card > svg { width:23px; height:23px; }
+.overview-blue .business-tools > a > svg { width:26px; height:26px; }
+@media (prefers-reduced-motion:reduce) { .video-scene { animation:none; }.video-progress i { transition:none; } }
+
+/* The reel is a quiet identity surface; the readable story remains in the panel copy. */
+.intro-video-player { display:none !important; opacity:0; transform:scale(1.03); }
+.video-shade { background:linear-gradient(90deg,#071936f8 0%,#071936ec 55%,#071936d8 100%); }
+.video-scene { display:none; width:min(82%,350px); gap:7px; }
+.video-scene strong { max-width:320px; font-size:clamp(16px,2vw,21px); line-height:1.12; }
+.auth-primary-message { max-width:460px !important; margin:28px 0 20px !important; font-size:clamp(27px,3.2vw,42px) !important; line-height:1.08 !important; letter-spacing:-.06em !important; }
+.auth-primary-message span, .auth-primary-message strong { display:block; }
+.auth-primary-message span { color:#17345f; font-weight:650; }
+.auth-primary-message strong { color:#247dcc; font-weight:850; }
+@media (max-width:760px) {
+  .auth-primary-message { font-size:clamp(27px,8vw,37px) !important; }
+  .video-scene strong { font-size:17px; }
+}
+
+/* Auth is an intentional Planmoy entry surface: safe gutters, one ambient panel, one calm door. */
+.space-auth { min-height:100svh; padding:24px clamp(16px, 4vw, 56px) 40px; overflow-x:hidden; }
+.space-auth .auth-language { width:min(1180px,100%); margin:0 auto; min-height:32px; }
+.space-auth .auth-layout { width:min(1180px,100%); min-height:calc(100svh - 96px); grid-template-columns:minmax(0,1fr) minmax(340px,430px); gap:clamp(32px,7vw,96px); }
+.space-auth .auth-intro { min-width:0; max-width:620px; overflow:hidden; padding:32px; border:1px solid var(--space-line); border-radius:18px; background:linear-gradient(145deg,#101b33f2,#0b1428f4); box-shadow:0 22px 65px #0000002e; text-align:left; }
+.space-auth .auth-intro > * { min-width:0; }
+.space-auth .auth-intro .auth-brand { margin:0; }
+.space-auth .auth-intro .intro-video { width:100%; max-width:none; margin-top:38px; }
+.space-auth .auth-intro .auth-primary-message { width:100%; margin-left:0 !important; margin-right:0 !important; }
+.space-auth .auth-intro .auth-primary-message span { color:var(--space-text) !important; }
+.space-auth .auth-intro .auth-primary-message strong { color:var(--space-cyan) !important; }
+.space-auth .auth-intro .auth-feature-list { width:100%; }
+.space-auth .auth-card { min-width:0; width:100%; padding:32px; border-radius:18px; background:linear-gradient(145deg,#111d36f7,#0d172cf7); box-shadow:0 24px 70px #0000003b; }
+.space-auth .auth-card h1 { color:var(--space-text) !important; }
+.space-auth .auth-card input { min-width:0; }
+.space-auth .auth-card button, .space-auth .auth-card a { max-width:100%; }
+.space-auth .auth-submit:focus-visible, .space-auth .auth-toggle:focus-visible, .space-auth .auth-provider-grid button:focus-visible, .space-auth .auth-card input:focus-visible { outline:3px solid #70d6ff88; outline-offset:3px; }
+.space-auth .auth-provider-grid button:disabled { cursor:not-allowed; }
+@media (max-width:900px) {
+  .space-auth { padding-inline:24px; }
+  .space-auth .auth-layout { grid-template-columns:minmax(0,1fr) minmax(300px,390px); gap:28px; }
+  .space-auth .auth-intro, .space-auth .auth-card { padding:24px; }
+}
+@media (max-width:760px) {
+  .space-auth { padding:16px 16px 30px; }
+  .space-auth .auth-language { min-height:30px; }
+  .space-auth .auth-layout { display:flex; flex-direction:column; gap:20px; min-height:0; padding:24px 0 0; }
+  .space-auth .auth-card { order:1; }
+  .space-auth .auth-intro { order:2; padding:20px; }
+  .space-auth .auth-intro .intro-video { margin-top:28px; }
+}
+@media (prefers-reduced-motion:reduce) { .space-auth::before { animation:none; } }
+EOF

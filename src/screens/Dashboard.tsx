@@ -1,252 +1,423 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState } from "react";
 import {
-  CalendarDays,
-  CheckSquare,
-  Sparkles,
-  Compass,
-  StickyNote,
-  Users,
-  BarChart3,
-  Megaphone,
-  Settings2,
-  Package,
-  UserCog,
-  Award,
-  ChartNoAxesCombined,
-  Gauge,
-  ShoppingCart,
-  Coins,
-  Activity,
-  Target,
-  Brain,
-  Wallet,
-  Clock3,
-  Plus,
+  ArrowUpRight, CalendarDays, Check, ChevronRight, Compass, FileText,
+  HeartPulse, LayoutDashboard, ListChecks, Plus, Scissors, Settings2,
+  Sparkles, Users, WandSparkles, Dumbbell, Brain, StickyNote,
 } from "lucide-react";
 import { tt, type Dict } from "../lib/i18n";
 import { supabase } from "../lib/supabase";
-import { AppShell, type NavItem } from "../components/AppShell";
-import { ComingSoon } from "../components/ComingSoon";
 import { NotesScreen } from "./NotesScreen";
 import { DiscoverScreen } from "./DiscoverScreen";
+import { ComingSoon } from "../components/ComingSoon";
 
-type AppMode = "personal" | "business";
+// Bu ekran FireVibe'ın gerçek src/routes/index.tsx dosyasından (Home
+// bileşeni) birebir taşınmıştır — class isimleri, bölüm sırası ve kopya
+// metinler kaynağa sadık kalınarak yazıldı.
 
-const personalNav: NavItem[] = [
-  { id: "flow", label: { tr: "Akışım", en: "My Flow" }, icon: Activity },
-  { id: "calendar", label: { tr: "Zaman akışı", en: "Time Flow" }, icon: CalendarDays },
-  { id: "tasks", label: { tr: "Yapılacaklar", en: "To-Do" }, icon: CheckSquare },
-  { id: "stylesync", label: { tr: "StyleSync", en: "StyleSync" }, icon: Sparkles },
-  { id: "discover", label: { tr: "Keşfet", en: "Discover" }, icon: Compass },
-  { id: "sports", label: { tr: "Spor akışı", en: "Sports Flow" }, icon: Target },
-  { id: "space", label: { tr: "Hobi ve hedefler", en: "Hobbies & goals" }, icon: Award },
-  { id: "notes", label: { tr: "Boş Alan", en: "Open Space" }, icon: StickyNote },
-  { id: "intelligence", label: { tr: "Yapay zeka", en: "Intelligence" }, icon: Brain },
+type Mode = "personal" | "business";
+type ViewId =
+  | "flow" | "calendar" | "tasks" | "stylesync" | "discover"
+  | "sports" | "events" | "space" | "notes" | "intelligence" | "personal-tools";
+
+const navItems: { id: ViewId; icon: React.ReactNode; label: Dict }[] = [
+  { id: "flow", icon: <LayoutDashboard size={17} />, label: { tr: "Genel bakış", en: "Overview" } },
+  { id: "calendar", icon: <CalendarDays size={17} />, label: { tr: "Zaman akışı", en: "Time flow" } },
+  { id: "tasks", icon: <ListChecks size={17} />, label: { tr: "Yapılacaklar", en: "Tasks" } },
+  { id: "stylesync", icon: <WandSparkles size={17} />, label: { tr: "StyleSync", en: "StyleSync" } },
+  { id: "discover", icon: <Compass size={17} />, label: { tr: "Keşfet", en: "Discover" } },
+  { id: "sports", icon: <Dumbbell size={17} />, label: { tr: "Spor akışı", en: "Sports flow" } },
+  { id: "events", icon: <Users size={17} />, label: { tr: "Etkinlikler", en: "Events" } },
+  { id: "space", icon: <FileText size={17} />, label: { tr: "Hobi ve hedefler", en: "Hobbies & goals" } },
+  { id: "notes", icon: <StickyNote size={17} />, label: { tr: "Boş Alan", en: "Empty space" } },
+  { id: "intelligence", icon: <Brain size={17} />, label: { tr: "Yapay zeka", en: "Intelligence" } },
 ];
 
-const businessNav: NavItem[] = [
-  { id: "overview", label: { tr: "Genel bakış", en: "Overview" }, icon: BarChart3 },
-  { id: "appointments", label: { tr: "Randevular", en: "Appointments" }, icon: CalendarDays },
-  { id: "customers", label: { tr: "Müşteriler", en: "Customers" }, icon: Users },
-  { id: "staff", label: { tr: "Personel", en: "Staff" }, icon: UserCog },
-  { id: "inventory", label: { tr: "Stok & ürünler", en: "Inventory" }, icon: Package },
-  { id: "reports", label: { tr: "Raporlar & analiz", en: "Reports" }, icon: BarChart3 },
-  { id: "marketing", label: { tr: "İletişim & pazarlama", en: "Marketing" }, icon: Megaphone },
-  { id: "settings", label: { tr: "İşletme ayarları", en: "Settings" }, icon: Settings2 },
-  { id: "loyalty", label: { tr: "Sadakat programı", en: "Loyalty" }, icon: Award },
-  { id: "competition", label: { tr: "Rekabet analizi", en: "Competition" }, icon: ChartNoAxesCombined },
-  { id: "performance", label: { tr: "Çalışan performansı", en: "Performance" }, icon: Gauge },
-  { id: "supply", label: { tr: "Tedarik zinciri", en: "Supply chain" }, icon: ShoppingCart },
-  { id: "pricing", label: { tr: "Kar marjı & fiyat", en: "Pricing" }, icon: Coins },
-];
-
-function StatCard({ icon: Icon, label, value }: { icon: typeof CalendarDays; label: Dict; value: string }) {
+function NavItem({ item, active, onClick }: { item: (typeof navItems)[number]; active: boolean; onClick: () => void }) {
   return (
-    <div className="orbit-card p-4">
-      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--color-cyan-400)]/12">
-        <Icon size={18} className="text-[var(--color-cyan-300)]" />
-      </div>
-      <p className="mt-3 text-2xl font-semibold">{value}</p>
-      <p className="text-xs text-[var(--color-mist-500)]">{tt(label)}</p>
-    </div>
-  );
-}
-
-type Task = { id: string; title: string; completed: boolean };
-
-function TaskList({ userId }: { userId: string }) {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [draft, setDraft] = useState("");
-  const [loading, setLoading] = useState(true);
-
-  async function loadTasks() {
-    const { data } = await supabase.from("tasks").select("id, title, completed").order("created_at", { ascending: false });
-    setTasks(data ?? []);
-    setLoading(false);
-  }
-
-  useEffect(() => {
-    loadTasks();
-  }, []);
-
-  async function addTask(e: FormEvent) {
-    e.preventDefault();
-    if (!draft.trim()) return;
-    const { error } = await supabase.from("tasks").insert({ title: draft.trim(), user_id: userId });
-    if (!error) {
-      setDraft("");
-      loadTasks();
-    }
-  }
-
-  async function toggleTask(task: Task) {
-    await supabase.from("tasks").update({ completed: !task.completed }).eq("id", task.id);
-    loadTasks();
-  }
-
-  return (
-    <div className="orbit-card p-5">
-      <form onSubmit={addTask} className="flex gap-2">
-        <input
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          placeholder={tt({ tr: "Yeni görev ekle…", en: "Add a new task…" })}
-          className="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm outline-none focus:border-[var(--color-cyan-400)]"
-        />
-        <button type="submit" className="flex items-center justify-center rounded-xl bg-[var(--color-cyan-400)] px-3 text-[var(--color-space-950)]">
-          <Plus size={18} />
-        </button>
-      </form>
-      <ul className="mt-4 flex flex-col gap-2">
-        {!loading && tasks.length === 0 && (
-          <li className="text-sm text-[var(--color-mist-500)]">{tt({ tr: "Henüz görev yok.", en: "No tasks yet." })}</li>
-        )}
-        {tasks.map((task) => (
-          <li key={task.id}>
-            <button onClick={() => toggleTask(task)} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-white/5">
-              <span
-                className={`flex h-4 w-4 items-center justify-center rounded border ${
-                  task.completed ? "border-[var(--color-cyan-400)] bg-[var(--color-cyan-400)]" : "border-white/20"
-                }`}
-              />
-              <span className={task.completed ? "text-[var(--color-mist-500)] line-through" : ""}>{task.title}</span>
-            </button>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function PersonalFlow({ userId, go }: { userId: string; go: (id: string) => void }) {
-  return (
-    <div className="flex flex-col gap-6">
-      <p className="max-w-xl text-sm leading-relaxed text-[var(--color-mist-300)]">
-        {tt({
-          tr: "Takvim, görevler ve öneriler bir arada; hangi cihazdan girersen gir aynı yerden devam edersin.",
-          en: "Calendar, tasks, and suggestions together — pick up where you left off on any device.",
-        })}
-      </p>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <button onClick={() => go("tasks")} className="orbit-card p-4 text-left hover:border-[var(--color-cyan-400)]/40">
-          <CheckSquare className="text-[var(--color-cyan-300)]" size={18} />
-          <p className="mt-3 text-sm font-medium">{tt({ tr: "Yapılacaklar", en: "To-Do" })}</p>
-        </button>
-        <button onClick={() => go("stylesync")} className="orbit-card p-4 text-left hover:border-[var(--color-cyan-400)]/40">
-          <Sparkles className="text-[var(--color-cyan-300)]" size={18} />
-          <p className="mt-3 text-sm font-medium">StyleSync</p>
-        </button>
-        <button onClick={() => go("discover")} className="orbit-card p-4 text-left hover:border-[var(--color-cyan-400)]/40">
-          <Compass className="text-[var(--color-cyan-300)]" size={18} />
-          <p className="mt-3 text-sm font-medium">{tt({ tr: "Keşfet", en: "Discover" })}</p>
-        </button>
-      </div>
-      <TaskList userId={userId} />
-    </div>
-  );
-}
-
-function BusinessOverview() {
-  const [counts, setCounts] = useState<{ appointments: number; customers: number } | null>(null);
-
-  useEffect(() => {
-    Promise.all([
-      supabase.from("appointments").select("id", { count: "exact", head: true }),
-      supabase.from("customers").select("id", { count: "exact", head: true }),
-    ]).then(([a, c]) => setCounts({ appointments: a.count ?? 0, customers: c.count ?? 0 }));
-  }, []);
-
-  return (
-    <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard icon={CalendarDays} label={{ tr: "Bugünkü randevular", en: "Today's appointments" }} value={String(counts?.appointments ?? "—")} />
-        <StatCard icon={Users} label={{ tr: "Toplam müşteri", en: "Total customers" }} value={String(counts?.customers ?? "—")} />
-        <StatCard icon={Clock3} label={{ tr: "Doluluk oranı", en: "Occupancy" }} value="—" />
-        <StatCard icon={Wallet} label={{ tr: "Ciro tahmini", en: "Revenue estimate" }} value="—" />
-      </div>
-      <p className="text-xs text-[var(--color-mist-500)]">
-        {tt({
-          tr: "Henüz bir işletme kaydın yok — Randevular ve Müşteriler bölümlerinden ilk kayıtlarını ekleyerek bu paneli canlandırabilirsin.",
-          en: "You don't have a business record yet — add your first entries from Appointments and Customers to bring this panel to life.",
-        })}
-      </p>
-    </div>
+    <button onClick={onClick} className={`nav-item ${active ? "active" : ""}`} style={{ width: "100%", cursor: "pointer" }}>
+      {item.icon}
+      <span>{tt(item.label)}</span>
+    </button>
   );
 }
 
 export function Dashboard({ userId }: { userId: string }) {
-  const [appMode, setAppMode] = useState<AppMode>("personal");
-  const [view, setView] = useState("flow");
+  const [mode, setMode] = useState<Mode>("personal");
+  const [view, setView] = useState<ViewId>("flow");
+  const [dashboard, setDashboard] = useState<{ todayTasks: number; todayAppointments: number } | null>(null);
+  const [suggestion] = useState("");
 
-  const navItems = appMode === "personal" ? personalNav : businessNav;
-  const activeItem = navItems.find((i) => i.id === view) ?? navItems[0];
+  useEffect(() => {
+    supabase
+      .from("tasks")
+      .select("id", { count: "exact", head: true })
+      .eq("completed", false)
+      .then(({ count }) => setDashboard({ todayTasks: count ?? 0, todayAppointments: 0 }));
+  }, []);
 
-  function switchMode(next: AppMode) {
-    setAppMode(next);
-    setView(next === "personal" ? "flow" : "overview");
+  function switchMode(next: Mode) {
+    setMode(next);
+    setView("flow");
   }
 
-  const modeSwitcher = (
-    <div className="orbit-card flex gap-1 p-1">
-      <button
-        onClick={() => switchMode("personal")}
-        className={`flex-1 rounded-xl px-3 py-1.5 text-sm font-medium transition-colors ${
-          appMode === "personal" ? "bg-[var(--color-cyan-400)] text-[var(--color-space-950)]" : "text-[var(--color-mist-300)]"
-        }`}
-      >
-        {tt({ tr: "Kişisel", en: "Personal" })}
-      </button>
-      <button
-        onClick={() => switchMode("business")}
-        className={`flex-1 rounded-xl px-3 py-1.5 text-sm font-medium transition-colors ${
-          appMode === "business" ? "bg-[var(--color-cyan-400)] text-[var(--color-space-950)]" : "text-[var(--color-mist-300)]"
-        }`}
-      >
-        {tt({ tr: "İşletme", en: "Business" })}
-      </button>
+  return (
+    <div className="app-shell overview-blue home-choice">
+      <aside className="sidebar">
+        <a href="/" className="brand" onClick={(e) => e.preventDefault()}>
+          plan<span>moy</span>
+          <i />
+        </a>
+        <div className="workspace">
+          <span className="avatar-mark">PM</span>
+          <div>
+            <strong>Planmoy</strong>
+            <small>{mode === "personal" ? tt({ tr: "Kişisel alan", en: "Personal space" }) : tt({ tr: "İşletme alanı", en: "Business space" })}</small>
+          </div>
+        </div>
+        <nav className="side-nav" aria-label="Ana menü">
+          {navItems.map((item) => (
+            <NavItem key={item.id} item={item} active={view === item.id} onClick={() => setView(item.id)} />
+          ))}
+        </nav>
+        <div className="sidebar-bottom">
+          <div className="fire-note">
+            <Sparkles size={16} />
+            <span>
+              {tt({ tr: "Akışını", en: "Your flow" })}
+              <br />
+              <b>{tt({ tr: "netleştir.", en: "made clear." })}</b>
+            </span>
+          </div>
+          <span className="side-caption">Planmoy · cross-platform</span>
+        </div>
+      </aside>
+
+      <main className="main-canvas">
+        <header className="topbar">
+          <div>
+            <p className="eyebrow">Planmoy</p>
+            <h1>{tt(navItems.find((n) => n.id === view)?.label ?? { tr: "Genel bakış", en: "Overview" })}</h1>
+          </div>
+          <div className="top-actions">
+            <span className="platform-note">
+              <i /> Web · Android · iOS
+            </span>
+          </div>
+        </header>
+
+        <section className="mode-hero">
+          <div>
+            <p className="eyebrow blue-label">{mode === "personal" ? tt({ tr: "KİŞİSEL AKIŞ", en: "PERSONAL FLOW" }) : tt({ tr: "İŞLETME AKIŞI", en: "BUSINESS FLOW" })}</p>
+            <h2>
+              {mode === "personal" ? (
+                <>
+                  {tt({ tr: "Günün akışı,", en: "Your day," })}
+                  <br />
+                  {tt({ tr: "senin ritminde.", en: "in your rhythm." })}
+                </>
+              ) : (
+                <>
+                  {tt({ tr: "İşletmen için", en: "A clearer flow" })}
+                  <br />
+                  {tt({ tr: "daha net bir akış.", en: "for your business." })}
+                </>
+              )}
+            </h2>
+            <p className="intro">
+              {mode === "personal"
+                ? tt({ tr: "Randevular, görevler, stil ve keşif önerileri tek bir sakin çalışma alanında.", en: "Appointments, tasks, style, and discovery in one calm workspace." })
+                : tt({ tr: "Takvim, hizmetler, ekip ve danışan deneyimi için ihtiyacın olan sade panel.", en: "A focused panel for calendars, services, teams, and clients." })}
+            </p>
+          </div>
+          <div className="flow-orb">
+            <span className="orb-ring" />
+            <span className="orb-dot dot-one" />
+            <span className="orb-dot dot-two" />
+            <b>FLOW</b>
+          </div>
+        </section>
+
+        <section className="mode-switch" aria-label="Nasıl kullanacaksın?">
+          <button className={mode === "personal" ? "selected" : ""} onClick={() => switchMode("personal")}>
+            <span className="mode-icon">
+              <HeartPulse size={20} />
+            </span>
+            <span>
+              <strong>{tt({ tr: "Kişisel alan", en: "Personal space" })}</strong>
+              <small>{tt({ tr: "Takvimini, görevlerini ve günlük akışını yönet.", en: "Manage your calendar, tasks and daily flow." })}</small>
+            </span>
+            <ChevronRight size={17} />
+          </button>
+          <button className={mode === "business" ? "selected" : ""} onClick={() => switchMode("business")}>
+            <span className="mode-icon">
+              <Users size={20} />
+            </span>
+            <span>
+              <strong>{tt({ tr: "İşletme alanı", en: "Business space" })}</strong>
+              <small>{tt({ tr: "Randevularını, ekibini ve müşteri akışını yönet.", en: "Manage appointments, team and customer flow." })}</small>
+            </span>
+            <ChevronRight size={17} />
+          </button>
+        </section>
+
+        {mode === "personal" && view === "flow" && (
+          <PersonalView dashboard={dashboard} suggestion={suggestion} go={setView} />
+        )}
+        {mode === "business" && view === "flow" && <BusinessView />}
+
+        {view === "tasks" && <PanelWrap><TasksInline userId={userId} /></PanelWrap>}
+        {view === "notes" && <PanelWrap><NotesScreen userId={userId} /></PanelWrap>}
+        {view === "discover" && <PanelWrap><DiscoverScreen /></PanelWrap>}
+        {!["flow", "tasks", "notes", "discover"].includes(view) && (
+          <PanelWrap>
+            <ComingSoon label={tt(navItems.find((n) => n.id === view)?.label ?? { tr: "", en: "" })} />
+          </PanelWrap>
+        )}
+
+        <footer>
+          <span className="brand small">
+            plan<span>moy</span>
+            <i />
+          </span>
+          <span>{tt({ tr: "Kişisel hayat ve işletme akışı, tek noktada.", en: "One clear flow for life and business." })}</span>
+        </footer>
+      </main>
     </div>
   );
+}
+
+function PanelWrap({ children }: { children: React.ReactNode }) {
+  return <section style={{ marginTop: 18 }}>{children}</section>;
+}
+
+function PanelHeading({ eyebrow, title, action }: { eyebrow: string; title: string; action?: React.ReactNode }) {
+  return (
+    <div className="panel-heading">
+      <div>
+        <p className="eyebrow">{eyebrow}</p>
+        <h3>{title}</h3>
+      </div>
+      {action}
+    </div>
+  );
+}
+
+function PersonalView({
+  dashboard,
+  suggestion,
+  go,
+}: {
+  dashboard: { todayTasks: number; todayAppointments: number } | null;
+  suggestion: string;
+  go: (id: ViewId) => void;
+}) {
+  return (
+    <>
+      <section className="today-focus-banner">
+        <div>
+          <p className="eyebrow blue-label">{tt({ tr: "BUGÜNÜN ODAĞI", en: "TODAY'S FOCUS" })}</p>
+          <h2>{dashboard ? `${dashboard.todayTasks} ${tt({ tr: "görev seni bekliyor.", en: "tasks are waiting for you." })}` : tt({ tr: "Akışını tek bakışta netleştir.", en: "See your flow at a glance." })}</h2>
+          <p>{tt({ tr: "Önce en önemli adımı seç, kalanını Planmoy senin için sakinleştirsin.", en: "Choose the most important step first; Planmoy will simplify the rest." })}</p>
+        </div>
+        <button className="primary-button" onClick={() => go("tasks")}>
+          {tt({ tr: "Bugünü planla", en: "Plan today" })} <ArrowUpRight size={15} />
+        </button>
+      </section>
+
+      <section className="personal-stat-grid">
+        <article className="personal-stat">
+          <span className="stat-icon">
+            <ListChecks size={16} />
+          </span>
+          <small>{tt({ tr: "Bugünün görevleri", en: "Today's tasks" })}</small>
+          <strong>{dashboard ? dashboard.todayTasks : "—"}</strong>
+          <em>{tt({ tr: "Önceliklerini seç", en: "Choose your priorities" })}</em>
+        </article>
+        <article className="personal-stat">
+          <span className="stat-icon">
+            <CalendarDays size={16} />
+          </span>
+          <small>{tt({ tr: "Yaklaşan randevular", en: "Upcoming appointments" })}</small>
+          <strong>—</strong>
+          <em>{tt({ tr: "Yaklaşan randevu yok", en: "No upcoming appointments" })}</em>
+        </article>
+        <article className="personal-stat">
+          <span className="stat-icon">
+            <Sparkles size={16} />
+          </span>
+          <small>{tt({ tr: "Fire puanı", en: "Fire points" })}</small>
+          <strong>—</strong>
+          <em>{tt({ tr: "Henüz veri yok", en: "No data yet" })}</em>
+        </article>
+        <article className="personal-stat">
+          <span className="stat-icon">
+            <HeartPulse size={16} />
+          </span>
+          <small>{tt({ tr: "Akış dengesi", en: "Flow balance" })}</small>
+          <strong>—</strong>
+          <em>{tt({ tr: "Henüz veri yok", en: "No data yet" })}</em>
+        </article>
+      </section>
+
+      <section className="overview-grid personal-main-grid">
+        <article className="panel schedule-panel">
+          <PanelHeading eyebrow="Zaman akışı" title={tt({ tr: "Yaklaşanlar", en: "Upcoming" })} action={<a onClick={() => go("calendar")}>{tt({ tr: "Takvime git", en: "Go to calendar" })} <ArrowUpRight size={14} /></a>} />
+          <div className="appointment-list">
+            <p className="empty-schedule">{tt({ tr: "Giriş yaptıktan sonra yaklaşan randevuların burada görünür.", en: "Your upcoming appointments will appear here." })}</p>
+          </div>
+        </article>
+        <article className="panel focus-panel">
+          <span className="focus-envelope" aria-hidden="true">✦</span>
+          <PanelHeading eyebrow={tt({ tr: "Yapay zeka", en: "Intelligence" })} title={tt({ tr: "Bugünün dengesi", en: "Today's balance" })} />
+          <div className="focus-score">
+            <strong>—</strong>
+            <span>
+              / 100<br />
+              <small>{tt({ tr: "akış puanı", en: "flow score" })}</small>
+            </span>
+          </div>
+          <p className="focus-copy">{tt({ tr: "AI sağlayıcısı henüz yapılandırılmadı — bu öneri devreye girdiğinde burada görünecek.", en: "AI provider isn't configured yet — this suggestion will appear here once it is." })}</p>
+          {suggestion && <p className="suggestion" role="status">{suggestion}</p>}
+        </article>
+      </section>
+
+      <section className="quick-actions-personal">
+        <div>
+          <p className="eyebrow blue-label">{tt({ tr: "HIZLI BAŞLANGIÇ", en: "QUICK START" })}</p>
+          <h2>{tt({ tr: "Akışına bir adım ekle.", en: "Add a step to your flow." })}</h2>
+        </div>
+        <div className="quick-actions-personal-list">
+          <a onClick={() => go("tasks")}>
+            <span><ListChecks size={17} /></span>
+            <b>{tt({ tr: "Görev ekle", en: "Add task" })}</b>
+            <small>{tt({ tr: "Bugünü planla", en: "Plan today" })}</small>
+            <ArrowUpRight size={14} />
+          </a>
+          <a onClick={() => go("calendar")}>
+            <span><CalendarDays size={17} /></span>
+            <b>{tt({ tr: "Randevu ekle", en: "Add appointment" })}</b>
+            <small>{tt({ tr: "Takvimine bağla", en: "Connect to calendar" })}</small>
+            <ArrowUpRight size={14} />
+          </a>
+          <a onClick={() => go("stylesync")}>
+            <span><WandSparkles size={17} /></span>
+            <b>{tt({ tr: "Stil önerisi iste", en: "Ask for a style idea" })}</b>
+            <small>{tt({ tr: "StyleSync ile keşfet", en: "Explore with StyleSync" })}</small>
+            <ArrowUpRight size={14} />
+          </a>
+        </div>
+      </section>
+
+      <section className="recommendation-band">
+        <div>
+          <p className="eyebrow blue-label">{tt({ tr: "ÖNCELİKLİ KONU", en: "PRIORITY" })}</p>
+          <h2>
+            {tt({ tr: "Bugün sağlık ve bakım", en: "Health and care stand out" })}
+            <br />
+            <strong>{tt({ tr: "öne çıkıyor.", en: "today." })}</strong>
+          </h2>
+          <p>{tt({ tr: "İlk görüşmen yaklaşırken en işine yarayacak üç alan.", en: "Three areas that will help most as your first meeting approaches." })}</p>
+        </div>
+        <div className="recommendation-buttons">
+          <a onClick={() => go("calendar")} className="recommendation-button">
+            <HeartPulse size={18} />
+            <b>{tt({ tr: "Sağlık randevuları", en: "Health appointments" })}</b>
+            <small>{tt({ tr: "Görüşmelerini düzenle", en: "Organize your visits" })}</small>
+          </a>
+          <a onClick={() => go("stylesync")} className="recommendation-button">
+            <Scissors size={18} />
+            <b>{tt({ tr: "Bakım planı", en: "Care plan" })}</b>
+            <small>{tt({ tr: "Stil ve kuaför", en: "Style and hair" })}</small>
+          </a>
+          <a onClick={() => go("intelligence")} className="recommendation-button">
+            <Sparkles size={18} />
+            <b>{tt({ tr: "Akıllı öneriler", en: "Smart suggestions" })}</b>
+            <small>{tt({ tr: "Bugünü birlikte planla", en: "Plan today together" })}</small>
+          </a>
+        </div>
+      </section>
+    </>
+  );
+}
+
+function BusinessView() {
+  return (
+    <>
+      <section className="business-stats">
+        <article className="stat-card">
+          <CalendarDays />
+          <span>{tt({ tr: "Bugünkü randevular", en: "Today's appointments" })}</span>
+          <strong>—</strong>
+          <small>{tt({ tr: "Henüz işletme kaydın yok", en: "No business record yet" })}</small>
+        </article>
+        <article className="stat-card">
+          <Users />
+          <span>{tt({ tr: "Aktif danışanlar", en: "Active clients" })}</span>
+          <strong>—</strong>
+          <small>{tt({ tr: "Henüz veri yok", en: "No data yet" })}</small>
+        </article>
+        <article className="stat-card">
+          <Settings2 />
+          <span>{tt({ tr: "Doluluk oranı", en: "Occupancy" })}</span>
+          <strong>—</strong>
+          <small>{tt({ tr: "Henüz veri yok", en: "No data yet" })}</small>
+        </article>
+      </section>
+      <section className="business-grid">
+        <article className="panel schedule-panel">
+          <PanelHeading eyebrow={tt({ tr: "İşletme takvimi", en: "Business calendar" })} title={tt({ tr: "Bugünün akışı", en: "Today's flow" })} />
+          <p className="empty-schedule">{tt({ tr: "Henüz randevu kaydı yok.", en: "No appointments recorded yet." })}</p>
+        </article>
+        <article className="panel business-ai">
+          <p className="eyebrow blue-label">{tt({ tr: "Yapay zeka · işletme", en: "Intelligence · business" })}</p>
+          <h3>{tt({ tr: "Yoğunluğunu", en: "Manage your" })}<br />{tt({ tr: "daha iyi yönet.", en: "workload better." })}</h3>
+          <p>{tt({ tr: "AI sağlayıcısı henüz yapılandırılmadı.", en: "AI provider isn't configured yet." })}</p>
+        </article>
+      </section>
+    </>
+  );
+}
+
+function TasksInline({ userId }: { userId: string }) {
+  const [tasks, setTasks] = useState<{ id: string; title: string; completed: boolean }[]>([]);
+  const [draft, setDraft] = useState("");
+
+  async function load() {
+    const { data } = await supabase.from("tasks").select("id, title, completed").order("created_at", { ascending: false });
+    setTasks(data ?? []);
+  }
+  useEffect(() => {
+    load();
+  }, []);
+
+  async function add(e: React.FormEvent) {
+    e.preventDefault();
+    if (!draft.trim()) return;
+    await supabase.from("tasks").insert({ title: draft.trim(), user_id: userId });
+    setDraft("");
+    load();
+  }
+  async function toggle(id: string, completed: boolean) {
+    await supabase.from("tasks").update({ completed: !completed }).eq("id", id);
+    load();
+  }
 
   return (
-    <AppShell
-      navItems={navItems}
-      activeId={view}
-      onSelect={setView}
-      title={tt(activeItem.label)}
-      eyebrow={appMode === "personal" ? "PLANMOY · KİŞİSEL" : "PLANMOY BUSINESS"}
-      onSignOut={() => supabase.auth.signOut()}
-      modeSwitcher={modeSwitcher}
-    >
-      {appMode === "personal" && view === "flow" && <PersonalFlow userId={userId} go={setView} />}
-      {appMode === "personal" && view === "tasks" && <TaskList userId={userId} />}
-      {appMode === "personal" && view === "notes" && <NotesScreen userId={userId} />}
-      {appMode === "personal" && view === "discover" && <DiscoverScreen />}
-      {appMode === "personal" && !["flow", "tasks", "notes", "discover"].includes(view) && (
-        <ComingSoon label={tt(activeItem.label)} />
-      )}
-
-      {appMode === "business" && view === "overview" && <BusinessOverview />}
-      {appMode === "business" && view !== "overview" && <ComingSoon label={tt(activeItem.label)} />}
-    </AppShell>
+    <section className="panel tasks-panel">
+      <PanelHeading eyebrow={tt({ tr: "Yapılacaklar", en: "Tasks" })} title={tt({ tr: "Bugünün küçük adımları", en: "Today's small steps" })} />
+      <form onSubmit={add} className="inline-add">
+        <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={tt({ tr: "Yeni görev ekle", en: "Add a new task" })} />
+        <button aria-label="Görev ekle"><Plus size={17} /></button>
+      </form>
+      <div className="task-list">
+        {tasks.map((task) => (
+          <button key={task.id} className={`task ${task.completed ? "is-done" : ""}`} onClick={() => toggle(task.id, task.completed)}>
+            <span className="task-check">{task.completed && <Check size={13} />}</span>
+            <span>{task.title}</span>
+          </button>
+        ))}
+        {tasks.length === 0 && <p className="task-empty"><span>{tt({ tr: "Henüz görev yok.", en: "No tasks yet." })}</span></p>}
+      </div>
+    </section>
   );
 }

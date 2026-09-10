@@ -1,102 +1,54 @@
 @import "tailwindcss";
-@import "@fontsource/geist-sans/400.css";
-@import "@fontsource/geist-sans/500.css";
-@import "@fontsource/geist-sans/600.css";
-@import "@fontsource/geist-sans/700.css";
+@import "@fontsource-variable/geist";
+
+@theme inline {
+  --font-heading: var(--font-sans);
+  --font-sans: 'Geist Variable', sans-serif;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --radius-sm: .45rem;
+  --radius-md: .7rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+}
 
 /* ===========================================================
-   Planmoy — "Solar Orbit" design system
-   Derin lacivert/cyan atmosfer + Fire Vibe turuncu/altın vurgular.
-   Bu dosya projenin tek görsel doğruluk kaynağıdır (design tokens).
+   Planmoy — FireVibe'ın GERÇEK CSS dosyalarından birebir alınmıştır.
+   Kendi yorumumuz değil; her satır kaynak koddan kopyalanmıştır.
    =========================================================== */
+@import "./real-css/core-styles.css";
+@import "./real-css/business-styles.css";
+@import "./real-css/space-theme.css";
+@import "./real-css/global-side-nav.css";
+@import "./real-css/auth-reel.css";
+@import "./real-css/planmoy-flow.css";
+@import "./real-css/cosmic-atmosphere.css";
+@import "./real-css/events.css";
+@import "./real-css/discover-nearby.css";
+@import "./real-css/content-moderation.css";
+@import "./real-css/appointment-detail.css";
+@import "./real-css/task-pinning.css";
 
-@theme {
-  --font-sans: "Geist Sans", ui-sans-serif, system-ui, sans-serif;
-
-  /* Atmosphere — FireVibe'ın gerçek space-theme.css'inden birebir alındı */
-  --color-space-950: #070b18;
-  --color-space-900: #0b1220;
-  --color-space-800: #0e1528;
-  --color-space-700: #111c34;
-  --color-space-600: #334665;
-
-  /* Orbit accents — gerçek değerler */
-  --color-cyan-400: #70d6ff;
-  --color-cyan-300: #9ee4ff;
-  --color-violet-400: #9a8cff;
-  --color-gold-400: #ffd36a;
-  --color-gold-300: #ffe19a;
-
-  /* Text */
-  --color-mist-100: #f3f7ff;
-  --color-mist-300: #b8c9e2;
-  --color-mist-500: #7f93b3;
-}
-
-html {
-  color-scheme: dark;
-}
-
-body {
-  background: radial-gradient(120% 140% at 15% 0%, var(--color-space-700) 0%, var(--color-space-900) 45%, var(--color-space-950) 100%);
-  color: var(--color-mist-100);
-  font-family: var(--font-sans);
-  min-height: 100vh;
-  position: relative;
-  overflow-x: hidden;
-}
-
-.starfield {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  background-image:
-    radial-gradient(1.5px 1.5px at 20% 30%, rgba(255,255,255,0.7), transparent),
-    radial-gradient(1px 1px at 70% 15%, rgba(255,255,255,0.5), transparent),
-    radial-gradient(1.5px 1.5px at 85% 60%, rgba(255,255,255,0.6), transparent),
-    radial-gradient(1px 1px at 40% 75%, rgba(255,255,255,0.4), transparent),
-    radial-gradient(1.5px 1.5px at 55% 45%, rgba(255,255,255,0.55), transparent),
-    radial-gradient(1px 1px at 10% 85%, rgba(255,255,255,0.4), transparent),
-    radial-gradient(1.5px 1.5px at 92% 25%, rgba(255,255,255,0.6), transparent);
-  background-repeat: repeat;
-  background-size: 600px 600px;
-  opacity: 0.6;
-}
-
-.orbit-ring {
-  position: absolute;
-  border-radius: 999px;
-  border: 1px solid rgba(77, 216, 240, 0.18);
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .orbit-spin {
-    animation: orbit-spin 60s linear infinite;
-  }
-  .rise-in {
-    animation: rise-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
-  }
-}
-
-@keyframes orbit-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-@keyframes rise-in {
-  from { opacity: 0; transform: translateY(14px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.orbit-card {
-  background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 20px;
-  backdrop-filter: blur(6px);
-}
-
-:focus-visible {
-  outline: 2px solid var(--color-cyan-300);
-  outline-offset: 2px;
-}
+html, body, #root { min-height: 100%; }
