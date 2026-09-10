@@ -144,12 +144,12 @@ kararlar:
 
 ## Açık kalan işler (bir sonraki oturumda buradan devam)
 
-- [ ] StyleSync ekranı henüz kurulmadı (madde 1) — sırada ilk iş
-- [ ] Keşfet'e ikinci kategori seti (restoran/etkinlik) eklenmedi (madde 2)
+- [x] StyleSync ekranı kuruldu (madde 1) — gardırop, fotoğraf depolama, Gemini ile kombin/deneme önerisi
+- [x] Keşfet'e ikinci kategori seti eklendi (madde 2) — kafe/bar/sinema/tiyatro/konser
 - [ ] GEMINI_API_KEY henüz Supabase'e eklenmedi — kullanıcı anahtarı
       aldığında `supabase secrets set GEMINI_API_KEY=...` ile eklenecek
 - [ ] İşletme tarafı (Lokasyon→Takvim→CRM→Öneriler sırasıyla) hiç
-      başlamadı
+      başlamadı — SIRADAKİ İŞ: önce Lokasyon modülü
 - [ ] fire-score-band ve assistant-fab bileşenleri (madde 6) StyleSync
       ile birlikte kurulacak
 - [ ] Auth ekranı demo/e-posta girişi "email not confirmed" hatasından
