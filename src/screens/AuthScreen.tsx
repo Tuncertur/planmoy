@@ -5,8 +5,9 @@ import { tt, type Dict } from "../lib/i18n";
 
 // Bu ekran FireVibe'ın gerçek src/routes/auth.tsx dosyasından birebir
 // taşınmıştır (yapı, class isimleri, kopya metinler). Telefon ve Google
-// girişi FireVibe'da da devre dışıydı ("Yakında") — burada da öyle,
-// uydurma bir özellik eklemiyoruz.
+// girişi FireVibe'da da devre dışıydı ("Yakında") — burada da öyle.
+// İSTİSNA: "Demo ile dene" butonu gerçek FireVibe'da yok, kullanıcının
+// açık isteğiyle test kolaylığı için eklendi (anonim Supabase girişi).
 
 const copy = {
   eyebrow: { tr: "Güvenli çalışma alanı", en: "Secure workspace" } satisfies Dict,
@@ -60,6 +61,14 @@ export function AuthScreen({ onOpenLegal }: { onOpenLegal: () => void }) {
       mode === "signup"
         ? await supabase.auth.signUp({ email, password })
         : await supabase.auth.signInWithPassword({ email, password });
+    setBusy(false);
+    if (error) setError(error.message);
+  }
+
+  async function tryDemo() {
+    setBusy(true);
+    setError(null);
+    const { error } = await supabase.auth.signInAnonymously();
     setBusy(false);
     if (error) setError(error.message);
   }
@@ -160,6 +169,18 @@ export function AuthScreen({ onOpenLegal }: { onOpenLegal: () => void }) {
             }}
           >
             {mode === "signin" ? tt(copy.toggleIn) : tt(copy.toggleUp)}
+          </button>
+
+          {/* Test kolaylığı için eklendi — gerçek FireVibe'da bu buton yok,
+              kullanıcının açık isteğiyle geri eklendi. */}
+          <button
+            type="button"
+            onClick={tryDemo}
+            disabled={busy}
+            className="secondary-button"
+            style={{ width: "100%", marginTop: 10 }}
+          >
+            {tt({ tr: "Hesabım yok, demo ile dene", en: "No account — try the demo" })}
           </button>
 
           <p className="auth-legal">
