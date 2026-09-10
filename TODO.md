@@ -1,14 +1,14 @@
 # Planmoy — Yapılacaklar Listesi (öncelik sırasıyla)
 
-## Ben kendi başıma yapabileceklerim (dış hesap/anahtar gerekmiyor) — ŞİMDİ YAPIYORUM
+## Ben kendi başıma yapabileceklerim (dış hesap/anahtar gerekmiyor) — TAMAMLANDI
 
-1. **İşletme — Lokasyon** (işletme profili: ad, sektör, şehir, adres, telefon)
-2. **İşletme — Takvim** (randevu oluşturma/listeleme, gerçek DB)
-3. **İşletme — CRM** (müşteri ekleme/listeleme, gerçek DB)
-4. **İşletme — Öneriler** (Gemini ile işletme performansı önerisi — anahtar
-   eklenene kadar dürüstçe "yapılandırılmadı" gösterir, ama kod hazır olur)
-5. Animasyon bileşenleri: fire-score-band, assistant-fab (CSS zaten hazır,
-   sadece bileşenler kuruluyor)
+1. ✅ **İşletme — Lokasyon** (işletme profili: ad, sektör, şehir, adres, telefon)
+2. ✅ **İşletme — Takvim** (randevu oluşturma/listeleme, gerçek DB, çakışma engeli)
+3. ✅ **İşletme — CRM** (müşteri ekleme/listeleme, gerçek DB)
+4. ✅ **İşletme — Öneriler** (Gemini ile işletme önerisi — anahtar eklenince
+   otomatik canlanacak)
+5. ✅ Animasyon bileşenleri: fire-score-band (Akışım'da), assistant-fab
+   (sağ altta, tüm oturum boyunca görünür, Gemini'ye bağlı soru-cevap)
 
 ## Senin bir eylemini gerektirenler (ben yapamam, sırayla)
 
