@@ -170,11 +170,14 @@ export function AuthScreen() {
               <input
                 type="password"
                 required
-                minLength={6}
+                minLength={8}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 outline-none focus:border-[var(--color-cyan-400)]"
               />
+              <span className="text-xs text-[var(--color-mist-500)]">
+                {tt({ tr: "En az 8 karakter", en: "At least 8 characters" })}
+              </span>
             </label>
             <button
               type="submit"
