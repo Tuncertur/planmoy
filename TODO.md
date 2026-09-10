@@ -24,10 +24,10 @@
 
 ## Beklemede / daha sonra karar verilecek
 
-- ✅ İşletmenin kalan 9 modülü (Personel, Stok, Raporlar, Pazarlama, Ayarlar,
-  Sadakat, Rekabet analizi, Performans, Tedarik, Fiyat) FireVibe kaynağından
-  birebir taşındı — Personel/Stok/Raporlar/Pazarlama/Sadakat/Rekabet/
-  Performans/Tedarik/Fiyat modülleri FireVibe'da da statik örnek veriyle
-  kuruluydu (gerçek DB'ye henüz bağlı değil), aynı şekilde taşındı.
-  Randevular ve Müşteriler (CRM) gerçek DB'ye bağlı kalmaya devam ediyor.
+- ✅ TÜM kişisel modüller (Akışım, Zaman Akışı, Yapılacaklar, StyleSync,
+  Keşfet, Spor Akışı, Hobi/Hedefler, Boş Alan, Yapay Zeka, Etkinlikler) ve
+  TÜM işletme modülleri (13/13) FireVibe kaynağından birebir taşındı.
+  Kişisel tarafta Zaman Akışı gerçek randevu verisiyle, Hobi/Hedefler
+  gerçek konum+zaman+ilgi alanı öncelikli AI öneriyle, Etkinlikler gerçek
+  DB + paylaşılabilir davet linkiyle çalışıyor.
 - Gerçek yayın öncesi gizlilik politikasının avukat incelemesi
