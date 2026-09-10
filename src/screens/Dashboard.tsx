@@ -11,6 +11,11 @@ import { askAi } from "../lib/ai";
 import { NotesScreen } from "./NotesScreen";
 import { DiscoverScreen } from "./DiscoverScreen";
 import { StyleSyncScreen } from "./StyleSyncScreen";
+import { CalendarScreen } from "./CalendarScreen";
+import { SportsScreen } from "./SportsScreen";
+import { SpaceScreen } from "./SpaceScreen";
+import { IntelligenceScreen } from "./IntelligenceScreen";
+import { EventsScreen } from "./EventsScreen";
 import { ComingSoon } from "../components/ComingSoon";
 import {
   StaffPanel, InventoryPanel, ReportsPanel, MarketingPanel, BusinessSettingsPanel,
@@ -278,6 +283,11 @@ export function Dashboard({ userId }: { userId: string }) {
         {view === "notes" && <PanelWrap><NotesScreen userId={userId} /></PanelWrap>}
         {view === "discover" && <PanelWrap><DiscoverScreen /></PanelWrap>}
         {view === "stylesync" && <PanelWrap><StyleSyncScreen userId={userId} /></PanelWrap>}
+        {view === "calendar" && <PanelWrap><CalendarScreen userId={userId} /></PanelWrap>}
+        {view === "sports" && <PanelWrap><SportsScreen /></PanelWrap>}
+        {view === "space" && <PanelWrap><SpaceScreen userId={userId} /></PanelWrap>}
+        {view === "intelligence" && <PanelWrap><IntelligenceScreen /></PanelWrap>}
+        {view === "events" && <PanelWrap><EventsScreen userId={userId} /></PanelWrap>}
         {view === "biz-location" && <PanelWrap><BusinessLocationPanel userId={userId} /></PanelWrap>}
         {view === "biz-appointments" && <PanelWrap><BusinessAppointmentsPanel userId={userId} /></PanelWrap>}
         {view === "biz-customers" && <PanelWrap><BusinessCustomersPanel userId={userId} /></PanelWrap>}
@@ -294,6 +304,7 @@ export function Dashboard({ userId }: { userId: string }) {
         {view === "biz-pricing" && <PanelWrap><PricingPanel /></PanelWrap>}
         {![
           "flow", "tasks", "notes", "discover", "stylesync",
+          "calendar", "sports", "space", "intelligence", "events",
           "biz-location", "biz-appointments", "biz-customers", "biz-suggestions",
           "biz-staff", "biz-inventory", "biz-reports", "biz-marketing", "biz-settings",
           "biz-loyalty", "biz-competition", "biz-performance", "biz-supply", "biz-pricing",
