@@ -40,15 +40,20 @@ const copy = {
   orEmail: { tr: "E-posta ile devam et", en: "Continue with email" } satisfies Dict,
 };
 
-export function AuthScreen() {
+export function AuthScreen({ onOpenLegal }: { onOpenLegal: () => void }) {
   const [mode, setMode] = useState<"signin" | "signup">("signup");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
+    if (mode === "signup" && !consent) {
+      setError(tt({ tr: "Devam etmek için Kullanım Koşulları ve Gizlilik Politikasını kabul etmelisin.", en: "You must accept the Terms and Privacy Policy to continue." }));
+      return;
+    }
     setBusy(true);
     setError(null);
     const { error } =
@@ -131,6 +136,14 @@ export function AuthScreen() {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </label>
+            {mode === "signup" && (
+              <label style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 11, fontWeight: 400 }}>
+                <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} style={{ marginTop: 2 }} />
+                <span>
+                  {tt({ tr: "Kullanım Koşulları ve Gizlilik Politikasını okudum, kabul ediyorum.", en: "I have read and accept the Terms of Use and Privacy Policy." })}
+                </span>
+              </label>
+            )}
             {error && (
               <div className="form-error" role="alert">
                 <p>{error}</p>
@@ -153,7 +166,7 @@ export function AuthScreen() {
           </button>
 
           <p className="auth-legal">
-            {tt(copy.legal)} <a href="#privacy">{tt(copy.privacy)}</a>
+            {tt(copy.legal)} <a onClick={onOpenLegal} style={{ cursor: "pointer" }}>{tt(copy.privacy)}</a>
           </p>
           <p className="auth-security">
             <ShieldCheck size={14} /> {tt(copy.privacy)}

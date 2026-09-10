@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   ArrowUpRight, CalendarDays, Check, ChevronRight, Compass, FileText,
   HeartPulse, LayoutDashboard, ListChecks, Plus, Scissors, Settings2,
@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { tt, type Dict } from "../lib/i18n";
 import { supabase } from "../lib/supabase";
+import { askAi } from "../lib/ai";
 import { NotesScreen } from "./NotesScreen";
 import { DiscoverScreen } from "./DiscoverScreen";
 import { ComingSoon } from "../components/ComingSoon";
@@ -32,9 +33,32 @@ const navItems: { id: ViewId; icon: React.ReactNode; label: Dict }[] = [
   { id: "intelligence", icon: <Brain size={17} />, label: { tr: "Yapay zeka", en: "Intelligence" } },
 ];
 
-function NavItem({ item, active, onClick }: { item: (typeof navItems)[number]; active: boolean; onClick: () => void }) {
+function NavItem({
+  item,
+  active,
+  onClick,
+  onDragStart,
+  onDragOver,
+  onDrop,
+}: {
+  item: (typeof navItems)[number];
+  active: boolean;
+  onClick: () => void;
+  onDragStart: () => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDrop: () => void;
+}) {
   return (
-    <button onClick={onClick} className={`nav-item ${active ? "active" : ""}`} style={{ width: "100%", cursor: "pointer" }}>
+    <button
+      onClick={onClick}
+      draggable
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+      className={`nav-item ${active ? "active" : ""}`}
+      style={{ width: "100%", cursor: "grab" }}
+      title={tt({ tr: "Sürükleyerek sırasını değiştirebilirsin", en: "Drag to reorder" })}
+    >
       {item.icon}
       <span>{tt(item.label)}</span>
     </button>
@@ -45,7 +69,42 @@ export function Dashboard({ userId }: { userId: string }) {
   const [mode, setMode] = useState<Mode>("personal");
   const [view, setView] = useState<ViewId>("flow");
   const [dashboard, setDashboard] = useState<{ todayTasks: number; todayAppointments: number } | null>(null);
-  const [suggestion] = useState("");
+  const [order, setOrder] = useState<ViewId[]>(navItems.map((n) => n.id));
+  const dragId = useRef<ViewId | null>(null);
+
+  useEffect(() => {
+    supabase
+      .from("user_preferences")
+      .select("personal_nav_order")
+      .eq("user_id", userId)
+      .maybeSingle()
+      .then(({ data }) => {
+        const saved = data?.personal_nav_order as ViewId[] | undefined;
+        if (Array.isArray(saved) && saved.length) {
+          const known = navItems.map((n) => n.id);
+          const merged = [...saved.filter((id) => known.includes(id)), ...known.filter((id) => !saved.includes(id))];
+          setOrder(merged);
+        }
+      });
+  }, [userId]);
+
+  async function persistOrder(next: ViewId[]) {
+    setOrder(next);
+    await supabase.from("user_preferences").upsert({ user_id: userId, personal_nav_order: next, updated_at: new Date().toISOString() });
+  }
+
+  function handleDrop(targetId: ViewId) {
+    if (!dragId.current || dragId.current === targetId) return;
+    const from = order.indexOf(dragId.current);
+    const to = order.indexOf(targetId);
+    const next = [...order];
+    next.splice(from, 1);
+    next.splice(to, 0, dragId.current);
+    persistOrder(next);
+    dragId.current = null;
+  }
+
+  const orderedNavItems = order.map((id) => navItems.find((n) => n.id === id)).filter(Boolean) as typeof navItems;
 
   useEffect(() => {
     supabase
@@ -75,11 +134,22 @@ export function Dashboard({ userId }: { userId: string }) {
           </div>
         </div>
         <nav className="side-nav" aria-label="Ana menü">
-          {navItems.map((item) => (
-            <NavItem key={item.id} item={item} active={view === item.id} onClick={() => setView(item.id)} />
+          {orderedNavItems.map((item) => (
+            <NavItem
+              key={item.id}
+              item={item}
+              active={view === item.id}
+              onClick={() => setView(item.id)}
+              onDragStart={() => (dragId.current = item.id)}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={() => handleDrop(item.id)}
+            />
           ))}
         </nav>
         <div className="sidebar-bottom">
+          <p style={{ fontSize: 10, color: "var(--space-muted, #7893ad)", padding: "0 12px 8px" }}>
+            {tt({ tr: "İpucu: Menü öğelerini sürükleyerek sırasını değiştirebilirsin — tercihin hesabına kaydedilir.", en: "Tip: drag menu items to reorder them — your preference is saved to your account." })}
+          </p>
           <div className="fire-note">
             <Sparkles size={16} />
             <span>
@@ -161,7 +231,7 @@ export function Dashboard({ userId }: { userId: string }) {
         </section>
 
         {mode === "personal" && view === "flow" && (
-          <PersonalView dashboard={dashboard} suggestion={suggestion} go={setView} />
+          <PersonalView dashboard={dashboard} go={setView} />
         )}
         {mode === "business" && view === "flow" && <BusinessView />}
 
@@ -204,13 +274,28 @@ function PanelHeading({ eyebrow, title, action }: { eyebrow: string; title: stri
 
 function PersonalView({
   dashboard,
-  suggestion,
   go,
 }: {
   dashboard: { todayTasks: number; todayAppointments: number } | null;
-  suggestion: string;
   go: (id: ViewId) => void;
 }) {
+  const [aiState, setAiState] = useState<"idle" | "loading" | "ready" | "missing-key" | "error">("idle");
+  const [aiText, setAiText] = useState("");
+
+  async function askFlow() {
+    setAiState("loading");
+    const result = await askAi(
+      "Sen Planmoy kişisel akış asistanısın. Türkçe yaz, en fazla 2 cümle kullan. Takvim, görevler ve günlük denge arasından tek bir uygulanabilir öneri ver.",
+      "Kullanıcının bugünkü odağı: takvim, görevler ve kişisel bakım dengesi."
+    );
+    if (!result.ok) {
+      setAiState(result.reason === "missing-key" ? "missing-key" : "error");
+      return;
+    }
+    setAiText(result.suggestion);
+    setAiState("ready");
+  }
+
   return (
     <>
       <section className="today-focus-banner">
@@ -276,8 +361,21 @@ function PersonalView({
               <small>{tt({ tr: "akış puanı", en: "flow score" })}</small>
             </span>
           </div>
-          <p className="focus-copy">{tt({ tr: "AI sağlayıcısı henüz yapılandırılmadı — bu öneri devreye girdiğinde burada görünecek.", en: "AI provider isn't configured yet — this suggestion will appear here once it is." })}</p>
-          {suggestion && <p className="suggestion" role="status">{suggestion}</p>}
+          <p className="focus-copy">{tt({ tr: "Takvim, görevler ve kişisel bakım dengeni Gemini ile değerlendir.", en: "Let Gemini weigh your calendar, tasks, and personal balance." })}</p>
+          <button className="primary-button" onClick={askFlow} disabled={aiState === "loading"}>
+            {aiState === "loading" ? tt({ tr: "Düşünüyor…", en: "Thinking…" }) : tt({ tr: "Yapay zeka önerisi al", en: "Get AI advice" })} <Sparkles size={16} />
+          </button>
+          {aiState === "missing-key" && (
+            <p className="suggestion" role="status">
+              {tt({ tr: "AI sağlayıcısı (Gemini) henüz yapılandırılmadı.", en: "The AI provider (Gemini) isn't configured yet." })}
+            </p>
+          )}
+          {aiState === "error" && (
+            <p className="suggestion" role="status">{tt({ tr: "Öneri alınamadı, tekrar dene.", en: "Couldn't get a suggestion, try again." })}</p>
+          )}
+          {aiState === "ready" && (
+            <p className="suggestion" role="status">{aiText}</p>
+          )}
         </article>
       </section>
 
