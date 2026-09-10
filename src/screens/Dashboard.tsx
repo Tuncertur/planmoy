@@ -2,7 +2,8 @@ import { useEffect, useState, useRef } from "react";
 import {
   ArrowUpRight, CalendarDays, Check, ChevronRight, Compass, FileText,
   HeartPulse, LayoutDashboard, ListChecks, Plus, Scissors, Settings2,
-  Sparkles, Users, WandSparkles, Dumbbell, Brain, StickyNote,
+  Sparkles, Users, WandSparkles, Dumbbell, Brain, StickyNote, MapPin,
+  Lightbulb, Flame,
 } from "lucide-react";
 import { tt, type Dict } from "../lib/i18n";
 import { supabase } from "../lib/supabase";
@@ -19,9 +20,12 @@ import { ComingSoon } from "../components/ComingSoon";
 type Mode = "personal" | "business";
 type ViewId =
   | "flow" | "calendar" | "tasks" | "stylesync" | "discover"
-  | "sports" | "events" | "space" | "notes" | "intelligence" | "personal-tools";
+  | "sports" | "events" | "space" | "notes" | "intelligence" | "personal-tools"
+  | "biz-location" | "biz-appointments" | "biz-customers" | "biz-suggestions"
+  | "biz-staff" | "biz-inventory" | "biz-reports" | "biz-marketing" | "biz-settings"
+  | "biz-loyalty" | "biz-competition" | "biz-performance" | "biz-supply" | "biz-pricing";
 
-const navItems: { id: ViewId; icon: React.ReactNode; label: Dict }[] = [
+const personalNavItems: { id: ViewId; icon: React.ReactNode; label: Dict }[] = [
   { id: "flow", icon: <LayoutDashboard size={17} />, label: { tr: "Genel bakış", en: "Overview" } },
   { id: "calendar", icon: <CalendarDays size={17} />, label: { tr: "Zaman akışı", en: "Time flow" } },
   { id: "tasks", icon: <ListChecks size={17} />, label: { tr: "Yapılacaklar", en: "Tasks" } },
@@ -34,6 +38,19 @@ const navItems: { id: ViewId; icon: React.ReactNode; label: Dict }[] = [
   { id: "intelligence", icon: <Brain size={17} />, label: { tr: "Yapay zeka", en: "Intelligence" } },
 ];
 
+const businessNavItems: { id: ViewId; icon: React.ReactNode; label: Dict }[] = [
+  { id: "flow", icon: <LayoutDashboard size={17} />, label: { tr: "Genel bakış", en: "Overview" } },
+  { id: "biz-location", icon: <MapPin size={17} />, label: { tr: "Lokasyon", en: "Location" } },
+  { id: "biz-appointments", icon: <CalendarDays size={17} />, label: { tr: "Randevular", en: "Appointments" } },
+  { id: "biz-customers", icon: <Users size={17} />, label: { tr: "Müşteriler", en: "Customers" } },
+  { id: "biz-suggestions", icon: <Lightbulb size={17} />, label: { tr: "Öneriler", en: "Suggestions" } },
+  { id: "biz-staff", icon: <Users size={17} />, label: { tr: "Personel", en: "Staff" } },
+  { id: "biz-inventory", icon: <FileText size={17} />, label: { tr: "Stok & ürünler", en: "Inventory" } },
+  { id: "biz-reports", icon: <Brain size={17} />, label: { tr: "Raporlar", en: "Reports" } },
+  { id: "biz-marketing", icon: <Sparkles size={17} />, label: { tr: "Pazarlama", en: "Marketing" } },
+  { id: "biz-settings", icon: <Settings2 size={17} />, label: { tr: "İşletme ayarları", en: "Settings" } },
+];
+
 function NavItem({
   item,
   active,
@@ -42,7 +59,7 @@ function NavItem({
   onDragOver,
   onDrop,
 }: {
-  item: (typeof navItems)[number];
+  item: (typeof personalNavItems)[number];
   active: boolean;
   onClick: () => void;
   onDragStart: () => void;
@@ -70,42 +87,54 @@ export function Dashboard({ userId }: { userId: string }) {
   const [mode, setMode] = useState<Mode>("personal");
   const [view, setView] = useState<ViewId>("flow");
   const [dashboard, setDashboard] = useState<{ todayTasks: number; todayAppointments: number } | null>(null);
-  const [order, setOrder] = useState<ViewId[]>(navItems.map((n) => n.id));
+  const [personalOrder, setPersonalOrder] = useState<ViewId[]>(personalNavItems.map((n) => n.id));
+  const [businessOrder, setBusinessOrder] = useState<ViewId[]>(businessNavItems.map((n) => n.id));
   const dragId = useRef<ViewId | null>(null);
 
   useEffect(() => {
     supabase
       .from("user_preferences")
-      .select("personal_nav_order")
+      .select("personal_nav_order, business_nav_order")
       .eq("user_id", userId)
       .maybeSingle()
       .then(({ data }) => {
-        const saved = data?.personal_nav_order as ViewId[] | undefined;
-        if (Array.isArray(saved) && saved.length) {
-          const known = navItems.map((n) => n.id);
-          const merged = [...saved.filter((id) => known.includes(id)), ...known.filter((id) => !saved.includes(id))];
-          setOrder(merged);
+        const savedPersonal = data?.personal_nav_order as ViewId[] | undefined;
+        if (Array.isArray(savedPersonal) && savedPersonal.length) {
+          const known = personalNavItems.map((n) => n.id);
+          setPersonalOrder([...savedPersonal.filter((id) => known.includes(id)), ...known.filter((id) => !savedPersonal.includes(id))]);
+        }
+        const savedBusiness = data?.business_nav_order as ViewId[] | undefined;
+        if (Array.isArray(savedBusiness) && savedBusiness.length) {
+          const known = businessNavItems.map((n) => n.id);
+          setBusinessOrder([...savedBusiness.filter((id) => known.includes(id)), ...known.filter((id) => !savedBusiness.includes(id))]);
         }
       });
   }, [userId]);
 
+  const currentNavItems = mode === "personal" ? personalNavItems : businessNavItems;
+  const currentOrder = mode === "personal" ? personalOrder : businessOrder;
+
   async function persistOrder(next: ViewId[]) {
-    setOrder(next);
-    await supabase.from("user_preferences").upsert({ user_id: userId, personal_nav_order: next, updated_at: new Date().toISOString() });
+    if (mode === "personal") setPersonalOrder(next);
+    else setBusinessOrder(next);
+    const column = mode === "personal" ? "personal_nav_order" : "business_nav_order";
+    await supabase.from("user_preferences").upsert({ user_id: userId, [column]: next, updated_at: new Date().toISOString() });
   }
 
   function handleDrop(targetId: ViewId) {
     if (!dragId.current || dragId.current === targetId) return;
-    const from = order.indexOf(dragId.current);
-    const to = order.indexOf(targetId);
-    const next = [...order];
+    const from = currentOrder.indexOf(dragId.current);
+    const to = currentOrder.indexOf(targetId);
+    const next = [...currentOrder];
     next.splice(from, 1);
     next.splice(to, 0, dragId.current);
     persistOrder(next);
     dragId.current = null;
   }
 
-  const orderedNavItems = order.map((id) => navItems.find((n) => n.id === id)).filter(Boolean) as typeof navItems;
+  const orderedNavItems = currentOrder
+    .map((id) => currentNavItems.find((n) => n.id === id))
+    .filter(Boolean) as typeof currentNavItems;
 
   useEffect(() => {
     supabase
@@ -167,7 +196,7 @@ export function Dashboard({ userId }: { userId: string }) {
         <header className="topbar">
           <div>
             <p className="eyebrow">Planmoy</p>
-            <h1>{tt(navItems.find((n) => n.id === view)?.label ?? { tr: "Genel bakış", en: "Overview" })}</h1>
+            <h1>{tt(currentNavItems.find((n) => n.id === view)?.label ?? { tr: "Genel bakış", en: "Overview" })}</h1>
           </div>
           <div className="top-actions">
             <span className="platform-note">
@@ -240,9 +269,16 @@ export function Dashboard({ userId }: { userId: string }) {
         {view === "notes" && <PanelWrap><NotesScreen userId={userId} /></PanelWrap>}
         {view === "discover" && <PanelWrap><DiscoverScreen /></PanelWrap>}
         {view === "stylesync" && <PanelWrap><StyleSyncScreen userId={userId} /></PanelWrap>}
-        {!["flow", "tasks", "notes", "discover", "stylesync"].includes(view) && (
+        {view === "biz-location" && <PanelWrap><BusinessLocationPanel userId={userId} /></PanelWrap>}
+        {view === "biz-appointments" && <PanelWrap><BusinessAppointmentsPanel userId={userId} /></PanelWrap>}
+        {view === "biz-customers" && <PanelWrap><BusinessCustomersPanel userId={userId} /></PanelWrap>}
+        {view === "biz-suggestions" && <PanelWrap><BusinessSuggestionsPanel /></PanelWrap>}
+        {![
+          "flow", "tasks", "notes", "discover", "stylesync",
+          "biz-location", "biz-appointments", "biz-customers", "biz-suggestions",
+        ].includes(view) && (
           <PanelWrap>
-            <ComingSoon label={tt(navItems.find((n) => n.id === view)?.label ?? { tr: "", en: "" })} />
+            <ComingSoon label={tt(currentNavItems.find((n) => n.id === view)?.label ?? { tr: "", en: "" })} />
           </PanelWrap>
         )}
 
@@ -345,6 +381,24 @@ function PersonalView({
           <em>{tt({ tr: "Henüz veri yok", en: "No data yet" })}</em>
         </article>
       </section>
+
+      <div className="fire-score-band">
+        <span className="fire-score-mark">
+          <Flame size={22} />
+        </span>
+        <div>
+          <h2>
+            {dashboard ? Math.max(0, 100 - dashboard.todayTasks * 5) : "—"} <span>/ 100</span>
+          </h2>
+          <p>{tt({ tr: "Bugünkü akış puanın", en: "Your flow score today" })}</p>
+        </div>
+        <div className="fire-progress">
+          <span style={{ width: dashboard ? `${Math.max(0, 100 - dashboard.todayTasks * 5)}%` : "0%" }} />
+        </div>
+        <button className="fire-challenge" onClick={() => go("tasks")}>
+          {tt({ tr: "Görevleri gör", en: "View tasks" })}
+        </button>
+      </div>
 
       <section className="overview-grid personal-main-grid">
         <article className="panel schedule-panel">
@@ -574,6 +628,282 @@ function TasksInline({ userId }: { userId: string }) {
         ))}
         {visible.length === 0 && <p className="task-empty"><span>{tt({ tr: "Bu dönemde görev yok.", en: "No tasks in this period." })}</span></p>}
       </div>
+    </section>
+  );
+}
+
+// ============================================================
+// İşletme — öncelik sırasıyla: Lokasyon → Takvim → CRM → Öneriler
+// ============================================================
+
+type Business = { id: string; name: string; industry: string; city: string; address: string | null; phone: string | null; slug: string };
+
+function slugify(s: string) {
+  return s
+    .toLocaleLowerCase("tr")
+    .replace(/ğ/g, "g").replace(/ü/g, "u").replace(/ş/g, "s").replace(/ı/g, "i").replace(/ö/g, "o").replace(/ç/g, "c")
+    .replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
+function BusinessLocationPanel({ userId }: { userId: string }) {
+  const [business, setBusiness] = useState<Business | null>(null);
+  const [name, setName] = useState("");
+  const [industry, setIndustry] = useState("");
+  const [city, setCity] = useState("");
+  const [address, setAddress] = useState("");
+  const [phone, setPhone] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  async function load() {
+    const { data } = await supabase.from("businesses").select("*").eq("owner_id", userId).maybeSingle();
+    if (data) {
+      setBusiness(data);
+      setName(data.name);
+      setIndustry(data.industry);
+      setCity(data.city);
+      setAddress(data.address ?? "");
+      setPhone(data.phone ?? "");
+    }
+  }
+  useEffect(() => {
+    load();
+  }, []);
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim() || !industry.trim() || !city.trim()) return;
+    setBusy(true);
+    setSaved(false);
+    const payload = { name, industry, city, address: address || null, phone: phone || null, owner_id: userId, slug: slugify(name) };
+    if (business) {
+      await supabase.from("businesses").update(payload).eq("id", business.id);
+    } else {
+      const { data } = await supabase.from("businesses").insert(payload).select().single();
+      if (data) {
+        // İlk kurulumda randevu alabilmek için varsayılan bir personel ve
+        // hizmet oluşturulur — kullanıcı Takvim'e gider gitmez randevu
+        // ekleyebilsin diye (aksi halde professional_id/service_id boş kalır).
+        const { data: pro } = await supabase.from("professionals").insert({ business_id: data.id, name: "Genel", role: "Personel" }).select().single();
+        if (pro) {
+          await supabase.from("services").insert({ business_id: data.id, name: "Randevu", duration_minutes: 30, price: 0 });
+        }
+      }
+    }
+    setBusy(false);
+    setSaved(true);
+    load();
+  }
+
+  return (
+    <section className="panel">
+      <PanelHeading eyebrow={tt({ tr: "İşletme", en: "Business" })} title={tt({ tr: "Lokasyon ve işletme profili", en: "Location & business profile" })} />
+      <form onSubmit={save} className="wardrobe-form" style={{ maxWidth: 420 }}>
+        <label>
+          {tt({ tr: "İşletme adı", en: "Business name" })}
+          <input required value={name} onChange={(e) => setName(e.target.value)} />
+        </label>
+        <label>
+          {tt({ tr: "Sektör", en: "Industry" })}
+          <input required value={industry} onChange={(e) => setIndustry(e.target.value)} placeholder={tt({ tr: "Örn. kuaför, masaj salonu", en: "e.g. hair salon, massage studio" })} />
+        </label>
+        <label>
+          {tt({ tr: "Şehir", en: "City" })}
+          <input required value={city} onChange={(e) => setCity(e.target.value)} />
+        </label>
+        <label>
+          {tt({ tr: "Adres", en: "Address" })}
+          <input value={address} onChange={(e) => setAddress(e.target.value)} />
+        </label>
+        <label>
+          {tt({ tr: "Telefon", en: "Phone" })}
+          <input value={phone} onChange={(e) => setPhone(e.target.value)} />
+        </label>
+        <button className="primary-button" disabled={busy}>
+          {busy ? tt({ tr: "Kaydediliyor…", en: "Saving…" }) : tt({ tr: "Kaydet", en: "Save" })}
+        </button>
+        {saved && <p className="suggestion">{tt({ tr: "Kaydedildi.", en: "Saved." })}</p>}
+      </form>
+    </section>
+  );
+}
+
+function BusinessAppointmentsPanel({ userId }: { userId: string }) {
+  const [appointments, setAppointments] = useState<any[]>([]);
+  const [businessId, setBusinessId] = useState<string | null>(null);
+  const [professionalId, setProfessionalId] = useState<string | null>(null);
+  const [serviceId, setServiceId] = useState<string | null>(null);
+  const [customerName, setCustomerName] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
+  const [startsAt, setStartsAt] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  async function load() {
+    const { data: biz } = await supabase.from("businesses").select("id").eq("owner_id", userId).maybeSingle();
+    if (!biz) return;
+    setBusinessId(biz.id);
+    const { data: pros } = await supabase.from("professionals").select("id").eq("business_id", biz.id).limit(1);
+    const { data: svcs } = await supabase.from("services").select("id, duration_minutes").eq("business_id", biz.id).limit(1);
+    setProfessionalId(pros?.[0]?.id ?? null);
+    setServiceId(svcs?.[0]?.id ?? null);
+    const { data: appts } = await supabase.from("appointments").select("*").eq("business_id", biz.id).order("starts_at", { ascending: true });
+    setAppointments(appts ?? []);
+  }
+  useEffect(() => {
+    load();
+  }, []);
+
+  async function add(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (!businessId || !professionalId || !serviceId) {
+      setError(tt({ tr: "Önce Lokasyon sekmesinden işletmeni kaydet.", en: "Set up your business in Location first." }));
+      return;
+    }
+    if (!customerName.trim() || !customerEmail.trim() || !startsAt) return;
+    const starts = new Date(startsAt);
+    const ends = new Date(starts.getTime() + 30 * 60000);
+    const { error } = await supabase.from("appointments").insert({
+      business_id: businessId,
+      professional_id: professionalId,
+      service_id: serviceId,
+      customer_name: customerName,
+      customer_email: customerEmail,
+      starts_at: starts.toISOString(),
+      ends_at: ends.toISOString(),
+    });
+    if (error) {
+      setError(error.message.includes("no_overlapping") ? tt({ tr: "Bu saatte zaten bir randevu var.", en: "There's already an appointment at that time." }) : error.message);
+      return;
+    }
+    setCustomerName("");
+    setCustomerEmail("");
+    setStartsAt("");
+    load();
+  }
+
+  return (
+    <section className="panel">
+      <PanelHeading eyebrow={tt({ tr: "İşletme", en: "Business" })} title={tt({ tr: "Randevu takvimi", en: "Appointment calendar" })} />
+      <form onSubmit={add} className="wardrobe-form" style={{ maxWidth: 420 }}>
+        <label>
+          {tt({ tr: "Müşteri adı", en: "Customer name" })}
+          <input value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+        </label>
+        <label>
+          {tt({ tr: "Müşteri e-postası", en: "Customer email" })}
+          <input type="email" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} />
+        </label>
+        <label>
+          {tt({ tr: "Tarih ve saat", en: "Date & time" })}
+          <input type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
+        </label>
+        <button className="primary-button"><Plus size={16} /> {tt({ tr: "Randevu ekle", en: "Add appointment" })}</button>
+        {error && <p className="suggestion" role="alert">{error}</p>}
+      </form>
+
+      <div style={{ marginTop: 20 }}>
+        {appointments.length === 0 && <p className="empty-schedule">{tt({ tr: "Henüz randevu yok.", en: "No appointments yet." })}</p>}
+        {appointments.map((a) => (
+          <div key={a.id} className="appointment-row">
+            <strong>{a.customer_name}</strong>
+            <span>{new Date(a.starts_at).toLocaleString("tr-TR")}</span>
+            <small>{a.status}</small>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function BusinessCustomersPanel({ userId }: { userId: string }) {
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [businessId, setBusinessId] = useState<string | null>(null);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+
+  async function load() {
+    const { data: biz } = await supabase.from("businesses").select("id").eq("owner_id", userId).maybeSingle();
+    if (!biz) return;
+    setBusinessId(biz.id);
+    const { data } = await supabase.from("customers").select("*").eq("business_id", biz.id).order("created_at", { ascending: false });
+    setCustomers(data ?? []);
+  }
+  useEffect(() => {
+    load();
+  }, []);
+
+  async function add(e: React.FormEvent) {
+    e.preventDefault();
+    if (!businessId || !name.trim()) return;
+    await supabase.from("customers").insert({ business_id: businessId, name, email: email || null, phone: phone || null });
+    setName("");
+    setEmail("");
+    setPhone("");
+    load();
+  }
+
+  return (
+    <section className="panel">
+      <PanelHeading eyebrow={tt({ tr: "İşletme", en: "Business" })} title={tt({ tr: "Müşteriler (CRM)", en: "Customers (CRM)" })} />
+      {!businessId && <p className="suggestion">{tt({ tr: "Önce Lokasyon sekmesinden işletmeni kaydet.", en: "Set up your business in Location first." })}</p>}
+      <form onSubmit={add} className="wardrobe-form" style={{ maxWidth: 420 }}>
+        <label>
+          {tt({ tr: "Ad", en: "Name" })}
+          <input value={name} onChange={(e) => setName(e.target.value)} />
+        </label>
+        <label>
+          {tt({ tr: "E-posta", en: "Email" })}
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+        </label>
+        <label>
+          {tt({ tr: "Telefon", en: "Phone" })}
+          <input value={phone} onChange={(e) => setPhone(e.target.value)} />
+        </label>
+        <button className="primary-button"><Plus size={16} /> {tt({ tr: "Müşteri ekle", en: "Add customer" })}</button>
+      </form>
+      <div style={{ marginTop: 20 }}>
+        {customers.length === 0 && <p className="empty-schedule">{tt({ tr: "Henüz müşteri yok.", en: "No customers yet." })}</p>}
+        {customers.map((c) => (
+          <div key={c.id} className="appointment-row">
+            <strong>{c.name}</strong>
+            <span>{c.email}</span>
+            <small>{c.phone}</small>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function BusinessSuggestionsPanel() {
+  const [state, setState] = useState<"idle" | "loading" | "ready" | "missing-key" | "error">("idle");
+  const [text, setText] = useState("");
+
+  async function ask() {
+    setState("loading");
+    const result = await askAi(
+      "Sen Planmoy'un işletme danışmanı yapay zekasısın. Türkçe yaz, en fazla 3 cümle. Randevu yoğunluğu, müşteri sadakati ve genel işletme performansı hakkında uygulanabilir tek bir öneri ver.",
+      "İşletme henüz yeni kuruldu, randevu ve müşteri verisi sınırlı olabilir."
+    );
+    if (!result.ok) {
+      setState(result.reason === "missing-key" ? "missing-key" : "error");
+      return;
+    }
+    setText(result.suggestion);
+    setState("ready");
+  }
+
+  return (
+    <section className="panel business-ai">
+      <PanelHeading eyebrow={tt({ tr: "İşletme", en: "Business" })} title={tt({ tr: "Yapay zeka önerileri", en: "AI suggestions" })} />
+      <button className="primary-button" onClick={ask} disabled={state === "loading"}>
+        <Sparkles size={16} /> {state === "loading" ? tt({ tr: "Düşünüyor…", en: "Thinking…" }) : tt({ tr: "Öneri al", en: "Get a suggestion" })}
+      </button>
+      {state === "missing-key" && <p className="suggestion">{tt({ tr: "AI sağlayıcısı (Gemini) henüz yapılandırılmadı.", en: "AI provider (Gemini) isn't configured yet." })}</p>}
+      {state === "error" && <p className="suggestion">{tt({ tr: "Öneri alınamadı.", en: "Couldn't get a suggestion." })}</p>}
+      {state === "ready" && <p className="suggestion">{text}</p>}
     </section>
   );
 }
