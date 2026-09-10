@@ -107,9 +107,6 @@ export function AuthScreen({ onOpenLegal }: { onOpenLegal: () => void }) {
           <p className="auth-lead">{tt(copy.lead)}</p>
 
           <div className="auth-provider-grid" aria-label="Alternatif giriş seçenekleri">
-            <button type="button" disabled title="Telefon girişi yakında">
-              <Phone size={15} /> {tt(copy.phoneSoon)} <span className="provider-status">{tt(copy.soon)}</span>
-            </button>
             <button type="button" disabled title="Google ile giriş yakında">
               <span className="google-mark">G</span> {tt(copy.googleSoon)} <span className="provider-status">{tt(copy.soon)}</span>
             </button>
@@ -170,6 +167,10 @@ export function AuthScreen({ onOpenLegal }: { onOpenLegal: () => void }) {
           </p>
           <p className="auth-security">
             <ShieldCheck size={14} /> {tt(copy.privacy)}
+          </p>
+
+          <p style={{ marginTop: 14, textAlign: "center", fontSize: 10.5, opacity: 0.55, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+            <Phone size={11} /> {tt(copy.phoneSoon)} <span style={{ opacity: 0.8 }}>· {tt(copy.soon)}</span>
           </p>
         </section>
       </div>

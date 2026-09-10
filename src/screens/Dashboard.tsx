@@ -9,6 +9,7 @@ import { supabase } from "../lib/supabase";
 import { askAi } from "../lib/ai";
 import { NotesScreen } from "./NotesScreen";
 import { DiscoverScreen } from "./DiscoverScreen";
+import { StyleSyncScreen } from "./StyleSyncScreen";
 import { ComingSoon } from "../components/ComingSoon";
 
 // Bu ekran FireVibe'ın gerçek src/routes/index.tsx dosyasından (Home
@@ -238,7 +239,8 @@ export function Dashboard({ userId }: { userId: string }) {
         {view === "tasks" && <PanelWrap><TasksInline userId={userId} /></PanelWrap>}
         {view === "notes" && <PanelWrap><NotesScreen userId={userId} /></PanelWrap>}
         {view === "discover" && <PanelWrap><DiscoverScreen /></PanelWrap>}
-        {!["flow", "tasks", "notes", "discover"].includes(view) && (
+        {view === "stylesync" && <PanelWrap><StyleSyncScreen userId={userId} /></PanelWrap>}
+        {!["flow", "tasks", "notes", "discover", "stylesync"].includes(view) && (
           <PanelWrap>
             <ComingSoon label={tt(navItems.find((n) => n.id === view)?.label ?? { tr: "", en: "" })} />
           </PanelWrap>
