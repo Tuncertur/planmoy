@@ -27,6 +27,8 @@ import { tt, type Dict } from "../lib/i18n";
 import { supabase } from "../lib/supabase";
 import { AppShell, type NavItem } from "../components/AppShell";
 import { ComingSoon } from "../components/ComingSoon";
+import { NotesScreen } from "./NotesScreen";
+import { DiscoverScreen } from "./DiscoverScreen";
 
 type AppMode = "personal" | "business";
 
@@ -237,7 +239,9 @@ export function Dashboard({ userId }: { userId: string }) {
     >
       {appMode === "personal" && view === "flow" && <PersonalFlow userId={userId} go={setView} />}
       {appMode === "personal" && view === "tasks" && <TaskList userId={userId} />}
-      {appMode === "personal" && view !== "flow" && view !== "tasks" && (
+      {appMode === "personal" && view === "notes" && <NotesScreen userId={userId} />}
+      {appMode === "personal" && view === "discover" && <DiscoverScreen />}
+      {appMode === "personal" && !["flow", "tasks", "notes", "discover"].includes(view) && (
         <ComingSoon label={tt(activeItem.label)} />
       )}
 

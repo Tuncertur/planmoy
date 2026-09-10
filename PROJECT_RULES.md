@@ -99,6 +99,24 @@ girildiği an uygulanır.
   uyarısı
 - "Yayınla" denmeden hiçbir şey canlıya alınmaz
 
+## FireVibe kaynak kodundan çıkarılan gerçek tasarım kararları
+
+Bu proje FireVibe'daki Planmoy'un BİREBİR aynısı olarak taşınıyor —
+yeniden tasarlanmıyor. Kaynak kod satır satır okunarak çıkarılan
+kararlar:
+
+- Keşfet yarıçapı: Pazartesi–Perşembe 50km, Cuma–Pazar 100km
+  (FireVibe'da bu kural yazılmış ama hiç bağlanmamıştı — burada
+  gerçekten uygulanıyor, bkz. supabase/functions/discover)
+- Boş Alan (notlar): veritabanında (FireVibe'da localStorage'daydı,
+  cihaza bağlıydı — burada hesaba bağlı)
+- AI sağlayıcı: OpenAI anahtarı henüz yok — StyleSync/Yapay
+  zeka/Hobi-hedef önerileri şimdilik "yapılandırılmadı" durumunda
+  bekliyor, uydurma öneri üretilmiyor
+- StyleSync: FireVibe'da da gardırop fotoğrafları AI'ya GÖRSEL olarak
+  gönderilmiyordu — sadece isim/kategori/renk metni. Birebir taşınacak
+  (metin tabanlı), gerçek görsel analiz sonradan ayrı bir karar
+
 ## Açık kalan işler (bir sonraki oturumda buradan devam)
 
 - [ ] Auth ekranı (telefon/Google/e-posta/demo) koda eklendi, demo/e-posta
