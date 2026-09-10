@@ -80,13 +80,14 @@ create table if not exists appointments (
 );
 
 do $$ begin
-  alter table appointments
-    add constraint no_overlapping_appointments
-    exclude using gist (
-      professional_id with =,
-      tstzrange(starts_at, ends_at) with &&
-    ) where (status in ('pending','confirmed'));
-exception when duplicate_object then null;
+  if not exists (select 1 from pg_constraint where conname = 'no_overlapping_appointments') then
+    alter table appointments
+      add constraint no_overlapping_appointments
+      exclude using gist (
+        professional_id with =,
+        tstzrange(starts_at, ends_at) with &&
+      ) where (status in ('pending','confirmed'));
+  end if;
 end $$;
 
 create table if not exists appointment_messages (
