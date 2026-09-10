@@ -5,6 +5,11 @@ import { tt } from "../lib/i18n";
 
 const categories = [
   "restaurant",
+  "cafe",
+  "bar",
+  "cinema",
+  "theater",
+  "concert",
   "manicure",
   "pedicure",
   "massage",
@@ -17,6 +22,11 @@ const categories = [
 
 const categoryLabel: Record<(typeof categories)[number], { tr: string; en: string }> = {
   restaurant: { tr: "Restoran", en: "Restaurants" },
+  cafe: { tr: "Kafe", en: "Cafes" },
+  bar: { tr: "Bar", en: "Bars" },
+  cinema: { tr: "Sinema", en: "Cinema" },
+  theater: { tr: "Tiyatro", en: "Theater" },
+  concert: { tr: "Konser & etkinlik", en: "Concerts & events" },
   manicure: { tr: "Manikür", en: "Manicure" },
   pedicure: { tr: "Pedikür", en: "Pedicure" },
   massage: { tr: "Masaj", en: "Massage" },

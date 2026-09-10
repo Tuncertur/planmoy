@@ -12,6 +12,11 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 
 const CATEGORY_QUERIES: Record<string, string> = {
   restaurant: "restaurants",
+  cafe: "cafes coffee shops",
+  bar: "bars pubs",
+  cinema: "cinemas movie theaters",
+  theater: "theaters performing arts venues",
+  concert: "concert halls event venues live music",
   manicure: "manicure salons",
   pedicure: "pedicure salons",
   massage: "massage salons",
