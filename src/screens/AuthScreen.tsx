@@ -81,6 +81,20 @@ export function AuthScreen({ onOpenLegal }: { onOpenLegal: () => void }) {
             plan<span>moy</span>
             <i />
           </a>
+
+          {/* Tanıtım videosu — şimdilik buton olarak duruyor, video dosyası
+              eklendiğinde bağlanacak. */}
+          <button type="button" className="intro-video" onClick={() => {}} aria-label={tt({ tr: "Tanıtım videosunu oynat", en: "Play intro video" })} style={{ border: 0, padding: 0, cursor: "pointer" }}>
+            <div className="video-orbit">
+              <span />
+              <b>PLANMOY</b>
+            </div>
+            <span className="video-play">
+              <Sparkles size={16} />
+            </span>
+            <small>{tt({ tr: "60 saniyede keşfet", en: "Discover in 60s" })}</small>
+          </button>
+
           <h2 className="auth-primary-message">
             <span>{tt(copy.personalHead)}</span>
             <strong>{tt(copy.businessHead)}</strong>
