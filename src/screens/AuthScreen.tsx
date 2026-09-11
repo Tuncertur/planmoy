@@ -1,18 +1,21 @@
 import { useState, type FormEvent } from "react";
-import { ArrowRight, CalendarDays, Check, Phone, ShieldCheck, Sparkles, Users } from "lucide-react";
+import { ArrowRight, CalendarDays, Check, Mail, Phone, ShieldCheck, Sparkles, Users } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { tt, type Dict } from "../lib/i18n";
 
-// Bu ekran FireVibe'ın gerçek src/routes/auth.tsx dosyasından birebir
-// taşınmıştır (yapı, class isimleri, kopya metinler). Telefon ve Google
-// girişi FireVibe'da da devre dışıydı ("Yakında") — burada da öyle.
-// İSTİSNA: "Demo ile dene" butonu gerçek FireVibe'da yok, kullanıcının
-// açık isteğiyle test kolaylığı için eklendi (anonim Supabase girişi).
+// Bu ekran FireVibe'ın gerçek src/routes/auth.tsx dosyasındaki class'ları
+// ve kopya metinleri kullanır. Kullanıcının açık isteğiyle 4 eşit giriş
+// yöntemi (Google / E-posta / Demo / Telefon) tek bir seçim ekranında
+// gösteriliyor — Demo, gerçek FireVibe'da olmayan, test kolaylığı için
+// eklenmiş bir istisna.
+
+type Screen = "choose" | "email";
 
 const copy = {
   eyebrow: { tr: "Güvenli çalışma alanı", en: "Secure workspace" } satisfies Dict,
   signIn: { tr: "Akışına giriş yap.", en: "Sign in to your flow." } satisfies Dict,
   signUp: { tr: "Hesabını oluştur.", en: "Create your account." } satisfies Dict,
+  chooseTitle: { tr: "Nasıl devam etmek istersin?", en: "How would you like to continue?" } satisfies Dict,
   lead: {
     tr: "Randevuların, müşterilerin ve görevlerin hesabına bağlı olarak saklanır.",
     en: "Your appointments, clients and tasks stay connected to your account.",
@@ -31,17 +34,37 @@ const copy = {
   point3: { tr: "Ödeme almadan, açık ve güvenli rezervasyon", en: "Clear, payment-free booking" } satisfies Dict,
   personalHead: { tr: "Kişisel alanını", en: "Your personal space and" } satisfies Dict,
   businessHead: { tr: "işletmeni birlikte yönet.", en: "your business, together." } satisfies Dict,
-  phoneSoon: { tr: "Telefon ile giriş", en: "Continue with phone" } satisfies Dict,
-  googleSoon: { tr: "Google ile giriş", en: "Continue with Google" } satisfies Dict,
+  google: { tr: "Google ile giriş", en: "Continue with Google" } satisfies Dict,
+  emailBtn: { tr: "E-posta ile giriş", en: "Continue with email" } satisfies Dict,
+  demoBtn: { tr: "Demo olarak giriş yap", en: "Sign in with demo" } satisfies Dict,
+  phone: { tr: "Telefon ile giriş", en: "Continue with phone" } satisfies Dict,
   soon: { tr: "Yakında", en: "Soon" } satisfies Dict,
-  providerNote: {
-    tr: "Telefon ve Google girişi henüz etkin değil. Şimdilik güvenli e-posta girişi kullanılabilir.",
-    en: "Phone and Google sign-in aren't active yet. Secure email sign-in is available for now.",
-  } satisfies Dict,
-  orEmail: { tr: "E-posta ile devam et", en: "Continue with email" } satisfies Dict,
+  back: { tr: "Geri", en: "Back" } satisfies Dict,
 };
 
+function ChooseTile({
+  icon,
+  label,
+  status,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  status?: string;
+  onClick: () => void;
+}) {
+  return (
+    <button type="button" className="auth-choice-tile" onClick={onClick} disabled={!!status}>
+      <span className="auth-choice-icon">{icon}</span>
+      <span className="auth-choice-label">{label}</span>
+      {status && <span className="provider-status">{status}</span>}
+      {!status && <ArrowRight size={14} className="auth-choice-arrow" />}
+    </button>
+  );
+}
+
 export function AuthScreen({ onOpenLegal }: { onOpenLegal: () => void }) {
+  const [screen, setScreen] = useState<Screen>("choose");
   const [mode, setMode] = useState<"signin" | "signup">("signup");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -82,8 +105,6 @@ export function AuthScreen({ onOpenLegal }: { onOpenLegal: () => void }) {
             <i />
           </a>
 
-          {/* Tanıtım videosu — şimdilik buton olarak duruyor, video dosyası
-              eklendiğinde bağlanacak. */}
           <button type="button" className="intro-video" onClick={() => {}} aria-label={tt({ tr: "Tanıtım videosunu oynat", en: "Play intro video" })} style={{ border: 0, padding: 0, cursor: "pointer" }}>
             <div className="video-orbit">
               <span />
@@ -126,86 +147,79 @@ export function AuthScreen({ onOpenLegal }: { onOpenLegal: () => void }) {
 
         <section className="auth-card">
           <p className="eyebrow">{tt(copy.eyebrow)}</p>
-          <h1>{mode === "signin" ? tt(copy.signIn) : tt(copy.signUp)}</h1>
+          <h1>{screen === "choose" ? tt(copy.chooseTitle) : mode === "signin" ? tt(copy.signIn) : tt(copy.signUp)}</h1>
           <p className="auth-lead">{tt(copy.lead)}</p>
 
-          <div className="auth-provider-grid" aria-label="Alternatif giriş seçenekleri">
-            <button type="button" disabled title="Google ile giriş yakında">
-              <span className="google-mark">G</span> {tt(copy.googleSoon)} <span className="provider-status">{tt(copy.soon)}</span>
-            </button>
-          </div>
-          <p className="auth-provider-note">{tt(copy.providerNote)}</p>
+          {screen === "choose" && (
+            <div className="auth-choice-grid">
+              <ChooseTile icon={<span className="google-mark">G</span>} label={tt(copy.google)} status={tt(copy.soon)} onClick={() => {}} />
+              <ChooseTile icon={<Mail size={17} />} label={tt(copy.emailBtn)} onClick={() => setScreen("email")} />
+              <ChooseTile icon={<Sparkles size={17} />} label={tt(copy.demoBtn)} onClick={tryDemo} />
+              <ChooseTile icon={<Phone size={17} />} label={tt(copy.phone)} status={tt(copy.soon)} onClick={() => {}} />
+            </div>
+          )}
 
-          <div className="auth-or">
-            <span>{tt(copy.orEmail)}</span>
-          </div>
+          {screen === "email" && (
+            <>
+              <form onSubmit={submit}>
+                <label>
+                  {tt(copy.email)}
+                  <input required type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                </label>
+                <label>
+                  {tt(copy.password)}
+                  <input
+                    required
+                    minLength={8}
+                    type="password"
+                    autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                </label>
+                {mode === "signup" && (
+                  <label className="auth-consent">
+                    <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
+                    <span className="auth-consent-box">
+                      <Check size={11} />
+                    </span>
+                    <span className="auth-consent-text">
+                      {tt({ tr: "Kullanım Koşulları ve Gizlilik Politikasını okudum, kabul ediyorum.", en: "I have read and accept the Terms of Use and Privacy Policy." })}
+                    </span>
+                  </label>
+                )}
+                {error && (
+                  <div className="form-error" role="alert">
+                    <p>{error}</p>
+                  </div>
+                )}
+                <button disabled={busy} className="auth-submit">
+                  {busy ? tt(copy.wait) : mode === "signin" ? tt(copy.submitIn) : tt(copy.submitUp)}
+                  <ArrowRight size={16} />
+                </button>
+              </form>
 
-          <form onSubmit={submit}>
-            <label>
-              {tt(copy.email)}
-              <input required type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-            </label>
-            <label>
-              {tt(copy.password)}
-              <input
-                required
-                minLength={8}
-                type="password"
-                autoComplete={mode === "signin" ? "current-password" : "new-password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </label>
-            {mode === "signup" && (
-              <label style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 11, fontWeight: 400 }}>
-                <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} style={{ marginTop: 2 }} />
-                <span>
-                  {tt({ tr: "Kullanım Koşulları ve Gizlilik Politikasını okudum, kabul ediyorum.", en: "I have read and accept the Terms of Use and Privacy Policy." })}
-                </span>
-              </label>
-            )}
-            {error && (
-              <div className="form-error" role="alert">
-                <p>{error}</p>
-              </div>
-            )}
-            <button disabled={busy} className="auth-submit">
-              {busy ? tt(copy.wait) : mode === "signin" ? tt(copy.submitIn) : tt(copy.submitUp)}
-              <ArrowRight size={16} />
-            </button>
-          </form>
+              <button
+                className="auth-toggle"
+                onClick={() => {
+                  setMode(mode === "signin" ? "signup" : "signin");
+                  setError(null);
+                }}
+              >
+                {mode === "signin" ? tt(copy.toggleIn) : tt(copy.toggleUp)}
+              </button>
 
-          <button
-            className="auth-toggle"
-            onClick={() => {
-              setMode(mode === "signin" ? "signup" : "signin");
-              setError(null);
-            }}
-          >
-            {mode === "signin" ? tt(copy.toggleIn) : tt(copy.toggleUp)}
-          </button>
-
-          {/* Test kolaylığı için eklendi — gerçek FireVibe'da bu buton yok,
-              kullanıcının açık isteğiyle geri eklendi. */}
-          <button
-            type="button"
-            onClick={tryDemo}
-            disabled={busy}
-            className="secondary-button"
-            style={{ width: "100%", marginTop: 10 }}
-          >
-            {tt({ tr: "Hesabım yok, demo ile dene", en: "No account — try the demo" })}
-          </button>
+              <button type="button" className="auth-toggle" style={{ opacity: 0.6 }} onClick={() => setScreen("choose")}>
+                ← {tt(copy.back)}
+              </button>
+            </>
+          )}
 
           <p className="auth-legal">
             {tt(copy.legal)} <a onClick={onOpenLegal} style={{ cursor: "pointer" }}>{tt(copy.privacy)}</a>
           </p>
           <p className="auth-security">
             <ShieldCheck size={14} /> {tt(copy.privacy)}
-          </p>
-
-          <p style={{ marginTop: 14, textAlign: "center", fontSize: 10.5, opacity: 0.55, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
-            <Phone size={11} /> {tt(copy.phoneSoon)} <span style={{ opacity: 0.8 }}>· {tt(copy.soon)}</span>
           </p>
         </section>
       </div>
