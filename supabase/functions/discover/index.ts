@@ -71,7 +71,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
         "X-Goog-Api-Key": apiKey,
         "X-Goog-FieldMask":
-          "places.id,places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.googleMapsUri,places.websiteUri,places.nationalPhoneNumber,places.location",
+          "places.id,places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.googleMapsUri,places.websiteUri,places.nationalPhoneNumber,places.priceLevel,places.location",
       },
       body: JSON.stringify({
         textQuery,
@@ -90,6 +90,7 @@ serve(async (req) => {
         name: p.displayName?.text ?? "Unnamed place",
         address: p.formattedAddress ?? "",
         phone: p.nationalPhoneNumber ?? null,
+        priceLevel: typeof p.priceLevel === "string" ? p.priceLevel : null,
         rating: typeof p.rating === "number" ? p.rating : null,
         userRatingCount: typeof p.userRatingCount === "number" ? p.userRatingCount : null,
         distanceMeters:

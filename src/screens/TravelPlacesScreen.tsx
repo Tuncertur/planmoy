@@ -1,21 +1,55 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ExternalLink, Globe2, Info, MapPin, Phone, RefreshCw, Star } from "lucide-react";
 import { useLocationSource } from "../lib/useLocationSource";
 import { useTravelData, type TravelPlace } from "../lib/useTravelData";
+import { supabase } from "../lib/supabase";
 import { tt } from "../lib/i18n";
 
-// Oteller / Restoranlar / Gezilecek Yerler — üçü de TEK bir sorgudan
-// (useTravelData önbelleği) beslenir. Google'ın herkese açık işletme
-// verisi gösterilir; Planmoy bu bilgilerin güncelliğini/doğruluğunu
-// garanti etmez, her zaman kaynağı (Google Maps) doğrulamanı öneririz.
+const PRICE_RANK: Record<string, number> = {
+  PRICE_LEVEL_FREE: 0,
+  PRICE_LEVEL_INEXPENSIVE: 1,
+  PRICE_LEVEL_MODERATE: 2,
+  PRICE_LEVEL_EXPENSIVE: 3,
+  PRICE_LEVEL_VERY_EXPENSIVE: 4,
+};
+const PRICE_LABEL: Record<string, string> = {
+  PRICE_LEVEL_FREE: "Ücretsiz",
+  PRICE_LEVEL_INEXPENSIVE: "₺",
+  PRICE_LEVEL_MODERATE: "₺₺",
+  PRICE_LEVEL_EXPENSIVE: "₺₺₺",
+  PRICE_LEVEL_VERY_EXPENSIVE: "₺₺₺₺",
+};
 
+// Kişiselleştir bölümündeki "otel" cevapları burada okunup varsayılan
+// sıralamayı belirler (örn. "en uygun/ucuz" dediyse fiyata göre,
+// aksi halde puana göre sıralanır) — kullanıcı istediği zaman elle de
+// değiştirebilir.
 export function TravelPlacesScreen({ userId, category, title }: { userId: string; category: "hotel" | "restaurant" | "places"; title: string }) {
   const location = useLocationSource(userId);
   const { places, status, refresh } = useTravelData(category, location);
+  const [sortBy, setSortBy] = useState<"rating" | "price">("rating");
 
   useEffect(() => {
-    if (location.activeSource === "none") return;
-  }, [location.activeSource]);
+    if (category !== "hotel") return;
+    supabase
+      .from("user_interests")
+      .select("name")
+      .eq("user_id", userId)
+      .eq("kind", "otel")
+      .then(({ data }) => {
+        const text = (data ?? []).map((i) => i.name).join(" ").toLocaleLowerCase("tr");
+        if (/ucuz|uygun|ekonomik/.test(text)) setSortBy("price");
+      });
+  }, [category, userId]);
+
+  const sorted = [...places].sort((a: TravelPlace, b: TravelPlace) => {
+    if (sortBy === "price") {
+      const pa = a.priceLevel ? PRICE_RANK[a.priceLevel] ?? 99 : 99;
+      const pb = b.priceLevel ? PRICE_RANK[b.priceLevel] ?? 99 : 99;
+      return pa - pb;
+    }
+    return (b.rating ?? 0) - (a.rating ?? 0);
+  });
 
   return (
     <div className="flex flex-col gap-4">
@@ -30,6 +64,23 @@ export function TravelPlacesScreen({ userId, category, title }: { userId: string
           <RefreshCw size={13} className={status === "loading" ? "animate-spin" : ""} /> {tt({ tr: "Yenile", en: "Refresh" })}
         </button>
       </div>
+
+      {category === "hotel" && places.length > 0 && (
+        <div className="flex gap-2">
+          <button
+            onClick={() => setSortBy("rating")}
+            className={`rounded-xl px-3 py-1.5 text-xs ${sortBy === "rating" ? "bg-[var(--color-cyan-400)] text-[var(--color-space-950)]" : "border border-white/10 bg-white/5"}`}
+          >
+            {tt({ tr: "Puana göre", en: "By rating" })}
+          </button>
+          <button
+            onClick={() => setSortBy("price")}
+            className={`rounded-xl px-3 py-1.5 text-xs ${sortBy === "price" ? "bg-[var(--color-cyan-400)] text-[var(--color-space-950)]" : "border border-white/10 bg-white/5"}`}
+          >
+            {tt({ tr: "Fiyata göre (uygundan)", en: "By price (cheapest first)" })}
+          </button>
+        </div>
+      )}
 
       {location.activeSource === "none" && (
         <div className="orbit-card p-4 text-sm">
@@ -50,7 +101,7 @@ export function TravelPlacesScreen({ userId, category, title }: { userId: string
       {status === "loading" && <p className="text-sm text-[var(--color-mist-500)]">{tt({ tr: "Yükleniyor…", en: "Loading…" })}</p>}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {places.map((place: TravelPlace) => (
+        {sorted.map((place: TravelPlace) => (
           <article key={place.id} className="orbit-card p-4">
             <h3 className="font-medium">{place.name}</h3>
             <p className="mt-1 flex items-start gap-1.5 text-xs text-[var(--color-mist-500)]">
@@ -67,6 +118,7 @@ export function TravelPlacesScreen({ userId, category, title }: { userId: string
                   <Star size={12} fill="currentColor" /> {place.rating.toFixed(1)} ({place.userRatingCount ?? 0})
                 </span>
               )}
+              {place.priceLevel && PRICE_LABEL[place.priceLevel] && <span>{PRICE_LABEL[place.priceLevel]}</span>}
             </div>
             <div className="mt-2 flex flex-wrap gap-3">
               {place.mapsUrl && (

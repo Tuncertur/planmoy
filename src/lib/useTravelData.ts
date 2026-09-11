@@ -12,6 +12,7 @@ export type TravelPlace = {
   name: string;
   address: string;
   phone: string | null;
+  priceLevel: string | null;
   rating: number | null;
   userRatingCount: number | null;
   mapsUrl: string | null;
