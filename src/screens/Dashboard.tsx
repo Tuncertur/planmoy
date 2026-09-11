@@ -21,6 +21,7 @@ import { AccountScreen } from "./AccountScreen";
 import { CategoriesScreen } from "./CategoriesScreen";
 import { TripPlannerScreen } from "./TripPlannerScreen";
 import { TravelPlacesScreen } from "./TravelPlacesScreen";
+import { PersonalizeScreen } from "./PersonalizeScreen";
 import { ComingSoon } from "../components/ComingSoon";
 import {
   StaffPanel, InventoryPanel, ReportsPanel, MarketingPanel, BusinessSettingsPanel,
@@ -33,7 +34,7 @@ import {
 
 type Mode = "personal" | "business";
 type ViewId =
-  | "flow" | "calendar" | "tasks" | "stylesync" | "discover" | "trip" | "hotels" | "restaurants" | "places-to-visit"
+  | "flow" | "calendar" | "tasks" | "stylesync" | "discover" | "trip" | "hotels" | "restaurants" | "places-to-visit" | "personalize"
   | "sports" | "events" | "space" | "notes" | "intelligence" | "personal-tools" | "account" | "categories"
   | "biz-location" | "biz-appointments" | "biz-customers" | "biz-suggestions"
   | "biz-staff" | "biz-inventory" | "biz-reports" | "biz-marketing" | "biz-settings"
@@ -52,6 +53,7 @@ const personalNavItems: { id: ViewId; icon: React.ReactNode; label: Dict; extern
   { id: "sports", icon: <Dumbbell size={17} />, label: { tr: "Spor akışı", en: "Sports flow" } },
   { id: "events", icon: <Users size={17} />, label: { tr: "Etkinlikler", en: "Events" } },
   { id: "space", icon: <FileText size={17} />, label: { tr: "İlgi alanlarım", en: "My interests" } },
+  { id: "personalize", icon: <Sparkles size={17} />, label: { tr: "Kişiselleştir", en: "Personalize" } },
   { id: "notes", icon: <StickyNote size={17} />, label: { tr: "Boş Alan", en: "Empty space" } },
   { id: "intelligence", icon: <Brain size={17} />, label: { tr: "Yapay zeka", en: "Intelligence" } },
   { id: "categories", icon: <Layers3 size={17} />, label: { tr: "Kategori rehberi", en: "Category guide" } },
@@ -299,6 +301,7 @@ export function Dashboard({ userId, email }: { userId: string; email: string }) 
         {view === "hotels" && <PanelWrap><TravelPlacesScreen userId={userId} category="hotel" title={tt({ tr: "Oteller", en: "Hotels" })} /></PanelWrap>}
         {view === "restaurants" && <PanelWrap><TravelPlacesScreen userId={userId} category="restaurant" title={tt({ tr: "Restoranlar", en: "Restaurants" })} /></PanelWrap>}
         {view === "places-to-visit" && <PanelWrap><TravelPlacesScreen userId={userId} category="places" title={tt({ tr: "Gezilecek Yerler", en: "Places to Visit" })} /></PanelWrap>}
+        {view === "personalize" && <PanelWrap><PersonalizeScreen userId={userId} /></PanelWrap>}
         {view === "stylesync" && <PanelWrap><StyleSyncScreen userId={userId} /></PanelWrap>}
         {view === "calendar" && <PanelWrap><CalendarScreen userId={userId} /></PanelWrap>}
         {view === "sports" && <PanelWrap><SportsScreen /></PanelWrap>}
@@ -323,7 +326,7 @@ export function Dashboard({ userId, email }: { userId: string; email: string }) 
         {view === "biz-pricing" && <PanelWrap><PricingPanel /></PanelWrap>}
         {![
           "flow", "tasks", "notes", "discover", "stylesync",
-          "calendar", "sports", "space", "intelligence", "events", "account", "categories", "trip", "hotels", "restaurants", "places-to-visit",
+          "calendar", "sports", "space", "intelligence", "events", "account", "categories", "trip", "hotels", "restaurants", "places-to-visit", "personalize",
           "biz-location", "biz-appointments", "biz-customers", "biz-suggestions",
           "biz-staff", "biz-inventory", "biz-reports", "biz-marketing", "biz-settings",
           "biz-loyalty", "biz-competition", "biz-performance", "biz-supply", "biz-pricing",
