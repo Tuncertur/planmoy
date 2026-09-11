@@ -31,3 +31,22 @@
   gerçek konum+zaman+ilgi alanı öncelikli AI öneriyle, Etkinlikler gerçek
   DB + paylaşılabilir davet linkiyle çalışıyor.
 - Gerçek yayın öncesi gizlilik politikasının avukat incelemesi
+
+## Son taramada bulunan ek eksikler (tamamlanan)
+
+- ✅ Tema değiştirici (5 tema)
+- ✅ Kişisel Yapay Zeka Asistanı gerçek hâline yükseltildi (arama, moderasyon, akışa ekle)
+- ✅ Spor/Hobi geçiş paneli
+- ✅ Hesap Ayarları / Hesap Silme (gerçek silme akışı, Edge Function)
+- ✅ Kategori Rehberi sayfası (tam taksonomi)
+- ✅ Fiyatlandırma bilgisi bulundu (Free/$1.99/$4.99/$12.99, ödeme bağlı değil)
+- ✅ React Router eklendi (mimari eksiklik gerçekten routing yokluğuydu)
+- ✅ Etkinlik davet sayfası (kırık linki tamir etti)
+- ✅ Herkese açık rezervasyon sayfası (gerçek işletme verisiyle, /book/:slug)
+
+## Hâlâ okunmamış / kurulmamış
+
+- [ ] Randevu detay + güvenli mesajlaşma sayfası (appointments.$id.tsx) — appointment_messages tablosu zaten şemada var, ekran kurulmadı
+- [ ] Herkese açık işletme profil sayfası (businesses.$slug.tsx) — düşük öncelik, book sayfası zaten işi görüyor
+- [ ] server/integrations.ts, server/workspace.ts, server/bookings.ts detayları henüz okunmadı
+- [ ] Fiyatlandırma sayfası (PricingScreen) henüz koda dökülmedi, sadece bulundu
