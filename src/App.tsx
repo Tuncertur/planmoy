@@ -10,6 +10,7 @@ import { CookieConsent } from "./components/CookieConsent";
 import { ThemeSwitcher } from "./components/ThemeSwitcher";
 import { EventRsvpScreen } from "./screens/EventRsvpScreen";
 import { PublicBookingScreen } from "./screens/PublicBookingScreen";
+import { ProfileViewScreen } from "./screens/ProfileViewScreen";
 
 function MainApp() {
   const { session, loading } = useSession();
@@ -34,6 +35,7 @@ function App() {
       <Routes>
         <Route path="/events/:token" element={<EventRsvpScreen />} />
         <Route path="/book/:slug" element={<PublicBookingScreen />} />
+        <Route path="/profile/:token" element={<ProfileViewScreen />} />
         <Route path="/*" element={<MainApp />} />
       </Routes>
       <CookieConsent />

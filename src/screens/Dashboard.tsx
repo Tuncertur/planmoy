@@ -3,7 +3,7 @@ import {
   ArrowUpRight, CalendarDays, Check, ChevronRight, Compass, FileText,
   HeartPulse, LayoutDashboard, ListChecks, Plus, Scissors, Settings2,
   Sparkles, Users, WandSparkles, Dumbbell, Brain, StickyNote, MapPin,
-  Lightbulb, Flame, Layers3, UserCog, Plane, Building2, Utensils, Music,
+  Lightbulb, Flame, Layers3, UserCog, Plane, Building2, Utensils, Music, UserRound,
 } from "lucide-react";
 import { tt, type Dict } from "../lib/i18n";
 import { supabase } from "../lib/supabase";
@@ -23,6 +23,7 @@ import { CategoriesScreen } from "./CategoriesScreen";
 import { TripPlannerScreen } from "./TripPlannerScreen";
 import { TravelPlacesScreen } from "./TravelPlacesScreen";
 import { PersonalizeScreen } from "./PersonalizeScreen";
+import { ProfileShareScreen } from "./ProfileShareScreen";
 import { ComingSoon } from "../components/ComingSoon";
 import {
   StaffPanel, InventoryPanel, ReportsPanel, MarketingPanel, BusinessSettingsPanel,
@@ -35,7 +36,7 @@ import {
 
 type Mode = "personal" | "business";
 type ViewId =
-  | "flow" | "calendar" | "tasks" | "stylesync" | "discover" | "trip" | "hotels" | "restaurants" | "places-to-visit" | "personalize"
+  | "flow" | "calendar" | "tasks" | "stylesync" | "discover" | "trip" | "hotels" | "restaurants" | "places-to-visit" | "personalize" | "profile-share"
   | "sports" | "events" | "space" | "notes" | "intelligence" | "personal-tools" | "account" | "categories"
   | "biz-location" | "biz-appointments" | "biz-customers" | "biz-suggestions"
   | "biz-staff" | "biz-inventory" | "biz-reports" | "biz-marketing" | "biz-settings"
@@ -59,6 +60,7 @@ const personalNavItems: { id: ViewId; icon: React.ReactNode; label: Dict; extern
   { id: "intelligence", icon: <Brain size={17} />, label: { tr: "Yapay zeka", en: "Intelligence" } },
   { id: "categories", icon: <Layers3 size={17} />, label: { tr: "Kategori rehberi", en: "Category guide" } },
   { id: "account", icon: <UserCog size={17} />, label: { tr: "Hesap", en: "Account" } },
+  { id: "profile-share", icon: <UserRound size={17} />, label: { tr: "Profil Paylaş", en: "Share Profile" } },
   { id: "ext-flights" as ViewId, icon: <Plane size={17} />, label: { tr: "Uçaklar", en: "Flights" }, external: "https://www.google.com/travel/flights" },
   { id: "ext-concerts" as ViewId, icon: <Music size={17} />, label: { tr: "Konserler", en: "Concerts" }, external: "https://www.google.com/search?q=concerts+near+me" },
 ];
@@ -303,6 +305,7 @@ export function Dashboard({ userId, email }: { userId: string; email: string }) 
         {view === "restaurants" && <PanelWrap><TravelPlacesScreen userId={userId} category="restaurant" title={tt({ tr: "Restoranlar", en: "Restaurants" })} /></PanelWrap>}
         {view === "places-to-visit" && <PanelWrap><TravelPlacesScreen userId={userId} category="places" title={tt({ tr: "Gezilecek Yerler", en: "Places to Visit" })} /></PanelWrap>}
         {view === "personalize" && <PanelWrap><PersonalizeScreen userId={userId} /></PanelWrap>}
+        {view === "profile-share" && <PanelWrap><ProfileShareScreen userId={userId} /></PanelWrap>}
         {view === "stylesync" && <PanelWrap><StyleSyncScreen userId={userId} /></PanelWrap>}
         {view === "calendar" && <PanelWrap><CalendarScreen userId={userId} /></PanelWrap>}
         {view === "sports" && <PanelWrap><SportsScreen /></PanelWrap>}
@@ -327,7 +330,7 @@ export function Dashboard({ userId, email }: { userId: string; email: string }) 
         {view === "biz-pricing" && <PanelWrap><PricingPanel /></PanelWrap>}
         {![
           "flow", "tasks", "notes", "discover", "stylesync",
-          "calendar", "sports", "space", "intelligence", "events", "account", "categories", "trip", "hotels", "restaurants", "places-to-visit", "personalize",
+          "calendar", "sports", "space", "intelligence", "events", "account", "categories", "trip", "hotels", "restaurants", "places-to-visit", "personalize", "profile-share",
           "biz-location", "biz-appointments", "biz-customers", "biz-suggestions",
           "biz-staff", "biz-inventory", "biz-reports", "biz-marketing", "biz-settings",
           "biz-loyalty", "biz-competition", "biz-performance", "biz-supply", "biz-pricing",

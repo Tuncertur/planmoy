@@ -22,14 +22,18 @@ export function EventRsvpScreen() {
   const [busy, setBusy] = useState(false);
 
   async function load() {
-    const { data: ev } = await supabase.from("events").select("*").eq("share_token", token).maybeSingle();
-    if (!ev) {
+    // DÜZELTME: events tablosunda herkese açık SELECT izni yok (kasıtlı,
+    // güvenlik) — bu yüzden ziyaretçi/anon kullanıcılar için doğrudan
+    // client sorgusu RLS'e takılıp boş dönerdi. Artık service_role ile
+    // çalışan Edge Function üzerinden, sadece token'a uyan etkinlik
+    // getiriliyor.
+    const { data, error } = await supabase.functions.invoke("get-shared-event", { body: { token } });
+    if (error || !data?.ok) {
       setNotFoundState(true);
       return;
     }
-    setEvent(ev);
-    const { data: parts } = await supabase.from("event_participants").select("display_name, status").eq("event_id", ev.id);
-    setParticipants(parts ?? []);
+    setEvent(data.event);
+    setParticipants(data.participants ?? []);
   }
 
   useEffect(() => {

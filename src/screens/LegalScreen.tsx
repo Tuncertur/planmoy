@@ -58,6 +58,13 @@ export function LegalScreen({ onBack }: { onBack: () => void }) {
               <li>{tt({ tr: "Konum verisi: yalnızca Keşfet özelliğini kullanırken, açık izninle, cihazından alınan anlık konum", en: "Location data: only when using Discover, with your explicit permission, real-time device location" })}</li>
               <li>{tt({ tr: "İşlem güvenliği verisi: oturum açma zaman damgaları, IP tabanlı hız sınırlama kayıtları", en: "Security data: sign-in timestamps, IP-based rate-limit records" })}</li>
               <li>{tt({ tr: "Fotoğraflar: StyleSync'e yüklediğin gardırop fotoğrafları (isteğe bağlı)", en: "Photos: wardrobe photos you upload to StyleSync (optional)" })}</li>
+              <li>
+                <strong>{tt({ tr: "Profil Paylaş (tamamen isteğe bağlı, açık rızana dayanır): ", en: "Share Profile (fully optional, based on your explicit consent): " })}</strong>
+                {tt({
+                  tr: "yaş, cinsiyet, takma ad, planların ve ilgi alanların — YALNIZCA bu özelliği kendi isteğinle etkinleştirirsen işlenir ve YALNIZCA senin oluşturduğun özel bağlantıyı paylaştığın kişiler tarafından görülebilir. Bu bilgiler herkese açık, aranabilir bir listede yayınlanmaz.",
+                  en: "age, gender, nickname, plans, and interests — processed ONLY if you activate this feature yourself, and visible ONLY to people you share your private link with. This information is never published in a public, searchable list.",
+                })}
+              </li>
             </ul>
           </div>
         </section>
@@ -68,8 +75,21 @@ export function LegalScreen({ onBack }: { onBack: () => void }) {
             <h2>{tt({ tr: "3. İşleme Amaçları ve Hukuki Sebep (KVKK m.5)", en: "3. Purposes & Legal Basis" })}</h2>
             <p>
               {tt({
-                tr: "Verilerin, hesabını oluşturup hizmeti sağlayabilmemiz için sözleşmenin kurulması ve ifasıyla doğrudan ilgili olması nedeniyle işlenmesi esastır. Konum verisi ve gardırop fotoğrafları yalnızca açık rızanla, sen özellik kullanmayı seçtiğinde işlenir. Amaçlar: hesabını yönetmek, randevu/görev/not kayıtlarını sana özel tutmak, Keşfet'te yakın işletme önerisi sunmak, StyleSync'te kombin önerisi hazırlamak, kötüye kullanımı önlemek (hız sınırlama).",
-                en: "Data is processed on the basis that it's necessary for the performance of the contract (providing the service). Location and wardrobe photos are processed only with your explicit consent, when you choose to use those features. Purposes: managing your account, keeping your appointments/tasks/notes private to you, suggesting nearby businesses in Discover, generating outfit advice in StyleSync, and preventing abuse (rate limiting).",
+                tr: "Verilerin, hesabını oluşturup hizmeti sağlayabilmemiz için sözleşmenin kurulması ve ifasıyla doğrudan ilgili olması nedeniyle işlenmesi esastır. Konum verisi, gardırop fotoğrafları ve Profil Paylaş bilgileri (yaş, cinsiyet, planların) yalnızca açık rızanla, sen özellik kullanmayı seçtiğinde işlenir. Amaçlar: hesabını yönetmek, randevu/görev/not kayıtlarını sana özel tutmak, Keşfet'te yakın işletme önerisi sunmak, StyleSync'te kombin önerisi hazırlamak, kötüye kullanımı önlemek (hız sınırlama), ve tercih ettiğin kişilerle kısa bir tanışma profili paylaşmana imkân tanımak. Profil Paylaş özelliği 18 yaş altı için kullanılamaz; yaş beyanına dayanır, Planmoy kimlik/yaş doğrulaması yapmaz.",
+                en: "Data is processed on the basis that it's necessary for the performance of the contract (providing the service). Location data, wardrobe photos, and Share Profile information (age, gender, plans) are processed only with your explicit consent, when you choose to use those features. Purposes: managing your account, keeping your appointments/tasks/notes private to you, suggesting nearby businesses in Discover, generating outfit advice in StyleSync, preventing abuse (rate limiting), and letting you share a short intro profile with people you choose. Share Profile is not available under age 18; it relies on self-declared age — Planmoy does not verify identity or age.",
+              })}
+            </p>
+          </div>
+        </section>
+
+        <section className="legal-section">
+          <ShieldCheck size={20} />
+          <div>
+            <h2>{tt({ tr: "3a. Profil Paylaş — Özel Uyarı", en: "3a. Share Profile — Special Notice" })}</h2>
+            <p>
+              {tt({
+                tr: "Profil Paylaş, tamamen isteğe bağlı bir özelliktir ve HERKESE AÇIK, ARANABİLİR bir dizin DEĞİLDİR — profilin yalnızca senin oluşturduğun özel bağlantıyı paylaştığın kişiler tarafından görülebilir. Bu özelliği etkinleştirmeden önce ayrı bir güvenlik onayı istenir. Planmoy, bu özelliği kullanan kullanıcıların kimliğini, yaşını veya niyetini doğrulamaz; linki kiminle paylaştığından tamamen kendin sorumlusun. Profilini istediğin zaman kapatabilirsin.",
+                en: "Share Profile is a fully optional feature and is NOT a public, searchable directory — your profile is visible only to people you share your private link with. A separate safety acknowledgment is required before activating it. Planmoy does not verify the identity, age, or intentions of users of this feature; you are solely responsible for who you share your link with. You can deactivate your profile at any time.",
               })}
             </p>
           </div>
