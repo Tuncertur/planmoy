@@ -50,3 +50,18 @@
 - [ ] Herkese açık işletme profil sayfası (businesses.$slug.tsx) — düşük öncelik, book sayfası zaten işi görüyor
 - [ ] server/integrations.ts, server/workspace.ts, server/bookings.ts detayları henüz okunmadı
 - [ ] Fiyatlandırma sayfası (PricingScreen) henüz koda dökülmedi, sadece bulundu
+
+## Bu turda eklenen büyük özellikler
+
+- ✅ Ortak konum kaynağı (`useLocationSource`) — GPS çalışmayan ülkeler
+  için elle adres girişi, Keşfet'e entegre edildi
+- ✅ Tatil Planlama ekranı (Uçak/Otel Google linkleri + AI gezi önerisi)
+- ✅ Sidebar'a 4 Google-link kısayolu: Oteller, Uçaklar, Restoranlar, Konserler
+- ✅ Spor'a gerçek maç verisi (TheSportsDB, ücretsiz — ülke filtresi yok,
+  bu dürüstçe arayüzde belirtiliyor)
+
+## Not: tutarlılık için yapılacak küçük iş
+
+- [ ] İlgi Alanlarım (SpaceScreen) hâlâ kendi ayrı konum inputunu
+  kullanıyor — bir sonraki turda `useLocationSource` ile birleştirilecek
+  ki elle adres her yerde aynı şekilde çalışsın
