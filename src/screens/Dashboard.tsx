@@ -771,6 +771,7 @@ function BusinessLocationPanel({ userId }: { userId: string }) {
 function BusinessAppointmentsPanel({ userId }: { userId: string }) {
   const [appointments, setAppointments] = useState<any[]>([]);
   const [businessId, setBusinessId] = useState<string | null>(null);
+  const [businessSlug, setBusinessSlug] = useState<string | null>(null);
   const [professionalId, setProfessionalId] = useState<string | null>(null);
   const [serviceId, setServiceId] = useState<string | null>(null);
   const [customerName, setCustomerName] = useState("");
@@ -779,9 +780,10 @@ function BusinessAppointmentsPanel({ userId }: { userId: string }) {
   const [error, setError] = useState<string | null>(null);
 
   async function load() {
-    const { data: biz } = await supabase.from("businesses").select("id").eq("owner_id", userId).maybeSingle();
+    const { data: biz } = await supabase.from("businesses").select("id, slug").eq("owner_id", userId).maybeSingle();
     if (!biz) return;
     setBusinessId(biz.id);
+    setBusinessSlug(biz.slug);
     const { data: pros } = await supabase.from("professionals").select("id").eq("business_id", biz.id).limit(1);
     const { data: svcs } = await supabase.from("services").select("id, duration_minutes").eq("business_id", biz.id).limit(1);
     setProfessionalId(pros?.[0]?.id ?? null);
@@ -825,6 +827,14 @@ function BusinessAppointmentsPanel({ userId }: { userId: string }) {
   return (
     <section className="panel">
       <PanelHeading eyebrow={tt({ tr: "İşletme", en: "Business" })} title={tt({ tr: "Randevu takvimi", en: "Appointment calendar" })} />
+      {businessSlug && (
+        <p className="suggestion" style={{ marginBottom: 14 }}>
+          {tt({ tr: "Herkese açık rezervasyon linkin: ", en: "Your public booking link: " })}
+          <a href={`${window.location.origin}/book/${businessSlug}`} target="_blank" rel="noreferrer" style={{ fontWeight: 700 }}>
+            {window.location.origin}/book/{businessSlug}
+          </a>
+        </p>
+      )}
       <form onSubmit={add} className="wardrobe-form" style={{ maxWidth: 420 }}>
         <label>
           {tt({ tr: "Müşteri adı", en: "Customer name" })}
