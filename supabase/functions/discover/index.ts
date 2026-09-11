@@ -12,6 +12,7 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 
 const CATEGORY_QUERIES: Record<string, string> = {
   restaurant: "restaurants",
+  hotel: "hotels",
   cafe: "cafes coffee shops",
   bar: "bars pubs",
   cinema: "cinemas movie theaters",
@@ -51,61 +52,71 @@ serve(async (req) => {
 
   const apiKey = Deno.env.get("GOOGLE_MAPS_API_KEY");
   if (!apiKey) {
-    return new Response(JSON.stringify({ ok: false, reason: "missing-key", places: [] }), {
+    return new Response(JSON.stringify({ ok: false, reason: "missing-key", places: [], groups: {} }), {
       headers: { "Content-Type": "application/json" },
     });
   }
 
-  const { latitude, longitude, address, category, languageCode } = await req.json();
+  const { latitude, longitude, address, category, categories, languageCode } = await req.json();
   const radius = radiusForToday();
-  const categoryQuery = CATEGORY_QUERIES[category] ?? CATEGORY_QUERIES.places;
   const hasCoords = typeof latitude === "number" && typeof longitude === "number";
 
-  // GPS bazı ülkelerde çalışmıyor — koordinat yoksa elle girilen adresi
-  // arama metnine ekleyip locationBias olmadan aratıyoruz.
-  const textQuery = hasCoords ? categoryQuery : `${categoryQuery} ${address ?? ""}`.trim();
+  async function fetchOne(cat: string) {
+    const categoryQuery = CATEGORY_QUERIES[cat] ?? CATEGORY_QUERIES.places;
+    const textQuery = hasCoords ? categoryQuery : `${categoryQuery} ${address ?? ""}`.trim();
 
-  const response = await fetch("https://places.googleapis.com/v1/places:searchText", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Goog-Api-Key": apiKey,
-      "X-Goog-FieldMask":
-        "places.id,places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.googleMapsUri,places.websiteUri,places.location",
-    },
-    body: JSON.stringify({
-      textQuery,
-      languageCode: languageCode ?? "tr",
-      maxResultCount: 20,
-      rankPreference: hasCoords ? "DISTANCE" : "RELEVANCE",
-      ...(hasCoords ? { locationBias: { circle: { center: { latitude, longitude }, radius } } } : {}),
-    }),
-  });
+    const response = await fetch("https://places.googleapis.com/v1/places:searchText", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": apiKey,
+        "X-Goog-FieldMask":
+          "places.id,places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.googleMapsUri,places.websiteUri,places.nationalPhoneNumber,places.location",
+      },
+      body: JSON.stringify({
+        textQuery,
+        languageCode: languageCode ?? "tr",
+        maxResultCount: 20,
+        rankPreference: hasCoords ? "DISTANCE" : "RELEVANCE",
+        ...(hasCoords ? { locationBias: { circle: { center: { latitude, longitude }, radius } } } : {}),
+      }),
+    });
 
-  if (!response.ok) {
-    return new Response(JSON.stringify({ ok: false, reason: "provider-error", places: [] }), {
+    if (!response.ok) return [];
+    const payload = await response.json();
+    return (payload.places ?? [])
+      .map((p: any) => ({
+        id: p.id ?? crypto.randomUUID(),
+        name: p.displayName?.text ?? "Unnamed place",
+        address: p.formattedAddress ?? "",
+        phone: p.nationalPhoneNumber ?? null,
+        rating: typeof p.rating === "number" ? p.rating : null,
+        userRatingCount: typeof p.userRatingCount === "number" ? p.userRatingCount : null,
+        distanceMeters:
+          hasCoords && p.location?.latitude !== undefined && p.location?.longitude !== undefined
+            ? distanceInMeters(latitude, longitude, p.location.latitude, p.location.longitude)
+            : null,
+        mapsUrl: p.googleMapsUri ?? null,
+        websiteUrl: p.websiteUri ?? null,
+        category: cat,
+      }))
+      .sort((a: any, b: any) => (a.distanceMeters ?? Infinity) - (b.distanceMeters ?? Infinity));
+  }
+
+  // Birden fazla kategori istenmişse (Oteller+Restoranlar+Gezilecek yerler
+  // gibi) hepsini TEK istek/yanıt içinde döndürüyoruz — ekran başına ayrı
+  // sorgu atılmasın diye (ekonomik kullanım).
+  if (Array.isArray(categories) && categories.length) {
+    const groups: Record<string, unknown> = {};
+    for (const cat of categories) {
+      groups[cat] = await fetchOne(cat);
+    }
+    return new Response(JSON.stringify({ ok: true, radiusKm: radius / 1000, groups }), {
       headers: { "Content-Type": "application/json" },
     });
   }
 
-  const payload = await response.json();
-  const places = (payload.places ?? [])
-    .map((p: any) => ({
-      id: p.id ?? crypto.randomUUID(),
-      name: p.displayName?.text ?? "Unnamed place",
-      address: p.formattedAddress ?? "",
-      rating: typeof p.rating === "number" ? p.rating : null,
-      userRatingCount: typeof p.userRatingCount === "number" ? p.userRatingCount : null,
-      distanceMeters:
-        hasCoords && p.location?.latitude !== undefined && p.location?.longitude !== undefined
-          ? distanceInMeters(latitude, longitude, p.location.latitude, p.location.longitude)
-          : null,
-      mapsUrl: p.googleMapsUri ?? null,
-      websiteUrl: p.websiteUri ?? null,
-      category,
-    }))
-    .sort((a: any, b: any) => (a.distanceMeters ?? Infinity) - (b.distanceMeters ?? Infinity));
-
+  const places = await fetchOne(category ?? "places");
   return new Response(JSON.stringify({ ok: true, radiusKm: radius / 1000, places }), {
     headers: { "Content-Type": "application/json" },
   });

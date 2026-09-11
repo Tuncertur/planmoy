@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Building2, Bus, Car, Compass, MapPin, Plane, Sparkles, TrainFront, Utensils } from "lucide-react";
 import { useLocationSource } from "../lib/useLocationSource";
 import { askAi } from "../lib/ai";
+import { refreshTravelDataForAddress } from "../lib/useTravelData";
 import { supabase } from "../lib/supabase";
 import { tt } from "../lib/i18n";
 
@@ -57,6 +58,9 @@ export function TripPlannerScreen({ userId }: { userId: string }) {
     }
     setPlan(result.suggestion);
     setStatus("ready");
+    // Tatil planı oluşturulunca Oteller/Restoranlar/Gezilecek Yerler de
+    // varış noktasına göre (tek sorguda) yenilenir.
+    refreshTravelDataForAddress(destination);
   }
 
   const q = encodeURIComponent(destination || location.manualAddress || "");
