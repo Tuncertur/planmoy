@@ -11,6 +11,10 @@ export type LocationSource = {
   longitude: number | null;
   manualAddress: string;
   hasGps: boolean;
+  hasManual: boolean;
+  /** Aktif olarak hangisi kullanılacak — kullanıcının isteğiyle ÖNCE elle
+   *  giriş, o yoksa GPS. GPS bazı ülkelerde yanlış konum gösteriyor. */
+  activeSource: "manual" | "gps" | "none";
   useGps: () => void;
   setManualAddress: (v: string) => void;
   saveManualAddress: () => Promise<void>;
@@ -60,6 +64,8 @@ export function useLocationSource(userId: string): LocationSource {
     longitude,
     manualAddress,
     hasGps: latitude !== null && longitude !== null,
+    hasManual: manualAddress.trim().length > 0,
+    activeSource: manualAddress.trim() ? "manual" : latitude !== null && longitude !== null ? "gps" : "none",
     useGps,
     setManualAddress: setManualAddressState,
     saveManualAddress,

@@ -51,15 +51,15 @@ export function DiscoverScreen({ userId }: { userId: string }) {
   const [radiusKm, setRadiusKm] = useState(isWeekendWindow() ? 100 : 50);
 
   async function runSearch(cat: (typeof categories)[number]) {
-    if (!location.hasGps && !location.manualAddress.trim()) {
+    if (location.activeSource === "none") {
       setStatus("idle");
       return;
     }
     setStatus("loading");
     const result = await getNearbyPlaces(
-      location.hasGps
-        ? { latitude: location.latitude!, longitude: location.longitude!, category: cat, languageCode: "tr" }
-        : { address: location.manualAddress, category: cat, languageCode: "tr" }
+      location.activeSource === "manual"
+        ? { address: location.manualAddress, category: cat, languageCode: "tr" }
+        : { latitude: location.latitude!, longitude: location.longitude!, category: cat, languageCode: "tr" }
     );
     if (!result.ok) {
       setStatus(result.reason === "missing-key" ? "missing-key" : "provider-error");
@@ -76,8 +76,8 @@ export function DiscoverScreen({ userId }: { userId: string }) {
   }
 
   useEffect(() => {
-    if (location.hasGps) runSearch(category);
-  }, [location.hasGps]);
+    if (location.activeSource !== "none") runSearch(category);
+  }, [location.activeSource]);
 
   async function searchWithManualAddress() {
     await location.saveManualAddress();
@@ -95,6 +95,23 @@ export function DiscoverScreen({ userId }: { userId: string }) {
         })}
       </p>
 
+      {/* Öncelik: önce elle girilen adres, GPS bazı ülkelerde yanlış konum
+          gösterdiği için yalnızca elle adres YOKSA GPS'e başvurulur. */}
+      <div className="orbit-card flex flex-col gap-2 p-3 sm:flex-row sm:items-center">
+        <label className="flex flex-1 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm">
+          <MapPin size={15} className="text-[var(--color-mist-500)]" />
+          <input
+            value={location.manualAddress}
+            onChange={(e) => location.setManualAddress(e.target.value)}
+            placeholder={tt({ tr: "Adresini yaz (örn. Kadıköy, İstanbul) — önceliklidir", en: "Type your address (e.g. downtown) — takes priority" })}
+            className="w-full bg-transparent outline-none"
+          />
+        </label>
+        <button onClick={searchWithManualAddress} className="rounded-xl bg-[var(--color-cyan-400)] px-4 py-2 text-sm font-medium text-[var(--color-space-950)]">
+          {tt({ tr: "Bu adrese göre ara", en: "Search from this address" })}
+        </button>
+      </div>
+
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <label className="flex flex-1 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm">
           <Search size={15} className="text-[var(--color-mist-500)]" />
@@ -109,29 +126,12 @@ export function DiscoverScreen({ userId }: { userId: string }) {
           onClick={locate}
           disabled={status === "locating" || status === "loading"}
           className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium hover:bg-white/10 disabled:opacity-60"
+          title={tt({ tr: "Sadece elle adres girmediysen kullanılır", en: "Only used if you haven't typed an address" })}
         >
           <Crosshair size={15} />
-          {status === "locating" ? tt({ tr: "Konum alınıyor…", en: "Getting location…" }) : tt({ tr: "Konumumu kullan", en: "Use my location" })}
+          {status === "locating" ? tt({ tr: "Konum alınıyor…", en: "Getting location…" }) : tt({ tr: "Konumumu kullan (GPS)", en: "Use my location (GPS)" })}
         </button>
       </div>
-
-      {/* GPS çalışmayan ülkeler için — elle adres, GPS yoksa/başarısız olursa devreye girer */}
-      {!location.hasGps && (
-        <div className="orbit-card flex flex-col gap-2 p-3 sm:flex-row sm:items-center">
-          <label className="flex flex-1 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm">
-            <MapPin size={15} className="text-[var(--color-mist-500)]" />
-            <input
-              value={location.manualAddress}
-              onChange={(e) => location.setManualAddress(e.target.value)}
-              placeholder={tt({ tr: "GPS çalışmıyorsa adresini elle yaz (örn. Kadıköy, İstanbul)", en: "If GPS doesn't work, type your address (e.g. downtown)" })}
-              className="w-full bg-transparent outline-none"
-            />
-          </label>
-          <button onClick={searchWithManualAddress} className="rounded-xl bg-[var(--color-cyan-400)] px-4 py-2 text-sm font-medium text-[var(--color-space-950)]">
-            {tt({ tr: "Bu adrese göre ara", en: "Search from this address" })}
-          </button>
-        </div>
-      )}
 
       <div className="flex items-center gap-2 text-xs text-[var(--color-mist-500)]">
         <MapPin size={13} />
@@ -147,7 +147,7 @@ export function DiscoverScreen({ userId }: { userId: string }) {
             key={c}
             onClick={() => {
               setCategory(c);
-              if (location.hasGps || location.manualAddress.trim()) runSearch(c);
+              if (location.activeSource !== "none") runSearch(c);
             }}
             className={`rounded-xl px-3 py-1.5 text-sm transition-colors ${
               category === c
