@@ -85,3 +85,15 @@ mevcut ilgi alanlarını okuyup öneriye yansıtıyor, boşsa kullanıcıyı
 soru sorduğu bir anket akışı istiyorsan (örn. "3 soru soracağım, cevapla")
 bunu ayrıca kurarım — şimdilik mevcut veriyi yeniden kullanmak daha hızlı
 ve tutarlıydı.
+
+## Sidebar: Oteller/Restoranlar/Gezilecek Yerler (bu turda tamamlandı)
+
+- ✅ 3 ayrı sidebar kategorisi eklendi (Oteller, Restoranlar, Gezilecek Yerler)
+- ✅ Discover Edge Function'ı çoklu kategori destekler oldu — üçü TEK
+  sorguda (adres+telefon+web sitesi dahil) geliyor, ekonomik
+- ✅ Uygulama açılışında bir kez, tatil planı oluşturulunca varış
+  noktasına göre tekrar yenileniyor
+- ✅ Görseller dahil edilmedi (Google'ın foto API'si ayrı sorgu
+  gerektiriyor, "tek sorgu" prensibiyle çelişirdi) — bilinçli karar
+- ✅ Yasal sorumluluk notu her ekranın altına eklendi ("Planmoy içerik
+  doğruluğundan sorumlu değildir, işletmeyi kendi kaynağından teyit et")
