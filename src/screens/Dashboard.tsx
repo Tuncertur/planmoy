@@ -17,6 +17,7 @@ import { SpaceScreen } from "./SpaceScreen";
 import { IntelligenceScreen } from "./IntelligenceScreen";
 import { EventsScreen } from "./EventsScreen";
 import { AssistantFab } from "../components/AssistantFab";
+import { TodayHighlights } from "../components/TodayHighlights";
 import { AccountScreen } from "./AccountScreen";
 import { CategoriesScreen } from "./CategoriesScreen";
 import { TripPlannerScreen } from "./TripPlannerScreen";
@@ -290,7 +291,7 @@ export function Dashboard({ userId, email }: { userId: string; email: string }) 
         </section>
 
         {mode === "personal" && view === "flow" && (
-          <PersonalView dashboard={dashboard} go={setView} />
+          <PersonalView dashboard={dashboard} go={setView} userId={userId} />
         )}
         {mode === "business" && view === "flow" && <BusinessView />}
 
@@ -368,9 +369,11 @@ function PanelHeading({ eyebrow, title, action }: { eyebrow: string; title: stri
 function PersonalView({
   dashboard,
   go,
+  userId,
 }: {
   dashboard: { todayTasks: number; todayAppointments: number } | null;
   go: (id: ViewId) => void;
+  userId: string;
 }) {
   const [aiState, setAiState] = useState<"idle" | "loading" | "ready" | "missing-key" | "error">("idle");
   const [aiText, setAiText] = useState("");
@@ -391,6 +394,8 @@ function PersonalView({
 
   return (
     <>
+      <TodayHighlights userId={userId} />
+
       <section className="today-focus-banner">
         <div>
           <p className="eyebrow blue-label">{tt({ tr: "BUGÜNÜN ODAĞI", en: "TODAY'S FOCUS" })}</p>
