@@ -3,6 +3,7 @@ import { Compass, Heart, MapPin, Plus, Sparkles, Trash2, WandSparkles } from "lu
 import { supabase } from "../lib/supabase";
 import { askAi } from "../lib/ai";
 import { tt } from "../lib/i18n";
+import { FitnessHobbySwitch } from "../components/FitnessHobbySwitch";
 
 // FireVibe'ın gerçek src/routes/space.tsx dosyasından taşınmıştır —
 // "önce konum, sonra zaman, sonra ilgi alanı" öncelik sırası korunuyor.
@@ -151,8 +152,19 @@ export function SpaceScreen({ userId }: { userId: string }) {
             <h3>{location} · {radius} km</h3>
           </div>
           <p>{plan}</p>
+          <a
+            className="secondary-button"
+            href={`https://www.google.com/maps/search/${encodeURIComponent(`${interests[0]?.name ?? "aktivite"} ${location}`)}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <MapPin size={14} /> {tt({ tr: "Google Maps'te ara", en: "Search on Google Maps" })}
+          </a>
         </section>
       )}
+
+      <FitnessHobbySwitch />
+
       {message && <p className="suggestion" role="status" style={{ marginTop: 10 }}>{message}</p>}
     </div>
   );

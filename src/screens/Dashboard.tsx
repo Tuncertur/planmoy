@@ -3,7 +3,7 @@ import {
   ArrowUpRight, CalendarDays, Check, ChevronRight, Compass, FileText,
   HeartPulse, LayoutDashboard, ListChecks, Plus, Scissors, Settings2,
   Sparkles, Users, WandSparkles, Dumbbell, Brain, StickyNote, MapPin,
-  Lightbulb, Flame,
+  Lightbulb, Flame, Layers3, UserCog,
 } from "lucide-react";
 import { tt, type Dict } from "../lib/i18n";
 import { supabase } from "../lib/supabase";
@@ -16,6 +16,9 @@ import { SportsScreen } from "./SportsScreen";
 import { SpaceScreen } from "./SpaceScreen";
 import { IntelligenceScreen } from "./IntelligenceScreen";
 import { EventsScreen } from "./EventsScreen";
+import { AssistantFab } from "../components/AssistantFab";
+import { AccountScreen } from "./AccountScreen";
+import { CategoriesScreen } from "./CategoriesScreen";
 import { ComingSoon } from "../components/ComingSoon";
 import {
   StaffPanel, InventoryPanel, ReportsPanel, MarketingPanel, BusinessSettingsPanel,
@@ -29,7 +32,7 @@ import {
 type Mode = "personal" | "business";
 type ViewId =
   | "flow" | "calendar" | "tasks" | "stylesync" | "discover"
-  | "sports" | "events" | "space" | "notes" | "intelligence" | "personal-tools"
+  | "sports" | "events" | "space" | "notes" | "intelligence" | "personal-tools" | "account" | "categories"
   | "biz-location" | "biz-appointments" | "biz-customers" | "biz-suggestions"
   | "biz-staff" | "biz-inventory" | "biz-reports" | "biz-marketing" | "biz-settings"
   | "biz-loyalty" | "biz-competition" | "biz-performance" | "biz-supply" | "biz-pricing";
@@ -42,9 +45,11 @@ const personalNavItems: { id: ViewId; icon: React.ReactNode; label: Dict }[] = [
   { id: "discover", icon: <Compass size={17} />, label: { tr: "Keşfet", en: "Discover" } },
   { id: "sports", icon: <Dumbbell size={17} />, label: { tr: "Spor akışı", en: "Sports flow" } },
   { id: "events", icon: <Users size={17} />, label: { tr: "Etkinlikler", en: "Events" } },
-  { id: "space", icon: <FileText size={17} />, label: { tr: "Hobi ve hedefler", en: "Hobbies & goals" } },
+  { id: "space", icon: <FileText size={17} />, label: { tr: "İlgi alanlarım", en: "My interests" } },
   { id: "notes", icon: <StickyNote size={17} />, label: { tr: "Boş Alan", en: "Empty space" } },
   { id: "intelligence", icon: <Brain size={17} />, label: { tr: "Yapay zeka", en: "Intelligence" } },
+  { id: "categories", icon: <Layers3 size={17} />, label: { tr: "Kategori rehberi", en: "Category guide" } },
+  { id: "account", icon: <UserCog size={17} />, label: { tr: "Hesap", en: "Account" } },
 ];
 
 const businessNavItems: { id: ViewId; icon: React.ReactNode; label: Dict }[] = [
@@ -97,7 +102,7 @@ function NavItem({
   );
 }
 
-export function Dashboard({ userId }: { userId: string }) {
+export function Dashboard({ userId, email }: { userId: string; email: string }) {
   const [mode, setMode] = useState<Mode>("personal");
   const [view, setView] = useState<ViewId>("flow");
   const [dashboard, setDashboard] = useState<{ todayTasks: number; todayAppointments: number } | null>(null);
@@ -288,6 +293,8 @@ export function Dashboard({ userId }: { userId: string }) {
         {view === "space" && <PanelWrap><SpaceScreen userId={userId} /></PanelWrap>}
         {view === "intelligence" && <PanelWrap><IntelligenceScreen /></PanelWrap>}
         {view === "events" && <PanelWrap><EventsScreen userId={userId} /></PanelWrap>}
+        {view === "account" && <PanelWrap><AccountScreen email={email} /></PanelWrap>}
+        {view === "categories" && <PanelWrap><CategoriesScreen /></PanelWrap>}
         {view === "biz-location" && <PanelWrap><BusinessLocationPanel userId={userId} /></PanelWrap>}
         {view === "biz-appointments" && <PanelWrap><BusinessAppointmentsPanel userId={userId} /></PanelWrap>}
         {view === "biz-customers" && <PanelWrap><BusinessCustomersPanel userId={userId} /></PanelWrap>}
@@ -304,7 +311,7 @@ export function Dashboard({ userId }: { userId: string }) {
         {view === "biz-pricing" && <PanelWrap><PricingPanel /></PanelWrap>}
         {![
           "flow", "tasks", "notes", "discover", "stylesync",
-          "calendar", "sports", "space", "intelligence", "events",
+          "calendar", "sports", "space", "intelligence", "events", "account", "categories",
           "biz-location", "biz-appointments", "biz-customers", "biz-suggestions",
           "biz-staff", "biz-inventory", "biz-reports", "biz-marketing", "biz-settings",
           "biz-loyalty", "biz-competition", "biz-performance", "biz-supply", "biz-pricing",
@@ -322,6 +329,7 @@ export function Dashboard({ userId }: { userId: string }) {
           <span>{tt({ tr: "Kişisel hayat ve işletme akışı, tek noktada.", en: "One clear flow for life and business." })}</span>
         </footer>
       </main>
+      <AssistantFab isBusiness={mode === "business"} go={(id) => setView(id as ViewId)} />
     </div>
   );
 }

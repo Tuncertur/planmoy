@@ -6,7 +6,6 @@ import { Dashboard } from "./screens/Dashboard";
 import { ConfigMissingScreen } from "./screens/ConfigMissingScreen";
 import { LegalScreen } from "./screens/LegalScreen";
 import { CookieConsent } from "./components/CookieConsent";
-import { AssistantFab } from "./components/AssistantFab";
 import { ThemeSwitcher } from "./components/ThemeSwitcher";
 
 function App() {
@@ -21,8 +20,7 @@ function App() {
   return (
     <>
       <ThemeSwitcher />
-      {!session ? <AuthScreen onOpenLegal={() => setShowLegal(true)} /> : <Dashboard userId={session.user.id} />}
-      {session && <AssistantFab />}
+      {!session ? <AuthScreen onOpenLegal={() => setShowLegal(true)} /> : <Dashboard userId={session.user.id} email={session.user.email ?? ""} />}
       <CookieConsent />
     </>
   );
