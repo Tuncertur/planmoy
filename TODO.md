@@ -65,3 +65,23 @@
 - [ ] İlgi Alanlarım (SpaceScreen) hâlâ kendi ayrı konum inputunu
   kullanıyor — bir sonraki turda `useLocationSource` ile birleştirilecek
   ki elle adres her yerde aynı şekilde çalışsın
+
+## Bu turda düzeltilenler
+
+- ✅ Konum önceliği düzeltildi: artık ÖNCE elle girilen adrese bakılıyor,
+  GPS sadece elle adres yoksa devreye giriyor (GPS'in bazı ülkelerde
+  yanlış konum göstermesi sorununa karşı)
+- ✅ Tatil Planlama: nereden-nereye + gidiş/dönüş tarihi + ulaşım tercihi
+  (uçak/tren/otobüs/araba — araba seçilince dinlenme tesisli yol tarifi
+  linki çıkıyor) + İlgi Alanlarım verisiyle kişiselleştirilmiş AI planı
+
+## Netleştirilmesi gereken nokta
+
+"Anket" isteğini İlgi Alanlarım (user_interests) tablosunu kişiselleştirme
+sinyali olarak KULLANARAK karşıladım — ayrı, yeni bir "yapay zeka sohbet
+anketi" akışı KURMADIM (zaman/kapsam nedeniyle). Tatil Planlama artık
+mevcut ilgi alanlarını okuyup öneriye yansıtıyor, boşsa kullanıcıyı
+İlgi Alanlarım'ı doldurmaya yönlendiriyor. Eğer gerçekten ayrı, AI'ın
+soru sorduğu bir anket akışı istiyorsan (örn. "3 soru soracağım, cevapla")
+bunu ayrıca kurarım — şimdilik mevcut veriyi yeniden kullanmak daha hızlı
+ve tutarlıydı.
