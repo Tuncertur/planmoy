@@ -106,3 +106,28 @@ ve tutarlıydı.
 - ⚠️ Sanatçı takibi — KISMİ: otomatik arka plan bildirimi (cron) kurulmadı, bunun yerine
   kaydedilen her sanatçı için hazır Google arama linki sunuluyor. Gerçek otomatik bildirim
   için ileride pg_cron + bildirim tablosu + (opsiyonel push/e-posta) altyapısı gerekecek.
+
+## Profil Paylaş (bu turda eklendi — ÖNEMLİ TASARIM KARARI)
+
+- ✅ "Profil Paylaş" ayrı bir menü öğesi olarak eklendi (Hesap'ın altında)
+- ✅ Takma ad, yaş (18+ zorunlu), cinsiyet (kadın/erkek, zorunlu), planlar,
+  gidilecek yerler, elle eklenen ilgi alanları
+- ✅ Paylaşım linki üretiyor (Etkinlik davetiyle aynı model)
+- ⚠️ BİLİNÇLİ KARAR: Bunu herkese açık, aranabilir bir "yakınımdakiler"
+  dizini olarak KURMADIM — sadece linki paylaştığın kişiler görebiliyor.
+  Yaş doğrulaması olmadan açık bir dizin kurmak ciddi güvenlik riski
+  taşırdı. Eğer gerçekten "bölgedeki herkes görebilsin" istiyorsan bunu
+  konuşmamız lazım — bu, çok daha kapsamlı bir güvenlik/moderasyon
+  altyapısı (kimlik doğrulama, engelleme/şikayet sistemi vb.) gerektirir.
+- ✅ Ayrı güvenlik onay kutusu + her iki tarafta da (oluşturma ve
+  görüntüleme) net güvenlik uyarıları
+- ✅ Gizlilik Politikası yeni bölümlerle güncellendi (madde 2, 3, 3a)
+
+## Bu turda bulunan ve düzeltilen güvenlik açığı
+
+- ✅ Etkinlik davet sayfası (events.$token) daha önce doğrudan client RLS
+  ile çalışıyordu ama events tablosunda herkese açık okuma izni hiç
+  yoktu — ziyaretçiler için muhtemelen boş/kırık çalışıyordu. Artık
+  get-shared-event Edge Function'ı (service role, sadece token'a uyan
+  satırı döndürür) kullanıyor. Aynı güvenli desen yeni profil paylaşımı
+  için de (get-shared-profile) kullanıldı.
