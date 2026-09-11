@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useSession } from "./lib/useSession";
 import { isSupabaseConfigured } from "./lib/supabase";
 import { AuthScreen } from "./screens/AuthScreen";
@@ -7,22 +8,36 @@ import { ConfigMissingScreen } from "./screens/ConfigMissingScreen";
 import { LegalScreen } from "./screens/LegalScreen";
 import { CookieConsent } from "./components/CookieConsent";
 import { ThemeSwitcher } from "./components/ThemeSwitcher";
+import { EventRsvpScreen } from "./screens/EventRsvpScreen";
+import { PublicBookingScreen } from "./screens/PublicBookingScreen";
 
-function App() {
+function MainApp() {
   const { session, loading } = useSession();
   const [showLegal, setShowLegal] = useState(false);
 
-  if (!isSupabaseConfigured) return <ConfigMissingScreen />;
   if (loading) return null;
-
   if (showLegal) return <LegalScreen onBack={() => setShowLegal(false)} />;
 
+  return !session ? (
+    <AuthScreen onOpenLegal={() => setShowLegal(true)} />
+  ) : (
+    <Dashboard userId={session.user.id} email={session.user.email ?? ""} />
+  );
+}
+
+function App() {
+  if (!isSupabaseConfigured) return <ConfigMissingScreen />;
+
   return (
-    <>
+    <BrowserRouter>
       <ThemeSwitcher />
-      {!session ? <AuthScreen onOpenLegal={() => setShowLegal(true)} /> : <Dashboard userId={session.user.id} email={session.user.email ?? ""} />}
+      <Routes>
+        <Route path="/events/:token" element={<EventRsvpScreen />} />
+        <Route path="/book/:slug" element={<PublicBookingScreen />} />
+        <Route path="/*" element={<MainApp />} />
+      </Routes>
       <CookieConsent />
-    </>
+    </BrowserRouter>
   );
 }
 
