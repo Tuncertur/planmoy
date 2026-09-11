@@ -237,60 +237,64 @@ export function Dashboard({ userId, email }: { userId: string; email: string }) 
           </div>
         </header>
 
-        <section className="mode-hero">
-          <div>
-            <p className="eyebrow blue-label">{mode === "personal" ? tt({ tr: "KİŞİSEL AKIŞ", en: "PERSONAL FLOW" }) : tt({ tr: "İŞLETME AKIŞI", en: "BUSINESS FLOW" })}</p>
-            <h2>
-              {mode === "personal" ? (
-                <>
-                  {tt({ tr: "Günün akışı,", en: "Your day," })}
-                  <br />
-                  {tt({ tr: "senin ritminde.", en: "in your rhythm." })}
-                </>
-              ) : (
-                <>
-                  {tt({ tr: "İşletmen için", en: "A clearer flow" })}
-                  <br />
-                  {tt({ tr: "daha net bir akış.", en: "for your business." })}
-                </>
-              )}
-            </h2>
-            <p className="intro">
-              {mode === "personal"
-                ? tt({ tr: "Randevular, görevler, stil ve keşif önerileri tek bir sakin çalışma alanında.", en: "Appointments, tasks, style, and discovery in one calm workspace." })
-                : tt({ tr: "Takvim, hizmetler, ekip ve danışan deneyimi için ihtiyacın olan sade panel.", en: "A focused panel for calendars, services, teams, and clients." })}
-            </p>
-          </div>
-          <div className="flow-orb">
-            <span className="orb-ring" />
-            <span className="orb-dot dot-one" />
-            <span className="orb-dot dot-two" />
-            <b>FLOW</b>
-          </div>
-        </section>
+        {view === "flow" && (
+          <>
+            <section className="mode-hero">
+              <div>
+                <p className="eyebrow blue-label">{mode === "personal" ? tt({ tr: "KİŞİSEL AKIŞ", en: "PERSONAL FLOW" }) : tt({ tr: "İŞLETME AKIŞI", en: "BUSINESS FLOW" })}</p>
+                <h2>
+                  {mode === "personal" ? (
+                    <>
+                      {tt({ tr: "Günün akışı,", en: "Your day," })}
+                      <br />
+                      {tt({ tr: "senin ritminde.", en: "in your rhythm." })}
+                    </>
+                  ) : (
+                    <>
+                      {tt({ tr: "İşletmen için", en: "A clearer flow" })}
+                      <br />
+                      {tt({ tr: "daha net bir akış.", en: "for your business." })}
+                    </>
+                  )}
+                </h2>
+                <p className="intro">
+                  {mode === "personal"
+                    ? tt({ tr: "Randevular, görevler, stil ve keşif önerileri tek bir sakin çalışma alanında.", en: "Appointments, tasks, style, and discovery in one calm workspace." })
+                    : tt({ tr: "Takvim, hizmetler, ekip ve danışan deneyimi için ihtiyacın olan sade panel.", en: "A focused panel for calendars, services, teams, and clients." })}
+                </p>
+              </div>
+              <div className="flow-orb">
+                <span className="orb-ring" />
+                <span className="orb-dot dot-one" />
+                <span className="orb-dot dot-two" />
+                <b>FLOW</b>
+              </div>
+            </section>
 
-        <section className="mode-switch" aria-label="Nasıl kullanacaksın?">
-          <button className={mode === "personal" ? "selected" : ""} onClick={() => switchMode("personal")}>
-            <span className="mode-icon">
-              <HeartPulse size={20} />
-            </span>
-            <span>
-              <strong>{tt({ tr: "Kişisel alan", en: "Personal space" })}</strong>
-              <small>{tt({ tr: "Takvimini, görevlerini ve günlük akışını yönet.", en: "Manage your calendar, tasks and daily flow." })}</small>
-            </span>
-            <ChevronRight size={17} />
-          </button>
-          <button className={mode === "business" ? "selected" : ""} onClick={() => switchMode("business")}>
-            <span className="mode-icon">
-              <Users size={20} />
-            </span>
-            <span>
-              <strong>{tt({ tr: "İşletme alanı", en: "Business space" })}</strong>
-              <small>{tt({ tr: "Randevularını, ekibini ve müşteri akışını yönet.", en: "Manage appointments, team and customer flow." })}</small>
-            </span>
-            <ChevronRight size={17} />
-          </button>
-        </section>
+            <section className="mode-switch" aria-label="Nasıl kullanacaksın?">
+              <button className={mode === "personal" ? "selected" : ""} onClick={() => switchMode("personal")}>
+                <span className="mode-icon">
+                  <HeartPulse size={20} />
+                </span>
+                <span>
+                  <strong>{tt({ tr: "Kişisel alan", en: "Personal space" })}</strong>
+                  <small>{tt({ tr: "Takvimini, görevlerini ve günlük akışını yönet.", en: "Manage your calendar, tasks and daily flow." })}</small>
+                </span>
+                <ChevronRight size={17} />
+              </button>
+              <button className={mode === "business" ? "selected" : ""} onClick={() => switchMode("business")}>
+                <span className="mode-icon">
+                  <Users size={20} />
+                </span>
+                <span>
+                  <strong>{tt({ tr: "İşletme alanı", en: "Business space" })}</strong>
+                  <small>{tt({ tr: "Randevularını, ekibini ve müşteri akışını yönet.", en: "Manage appointments, team and customer flow." })}</small>
+                </span>
+                <ChevronRight size={17} />
+              </button>
+            </section>
+          </>
+        )}
 
         {mode === "personal" && view === "flow" && (
           <PersonalView dashboard={dashboard} go={setView} userId={userId} />

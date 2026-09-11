@@ -28,13 +28,22 @@ export type Lang = (typeof SUPPORTED_LANGS)[number];
 export type Dict = { tr: string; en: string } & Partial<Record<Lang, string>>;
 
 let activeLang: Lang = "tr";
+const listeners = new Set<() => void>();
 
 export function setActiveLang(lang: Lang) {
   activeLang = lang;
+  listeners.forEach((fn) => fn());
 }
 
 export function getActiveLang(): Lang {
   return activeLang;
+}
+
+export function subscribeLang(fn: () => void) {
+  listeners.add(fn);
+  return () => {
+    listeners.delete(fn);
+  };
 }
 
 /**

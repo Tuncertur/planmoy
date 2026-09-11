@@ -1,13 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useSession } from "./lib/useSession";
 import { isSupabaseConfigured } from "./lib/supabase";
+import { subscribeLang } from "./lib/i18n";
 import { AuthScreen } from "./screens/AuthScreen";
 import { Dashboard } from "./screens/Dashboard";
 import { ConfigMissingScreen } from "./screens/ConfigMissingScreen";
 import { LegalScreen } from "./screens/LegalScreen";
 import { CookieConsent } from "./components/CookieConsent";
 import { ThemeSwitcher } from "./components/ThemeSwitcher";
+import { LanguageSwitcher } from "./components/LanguageSwitcher";
 import { EventRsvpScreen } from "./screens/EventRsvpScreen";
 import { PublicBookingScreen } from "./screens/PublicBookingScreen";
 import { ProfileViewScreen } from "./screens/ProfileViewScreen";
@@ -27,11 +29,18 @@ function MainApp() {
 }
 
 function App() {
+  // Dil değiştiğinde tt() her yerde farklı metin döndürsün diye tüm
+  // ağacı yeniden çizdiriyoruz (tt() React state'i değil, modül
+  // seviyesinde bir değişken okuduğu için bu gerekli).
+  const [, forceRerender] = useState(0);
+  useEffect(() => subscribeLang(() => forceRerender((v) => v + 1)), []);
+
   if (!isSupabaseConfigured) return <ConfigMissingScreen />;
 
   return (
     <BrowserRouter>
       <ThemeSwitcher />
+      <LanguageSwitcher />
       <Routes>
         <Route path="/events/:token" element={<EventRsvpScreen />} />
         <Route path="/book/:slug" element={<PublicBookingScreen />} />
