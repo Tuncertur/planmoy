@@ -3,7 +3,7 @@ import {
   ArrowUpRight, CalendarDays, Check, ChevronRight, Compass, FileText,
   HeartPulse, LayoutDashboard, ListChecks, Plus, Scissors, Settings2,
   Sparkles, Users, WandSparkles, Dumbbell, Brain, StickyNote, MapPin,
-  Lightbulb, Flame, Layers3, UserCog,
+  Lightbulb, Flame, Layers3, UserCog, Plane, Building2, Utensils, Music,
 } from "lucide-react";
 import { tt, type Dict } from "../lib/i18n";
 import { supabase } from "../lib/supabase";
@@ -19,6 +19,7 @@ import { EventsScreen } from "./EventsScreen";
 import { AssistantFab } from "../components/AssistantFab";
 import { AccountScreen } from "./AccountScreen";
 import { CategoriesScreen } from "./CategoriesScreen";
+import { TripPlannerScreen } from "./TripPlannerScreen";
 import { ComingSoon } from "../components/ComingSoon";
 import {
   StaffPanel, InventoryPanel, ReportsPanel, MarketingPanel, BusinessSettingsPanel,
@@ -31,18 +32,19 @@ import {
 
 type Mode = "personal" | "business";
 type ViewId =
-  | "flow" | "calendar" | "tasks" | "stylesync" | "discover"
+  | "flow" | "calendar" | "tasks" | "stylesync" | "discover" | "trip"
   | "sports" | "events" | "space" | "notes" | "intelligence" | "personal-tools" | "account" | "categories"
   | "biz-location" | "biz-appointments" | "biz-customers" | "biz-suggestions"
   | "biz-staff" | "biz-inventory" | "biz-reports" | "biz-marketing" | "biz-settings"
   | "biz-loyalty" | "biz-competition" | "biz-performance" | "biz-supply" | "biz-pricing";
 
-const personalNavItems: { id: ViewId; icon: React.ReactNode; label: Dict }[] = [
+const personalNavItems: { id: ViewId; icon: React.ReactNode; label: Dict; external?: string }[] = [
   { id: "flow", icon: <LayoutDashboard size={17} />, label: { tr: "Genel bakış", en: "Overview" } },
   { id: "calendar", icon: <CalendarDays size={17} />, label: { tr: "Zaman akışı", en: "Time flow" } },
   { id: "tasks", icon: <ListChecks size={17} />, label: { tr: "Yapılacaklar", en: "Tasks" } },
   { id: "stylesync", icon: <WandSparkles size={17} />, label: { tr: "StyleSync", en: "StyleSync" } },
   { id: "discover", icon: <Compass size={17} />, label: { tr: "Keşfet", en: "Discover" } },
+  { id: "trip", icon: <Plane size={17} />, label: { tr: "Tatil Planla", en: "Plan a Trip" } },
   { id: "sports", icon: <Dumbbell size={17} />, label: { tr: "Spor akışı", en: "Sports flow" } },
   { id: "events", icon: <Users size={17} />, label: { tr: "Etkinlikler", en: "Events" } },
   { id: "space", icon: <FileText size={17} />, label: { tr: "İlgi alanlarım", en: "My interests" } },
@@ -50,6 +52,10 @@ const personalNavItems: { id: ViewId; icon: React.ReactNode; label: Dict }[] = [
   { id: "intelligence", icon: <Brain size={17} />, label: { tr: "Yapay zeka", en: "Intelligence" } },
   { id: "categories", icon: <Layers3 size={17} />, label: { tr: "Kategori rehberi", en: "Category guide" } },
   { id: "account", icon: <UserCog size={17} />, label: { tr: "Hesap", en: "Account" } },
+  { id: "ext-hotels" as ViewId, icon: <Building2 size={17} />, label: { tr: "Oteller", en: "Hotels" }, external: "https://www.google.com/travel/hotels" },
+  { id: "ext-flights" as ViewId, icon: <Plane size={17} />, label: { tr: "Uçaklar", en: "Flights" }, external: "https://www.google.com/travel/flights" },
+  { id: "ext-restaurants" as ViewId, icon: <Utensils size={17} />, label: { tr: "Restoranlar", en: "Restaurants" }, external: "https://www.google.com/maps/search/restaurants+near+me" },
+  { id: "ext-concerts" as ViewId, icon: <Music size={17} />, label: { tr: "Konserler", en: "Concerts" }, external: "https://www.google.com/search?q=concerts+near+me" },
 ];
 
 const businessNavItems: { id: ViewId; icon: React.ReactNode; label: Dict }[] = [
@@ -188,7 +194,7 @@ export function Dashboard({ userId, email }: { userId: string; email: string }) 
               key={item.id}
               item={item}
               active={view === item.id}
-              onClick={() => setView(item.id)}
+              onClick={() => (item as any).external ? window.open((item as any).external, "_blank") : setView(item.id)}
               onDragStart={() => (dragId.current = item.id)}
               onDragOver={(e) => e.preventDefault()}
               onDrop={() => handleDrop(item.id)}
@@ -286,7 +292,8 @@ export function Dashboard({ userId, email }: { userId: string; email: string }) 
 
         {view === "tasks" && <PanelWrap><TasksInline userId={userId} /></PanelWrap>}
         {view === "notes" && <PanelWrap><NotesScreen userId={userId} /></PanelWrap>}
-        {view === "discover" && <PanelWrap><DiscoverScreen /></PanelWrap>}
+        {view === "discover" && <PanelWrap><DiscoverScreen userId={userId} /></PanelWrap>}
+        {view === "trip" && <PanelWrap><TripPlannerScreen userId={userId} /></PanelWrap>}
         {view === "stylesync" && <PanelWrap><StyleSyncScreen userId={userId} /></PanelWrap>}
         {view === "calendar" && <PanelWrap><CalendarScreen userId={userId} /></PanelWrap>}
         {view === "sports" && <PanelWrap><SportsScreen /></PanelWrap>}
@@ -311,7 +318,7 @@ export function Dashboard({ userId, email }: { userId: string; email: string }) 
         {view === "biz-pricing" && <PanelWrap><PricingPanel /></PanelWrap>}
         {![
           "flow", "tasks", "notes", "discover", "stylesync",
-          "calendar", "sports", "space", "intelligence", "events", "account", "categories",
+          "calendar", "sports", "space", "intelligence", "events", "account", "categories", "trip",
           "biz-location", "biz-appointments", "biz-customers", "biz-suggestions",
           "biz-staff", "biz-inventory", "biz-reports", "biz-marketing", "biz-settings",
           "biz-loyalty", "biz-competition", "biz-performance", "biz-supply", "biz-pricing",

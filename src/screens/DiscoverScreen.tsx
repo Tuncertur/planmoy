@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Crosshair, Info, MapPin, Search, Star, ExternalLink } from "lucide-react";
 import { getNearbyPlaces, isWeekendWindow, type NearbyPlace } from "../lib/discover";
+import { useLocationSource } from "../lib/useLocationSource";
 import { tt } from "../lib/i18n";
 
 const categories = [
@@ -41,16 +42,25 @@ function formatDistance(meters: number) {
   return meters < 1000 ? `${meters} m` : `${(meters / 1000).toFixed(1)} km`;
 }
 
-export function DiscoverScreen() {
+export function DiscoverScreen({ userId }: { userId: string }) {
+  const location = useLocationSource(userId);
   const [category, setCategory] = useState<(typeof categories)[number]>("restaurant");
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<"idle" | "locating" | "loading" | "missing-key" | "provider-error" | "ready">("idle");
   const [places, setPlaces] = useState<NearbyPlace[]>([]);
   const [radiusKm, setRadiusKm] = useState(isWeekendWindow() ? 100 : 50);
 
-  async function runSearch(latitude: number, longitude: number, cat: (typeof categories)[number]) {
+  async function runSearch(cat: (typeof categories)[number]) {
+    if (!location.hasGps && !location.manualAddress.trim()) {
+      setStatus("idle");
+      return;
+    }
     setStatus("loading");
-    const result = await getNearbyPlaces({ latitude, longitude, category: cat, languageCode: "tr" });
+    const result = await getNearbyPlaces(
+      location.hasGps
+        ? { latitude: location.latitude!, longitude: location.longitude!, category: cat, languageCode: "tr" }
+        : { address: location.manualAddress, category: cat, languageCode: "tr" }
+    );
     if (!result.ok) {
       setStatus(result.reason === "missing-key" ? "missing-key" : "provider-error");
       return;
@@ -62,15 +72,16 @@ export function DiscoverScreen() {
 
   function locate() {
     setStatus("locating");
-    if (!navigator.geolocation) {
-      setStatus("provider-error");
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => runSearch(pos.coords.latitude, pos.coords.longitude, category),
-      () => setStatus("provider-error"),
-      { enableHighAccuracy: false, maximumAge: 300000, timeout: 10000 }
-    );
+    location.useGps();
+  }
+
+  useEffect(() => {
+    if (location.hasGps) runSearch(category);
+  }, [location.hasGps]);
+
+  async function searchWithManualAddress() {
+    await location.saveManualAddress();
+    runSearch(category);
   }
 
   const visible = places.filter((p) => `${p.name} ${p.address}`.toLocaleLowerCase("tr").includes(query.toLocaleLowerCase("tr")));
@@ -104,6 +115,24 @@ export function DiscoverScreen() {
         </button>
       </div>
 
+      {/* GPS çalışmayan ülkeler için — elle adres, GPS yoksa/başarısız olursa devreye girer */}
+      {!location.hasGps && (
+        <div className="orbit-card flex flex-col gap-2 p-3 sm:flex-row sm:items-center">
+          <label className="flex flex-1 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm">
+            <MapPin size={15} className="text-[var(--color-mist-500)]" />
+            <input
+              value={location.manualAddress}
+              onChange={(e) => location.setManualAddress(e.target.value)}
+              placeholder={tt({ tr: "GPS çalışmıyorsa adresini elle yaz (örn. Kadıköy, İstanbul)", en: "If GPS doesn't work, type your address (e.g. downtown)" })}
+              className="w-full bg-transparent outline-none"
+            />
+          </label>
+          <button onClick={searchWithManualAddress} className="rounded-xl bg-[var(--color-cyan-400)] px-4 py-2 text-sm font-medium text-[var(--color-space-950)]">
+            {tt({ tr: "Bu adrese göre ara", en: "Search from this address" })}
+          </button>
+        </div>
+      )}
+
       <div className="flex items-center gap-2 text-xs text-[var(--color-mist-500)]">
         <MapPin size={13} />
         {radiusKm} km {tt({ tr: "arama yarıçapı", en: "search radius" })}
@@ -118,8 +147,7 @@ export function DiscoverScreen() {
             key={c}
             onClick={() => {
               setCategory(c);
-              setPlaces([]);
-              setStatus("idle");
+              if (location.hasGps || location.manualAddress.trim()) runSearch(c);
             }}
             className={`rounded-xl px-3 py-1.5 text-sm transition-colors ${
               category === c

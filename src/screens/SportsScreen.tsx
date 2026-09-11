@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Bike, CircleDot, Dumbbell, ExternalLink, Globe2, Mountain, Newspaper, Trophy, Waves } from "lucide-react";
+import { supabase } from "../lib/supabase";
 import { tt } from "../lib/i18n";
 
 // FireVibe'ın gerçek src/routes/sports.tsx dosyasından birebir taşınmıştır
@@ -68,6 +69,77 @@ export function SportsScreen() {
           </p>
         </div>
       </section>
+
+      <LiveFixtures />
     </div>
+  );
+}
+
+const fixtureSports = [
+  { id: "football", label: { tr: "Futbol", en: "Football" } },
+  { id: "basketball", label: { tr: "Basketbol", en: "Basketball" } },
+  { id: "tennis", label: { tr: "Tenis", en: "Tennis" } },
+  { id: "volleyball", label: { tr: "Voleybol", en: "Volleyball" } },
+] as const;
+
+function LiveFixtures() {
+  const [sport, setSport] = useState<(typeof fixtureSports)[number]["id"]>("football");
+  const [status, setStatus] = useState<"idle" | "loading" | "error" | "ready">("idle");
+  const [events, setEvents] = useState<{ id: string; league: string; home: string; away: string; time: string; venue: string }[]>([]);
+
+  async function load(next: typeof sport) {
+    setSport(next);
+    setStatus("loading");
+    const { data, error } = await supabase.functions.invoke("sports-fixtures", { body: { sport: next } });
+    if (error || !data?.ok) {
+      setStatus("error");
+      return;
+    }
+    setEvents(data.events);
+    setStatus("ready");
+  }
+
+  return (
+    <section className="orbit-card p-4 mt-4">
+      <div className="flex items-center justify-between">
+        <p className="eyebrow blue-label">{tt({ tr: "Bugünün müsabakaları", en: "Today's fixtures" })}</p>
+      </div>
+      <div className="flex flex-wrap gap-2 mt-2">
+        {fixtureSports.map((s) => (
+          <button
+            key={s.id}
+            onClick={() => load(s.id)}
+            className={`rounded-xl px-3 py-1.5 text-sm ${sport === s.id ? "bg-[var(--color-cyan-400)] text-[var(--color-space-950)]" : "border border-white/10 bg-white/5"}`}
+          >
+            {tt(s.label)}
+          </button>
+        ))}
+      </div>
+      <p className="text-xs text-[var(--color-mist-500)] mt-3">
+        {tt({
+          tr: "Ücretsiz veri kaynağı ülkeye göre filtreleme desteklemiyor — tüm dünyadan bugünün maçları listelenir.",
+          en: "The free data source doesn't support country filtering — today's matches worldwide are listed.",
+        })}
+      </p>
+      {status === "idle" && <p className="text-sm text-[var(--color-mist-500)] mt-3">{tt({ tr: "Bir branş seç.", en: "Pick a sport." })}</p>}
+      {status === "loading" && <p className="text-sm text-[var(--color-mist-500)] mt-3">{tt({ tr: "Yükleniyor…", en: "Loading…" })}</p>}
+      {status === "error" && <p className="text-sm text-[var(--color-mist-500)] mt-3">{tt({ tr: "Maç verisi alınamadı.", en: "Couldn't load fixtures." })}</p>}
+      {status === "ready" && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3">
+          {events.length === 0 && <p className="text-sm text-[var(--color-mist-500)]">{tt({ tr: "Bugün bu branşta maç yok.", en: "No matches today in this sport." })}</p>}
+          {events.map((e) => (
+            <div key={e.id} className="rounded-xl border border-white/10 p-3 text-sm">
+              <p className="text-xs text-[var(--color-cyan-300)]">{e.league}</p>
+              <p className="font-medium">
+                {e.home} <span className="text-[var(--color-mist-500)]">vs</span> {e.away}
+              </p>
+              <p className="text-xs text-[var(--color-mist-500)] mt-1">
+                {e.time} {e.venue ? `· ${e.venue}` : ""}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }

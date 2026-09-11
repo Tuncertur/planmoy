@@ -17,8 +17,9 @@ export type DiscoverResult =
   | { ok: false; reason: "missing-key" | "provider-error" | "method-not-allowed"; places: [] };
 
 export async function getNearbyPlaces(params: {
-  latitude: number;
-  longitude: number;
+  latitude?: number;
+  longitude?: number;
+  address?: string;
   category: string;
   languageCode?: string;
 }): Promise<DiscoverResult> {

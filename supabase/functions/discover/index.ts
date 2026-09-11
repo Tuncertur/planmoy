@@ -56,9 +56,14 @@ serve(async (req) => {
     });
   }
 
-  const { latitude, longitude, category, languageCode } = await req.json();
+  const { latitude, longitude, address, category, languageCode } = await req.json();
   const radius = radiusForToday();
-  const query = CATEGORY_QUERIES[category] ?? CATEGORY_QUERIES.places;
+  const categoryQuery = CATEGORY_QUERIES[category] ?? CATEGORY_QUERIES.places;
+  const hasCoords = typeof latitude === "number" && typeof longitude === "number";
+
+  // GPS bazı ülkelerde çalışmıyor — koordinat yoksa elle girilen adresi
+  // arama metnine ekleyip locationBias olmadan aratıyoruz.
+  const textQuery = hasCoords ? categoryQuery : `${categoryQuery} ${address ?? ""}`.trim();
 
   const response = await fetch("https://places.googleapis.com/v1/places:searchText", {
     method: "POST",
@@ -69,11 +74,11 @@ serve(async (req) => {
         "places.id,places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.googleMapsUri,places.websiteUri,places.location",
     },
     body: JSON.stringify({
-      textQuery: query,
+      textQuery,
       languageCode: languageCode ?? "tr",
       maxResultCount: 20,
-      rankPreference: "DISTANCE",
-      locationBias: { circle: { center: { latitude, longitude }, radius } },
+      rankPreference: hasCoords ? "DISTANCE" : "RELEVANCE",
+      ...(hasCoords ? { locationBias: { circle: { center: { latitude, longitude }, radius } } } : {}),
     }),
   });
 
@@ -92,7 +97,7 @@ serve(async (req) => {
       rating: typeof p.rating === "number" ? p.rating : null,
       userRatingCount: typeof p.userRatingCount === "number" ? p.userRatingCount : null,
       distanceMeters:
-        p.location?.latitude !== undefined && p.location?.longitude !== undefined
+        hasCoords && p.location?.latitude !== undefined && p.location?.longitude !== undefined
           ? distanceInMeters(latitude, longitude, p.location.latitude, p.location.longitude)
           : null,
       mapsUrl: p.googleMapsUri ?? null,
