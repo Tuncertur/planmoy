@@ -7,6 +7,7 @@ import { ConfigMissingScreen } from "./screens/ConfigMissingScreen";
 import { LegalScreen } from "./screens/LegalScreen";
 import { CookieConsent } from "./components/CookieConsent";
 import { AssistantFab } from "./components/AssistantFab";
+import { ThemeSwitcher } from "./components/ThemeSwitcher";
 
 function App() {
   const { session, loading } = useSession();
@@ -19,6 +20,7 @@ function App() {
 
   return (
     <>
+      <ThemeSwitcher />
       {!session ? <AuthScreen onOpenLegal={() => setShowLegal(true)} /> : <Dashboard userId={session.user.id} />}
       {session && <AssistantFab />}
       <CookieConsent />
