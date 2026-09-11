@@ -97,3 +97,12 @@ ve tutarlıydı.
   gerektiriyor, "tek sorgu" prensibiyle çelişirdi) — bilinçli karar
 - ✅ Yasal sorumluluk notu her ekranın altına eklendi ("Planmoy içerik
   doğruluğundan sorumlu değildir, işletmeyi kendi kaynağından teyit et")
+
+## Bu turda tamamlanan 3 madde (sıralı istek)
+
+- ✅ Akışım'a Günün Özeti widget'ı (popüler otel/restoran + bugünün maçı + gardıroba göre kıyafet)
+- ✅ Otellerde tercihe göre sıralama (Kişiselleştir cevaplarından "uygun/ucuz" tespit edilirse
+  fiyata göre, aksi halde puana göre — Google fiyat seviyesi ₺-₺₺₺₺ eklendi)
+- ⚠️ Sanatçı takibi — KISMİ: otomatik arka plan bildirimi (cron) kurulmadı, bunun yerine
+  kaydedilen her sanatçı için hazır Google arama linki sunuluyor. Gerçek otomatik bildirim
+  için ileride pg_cron + bildirim tablosu + (opsiyonel push/e-posta) altyapısı gerekecek.
