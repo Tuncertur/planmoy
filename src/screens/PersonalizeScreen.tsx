@@ -176,6 +176,47 @@ export function PersonalizeScreen({ userId }: { userId: string }) {
           })}
         </p>
       </div>
+
+      <ArtistWatchlist userId={userId} />
+    </div>
+  );
+}
+
+function ArtistWatchlist({ userId }: { userId: string }) {
+  const [artists, setArtists] = useState<string[]>([]);
+
+  async function load() {
+    const { data } = await supabase.from("user_interests").select("name").eq("user_id", userId).eq("kind", "konser-muzik");
+    setArtists((data ?? []).map((i) => i.name));
+  }
+  useState(() => {
+    load();
+  });
+
+  if (!artists.length) return null;
+
+  return (
+    <div className="orbit-card p-4">
+      <p className="eyebrow blue-label">{tt({ tr: "Sanatçı takibi", en: "Artist watchlist" })}</p>
+      <p className="mt-1 text-xs text-[var(--color-mist-500)]">
+        {tt({
+          tr: "Otomatik arka plan bildirimi için henüz altyapımız yok — ama Kişiselleştir'de kaydettiğin her cevap için hazır bir arama linki hazırladık, tek tıkla kontrol edebilirsin.",
+          en: "We don't have automatic background alerts yet — but for each saved answer, here's a ready search link so you can check with one click.",
+        })}
+      </p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {artists.map((a) => (
+          <a
+            key={a}
+            href={`https://www.google.com/search?q=${encodeURIComponent(`${a} konser bileti 2026`)}`}
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-[var(--color-cyan-300)] hover:bg-white/10"
+          >
+            {a} {tt({ tr: "konserini kontrol et", en: "— check concerts" })}
+          </a>
+        ))}
+      </div>
     </div>
   );
 }
