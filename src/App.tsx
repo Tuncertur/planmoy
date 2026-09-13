@@ -13,6 +13,8 @@ import { LanguageSwitcher } from "./components/LanguageSwitcher";
 import { EventRsvpScreen } from "./screens/EventRsvpScreen";
 import { PublicBookingScreen } from "./screens/PublicBookingScreen";
 import { ProfileViewScreen } from "./screens/ProfileViewScreen";
+import { PricingScreen } from "./screens/PricingScreen";
+import { BusinessProfileScreen } from "./screens/BusinessProfileScreen";
 
 function MainApp() {
   const { session, loading } = useSession();
@@ -45,6 +47,9 @@ function App() {
         <Route path="/events/:token" element={<EventRsvpScreen />} />
         <Route path="/book/:slug" element={<PublicBookingScreen />} />
         <Route path="/profile/:token" element={<ProfileViewScreen />} />
+        <Route path="/legal" element={<LegalScreen onBack={() => window.history.back()} />} />
+        <Route path="/pricing" element={<PricingScreen />} />
+        <Route path="/businesses/:slug" element={<BusinessProfileScreen />} />
         <Route path="/*" element={<MainApp />} />
       </Routes>
       <CookieConsent />
