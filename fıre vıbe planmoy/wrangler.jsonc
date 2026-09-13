@@ -1,0 +1,9 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "firevibe-app",
+  "compatibility_date": "2025-09-02",
+  "compatibility_flags": ["nodejs_compat"],
+  // The app's SSR error wrapper, which delegates to
+  // @tanstack/react-start/server-entry (see src/server.ts).
+  "main": "src/server.ts"
+}

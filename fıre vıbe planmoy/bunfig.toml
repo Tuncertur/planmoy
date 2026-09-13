@@ -1,0 +1,15 @@
+[install]
+# Text lockfile: readable in diffs, so a dependency change is reviewable in
+# the project's version history instead of an opaque binary blob.
+saveTextLockfile = true
+
+# Dependency freshness window: do not install package versions published
+# less than 24 hours ago. Faulty or withdrawn releases are usually pulled
+# within hours, so a short delay avoids most of them at almost no cost.
+minimumReleaseAge = 86400
+
+# Each entry below waives the 24-hour window for ONE package. FireVibe's own
+# platform packages are listed so a template fix can reach projects
+# immediately. Confirm with the user before adding any other name: every
+# entry narrows the check above.
+minimumReleaseAgeExcludes = ["@firevibe/vite-tanstack-config"]
