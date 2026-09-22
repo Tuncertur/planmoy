@@ -10,7 +10,7 @@ workflows:
         certificates:
           - planmoy
         provisioning_profiles:
-          - planmoy
+          - com.planmoy.app
       vars:
         BUNDLE_ID: "com.planmoy.app"
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
