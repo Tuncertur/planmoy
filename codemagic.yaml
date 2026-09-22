@@ -48,11 +48,10 @@ workflows:
         script: |
           xcode-project use-profiles
 
-      - name: Set build number from App Store Connect
+      - name: Set build number
         script: |
           cd ios/App
-          LATEST_BUILD=$(app-store-connect get-latest-app-store-build-number "6814797446" || echo 0)
-          agvtool new-version -all $(($LATEST_BUILD + 1))
+          agvtool new-version -all $(date +%s)
 
       - name: Declare non-exempt encryption
         script: |
