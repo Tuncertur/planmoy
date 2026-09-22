@@ -55,49 +55,9 @@ workflows:
 
       - name: Build ipa
         script: |
-          set -x
-          mkdir -p build/ios/xcarchive
-          xcodebuild -workspace "$XCODE_WORKSPACE" \
-            -scheme "$XCODE_SCHEME" \
-            -archivePath build/ios/xcarchive/App.xcarchive \
-            -destination "generic/platform=iOS" \
-            DEVELOPMENT_TEAM=ACF8775WKR \
-            CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
-            archive | tee /tmp/xcodebuild_archive.log | xcbeautify || true
-          test -d build/ios/xcarchive/App.xcarchive
-
-      - name: Export ipa
-        script: |
-          set -x
-          mkdir -p build/ios/ipa
-          cat > /tmp/ExportOptions.plist << PLIST
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-            <key>method</key>
-            <string>app-store-connect</string>
-            <key>teamID</key>
-            <string>ACF8775WKR</string>
-            <key>signingStyle</key>
-            <string>manual</string>
-            <key>provisioningProfiles</key>
-            <dict>
-              <key>com.planmoy.app</key>
-              <string>com.planmoy.app</string>
-            </dict>
-          </dict>
-          </plist>
-          PLIST
-          xcodebuild -exportArchive \
-            -archivePath build/ios/xcarchive/App.xcarchive \
-            -exportPath build/ios/ipa \
-            -exportOptionsPlist /tmp/ExportOptions.plist \
-            | tee /tmp/xcodebuild_export.log | xcbeautify || true
-          echo "----- EXPORT HATA GÜNLÜĞÜ (son 60 satır) -----"
-          tail -n 60 /tmp/xcodebuild_export.log
-          ls -la build/ios/ipa/
+          xcode-project build-ipa \
+            --workspace "$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME"
 
     artifacts:
       - build/ios/ipa/*.ipa
