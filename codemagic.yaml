@@ -27,8 +27,9 @@ workflows:
         script: |
           npm run build
 
-      - name: Add iOS platform
+     - name: Add iOS platform
         script: |
+          npm install @capacitor/ios
           rm -rf ios
           npx cap add ios
           npx cap sync ios
