@@ -25,6 +25,12 @@ workflows:
 
       - name: Build web assets
         script: |
+          cat > .env.local << 'ENVEOF'
+          VITE_SUPABASE_URL=https://jveqmmmzwskgbvkcmgki.supabase.co
+          VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2ZXFtbW16d3NrZ2J2a2NtZ2tpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg5NTYzNDgsImV4cCI6MjEwNDUzMjM0OH0.VmODv6M2HQdebP-ylAznZQjaFg9mSpmAVSUERiYN_2Y
+          VITE_PADDLE_CLIENT_TOKEN=live_3381ff0c0f887d38d87fc45458b
+          VITE_PADDLE_ENVIRONMENT=production
+          ENVEOF
           npm run build
 
       - name: Add iOS platform
