@@ -31,7 +31,7 @@ workflows:
         script: |
           npm install @capacitor/ios
           rm -rf ios
-          npx cap add ios
+          npx cap add ios --packagemanager Cocoapods
           npx cap sync ios
 
       - name: Install CocoaPods dependencies
