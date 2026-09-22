@@ -27,7 +27,7 @@ workflows:
         script: |
           npm run build
 
-     - name: Add iOS platform
+      - name: Add iOS platform
         script: |
           npm install @capacitor/ios
           rm -rf ios
@@ -55,4 +55,16 @@ workflows:
 
       - name: Build ipa
         script: |
-          xcode-project
+          xcode-project build-ipa \
+            --workspace "$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME"
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        submit_to_app_store: false
