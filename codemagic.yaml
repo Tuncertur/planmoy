@@ -58,6 +58,15 @@ workflows:
           /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" ios/App/App/Info.plist || \
           /usr/libexec/PlistBuddy -c "Set :ITSAppUsesNonExemptEncryption false" ios/App/App/Info.plist
 
+      - name: Add camera and photo library permissions
+        script: |
+          /usr/libexec/PlistBuddy -c "Add :NSCameraUsageDescription string 'Planmoy, StyleSync için kıyafet fotoğrafı çekmene izin ister.'" ios/App/App/Info.plist || \
+          /usr/libexec/PlistBuddy -c "Set :NSCameraUsageDescription 'Planmoy, StyleSync için kıyafet fotoğrafı çekmene izin ister.'" ios/App/App/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryUsageDescription string 'Planmoy, StyleSync için galerinden fotoğraf seçmene izin ister.'" ios/App/App/Info.plist || \
+          /usr/libexec/PlistBuddy -c "Set :NSPhotoLibraryUsageDescription 'Planmoy, StyleSync için galerinden fotoğraf seçmene izin ister.'" ios/App/App/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryAddUsageDescription string 'Planmoy, seçtiğin fotoğrafı kaydetmek için izin ister.'" ios/App/App/Info.plist || \
+          /usr/libexec/PlistBuddy -c "Set :NSPhotoLibraryAddUsageDescription 'Planmoy, seçtiğin fotoğrafı kaydetmek için izin ister.'" ios/App/App/Info.plist
+
       - name: Build ipa
         script: |
           xcode-project build-ipa \
