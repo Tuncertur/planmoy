@@ -3,9 +3,13 @@ import {
   ArrowUpRight, CalendarDays, Check, ChevronRight, Compass, FileText,
   HeartPulse, LayoutDashboard, ListChecks, Plus, Scissors, Settings2,
   Sparkles, Users, WandSparkles, Dumbbell, Brain, StickyNote, MapPin,
-  Lightbulb, Flame, Layers3, UserCog, Plane, Building2, Utensils, Music, UserRound,
+  Lightbulb, Flame, Layers3, UserCog, Plane, Building2, Utensils, Music, UserRound, Phone, Pill,
 } from "lucide-react";
 import { tt, type Dict } from "../lib/i18n";
+import { NavSearch } from "../components/NavSearch";
+import { NotificationsBell } from "../components/NotificationsBell";
+import { DistrictSearch } from "../components/DistrictSearch";
+import { LocationBadge } from "../components/LocationBadge";
 import { supabase } from "../lib/supabase";
 import { askAi } from "../lib/ai";
 import { NotesScreen } from "./NotesScreen";
@@ -24,6 +28,8 @@ import { TripPlannerScreen } from "./TripPlannerScreen";
 import { TravelPlacesScreen } from "./TravelPlacesScreen";
 import { PersonalizeScreen } from "./PersonalizeScreen";
 import { ProfileShareScreen } from "./ProfileShareScreen";
+import { MedicationsScreen } from "./MedicationsScreen";
+import { EmergencyCallScreen } from "./EmergencyCallScreen";
 import { ComingSoon } from "../components/ComingSoon";
 import {
   StaffPanel, InventoryPanel, ReportsPanel, MarketingPanel, BusinessSettingsPanel,
@@ -37,15 +43,17 @@ import {
 type Mode = "personal" | "business";
 type ViewId =
   | "flow" | "calendar" | "tasks" | "stylesync" | "discover" | "trip" | "hotels" | "restaurants" | "places-to-visit" | "personalize" | "profile-share"
-  | "sports" | "events" | "space" | "notes" | "intelligence" | "personal-tools" | "account" | "categories"
+  | "sports" | "events" | "space" | "notes" | "intelligence" | "personal-tools" | "account" | "categories" | "medications" | "emergency-call"
   | "biz-location" | "biz-appointments" | "biz-customers" | "biz-suggestions"
   | "biz-staff" | "biz-inventory" | "biz-reports" | "biz-marketing" | "biz-settings"
   | "biz-loyalty" | "biz-competition" | "biz-performance" | "biz-supply" | "biz-pricing";
 
 const personalNavItems: { id: ViewId; icon: React.ReactNode; label: Dict; external?: string }[] = [
   { id: "flow", icon: <LayoutDashboard size={17} />, label: { tr: "Genel bakış", en: "Overview" } },
+  { id: "emergency-call", icon: <Phone size={17} />, label: { tr: "Acil Arama", en: "Emergency Call" } },
   { id: "calendar", icon: <CalendarDays size={17} />, label: { tr: "Zaman akışı", en: "Time flow" } },
   { id: "tasks", icon: <ListChecks size={17} />, label: { tr: "Yapılacaklar", en: "Tasks" } },
+  { id: "medications", icon: <Pill size={17} />, label: { tr: "İlaç Hatırlatma", en: "Medication Reminders" } },
   { id: "stylesync", icon: <WandSparkles size={17} />, label: { tr: "StyleSync", en: "StyleSync" } },
   { id: "discover", icon: <Compass size={17} />, label: { tr: "Keşfet", en: "Discover" } },
   { id: "hotels", icon: <Building2 size={17} />, label: { tr: "Oteller", en: "Hotels" } },
@@ -230,10 +238,14 @@ export function Dashboard({ userId, email }: { userId: string; email: string }) 
             <p className="eyebrow">Planmoy</p>
             <h1>{tt(currentNavItems.find((n) => n.id === view)?.label ?? { tr: "Genel bakış", en: "Overview" })}</h1>
           </div>
-          <div className="top-actions">
-            <span className="platform-note">
-              <i /> Web · Android · iOS
-            </span>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+            <NavSearch
+              items={[...personalNavItems, ...businessNavItems].map((n) => ({ id: n.id, icon: n.icon, label: n.label, external: (n as any).external }))}
+              onSelect={(id, external) => (external ? window.open(external, "_blank") : setView(id as ViewId))}
+            />
+            <NotificationsBell userId={userId} />
+            <DistrictSearch userId={userId} />
+            <LocationBadge userId={userId} />
           </div>
         </header>
 
@@ -310,6 +322,8 @@ export function Dashboard({ userId, email }: { userId: string; email: string }) 
         {view === "places-to-visit" && <PanelWrap><TravelPlacesScreen userId={userId} category="places" title={tt({ tr: "Gezilecek Yerler", en: "Places to Visit" })} /></PanelWrap>}
         {view === "personalize" && <PanelWrap><PersonalizeScreen userId={userId} /></PanelWrap>}
         {view === "profile-share" && <PanelWrap><ProfileShareScreen userId={userId} /></PanelWrap>}
+        {view === "medications" && <PanelWrap><MedicationsScreen userId={userId} /></PanelWrap>}
+        {view === "emergency-call" && <PanelWrap><EmergencyCallScreen userId={userId} /></PanelWrap>}
         {view === "stylesync" && <PanelWrap><StyleSyncScreen userId={userId} /></PanelWrap>}
         {view === "calendar" && <PanelWrap><CalendarScreen userId={userId} /></PanelWrap>}
         {view === "sports" && <PanelWrap><SportsScreen /></PanelWrap>}

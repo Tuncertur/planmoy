@@ -1,0 +1,11 @@
+# Planmoy
+
+> Planmoy, randevu, görev, stil ve keşif önerilerini tek bir sakin çalışma alanında birleştiren kişisel yaşam ve işletme asistanıdır. Web, Android ve iOS üzerinde çalışır.
+
+## Sayfalar
+
+- [Ana sayfa](https://planmoy.com/)
+- [Fiyatlandırma](https://planmoy.com/pricing)
+- [Kullanım Şartları](https://planmoy.com/terms)
+- [Gizlilik Politikası](https://planmoy.com/privacy)
+- [İade Politikası](https://planmoy.com/refund)

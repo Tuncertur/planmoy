@@ -1,13 +1,9 @@
 import { useEffect, useState } from "react";
 import { Check, Palette } from "lucide-react";
 
-// FireVibe'ın gerçek src/components/theme-switcher.tsx dosyasından
-// birebir taşınmıştır — 5 tema (Solar Orbit, Ocean Clean, Mono Focus,
-// Sun Signal, Aurora Calm). CSS override'ları zaten core-styles.css
-// içinde vardı, sadece bu bileşen eksikti.
-
-type Theme = "orbit" | "ocean" | "mono" | "sun" | "aurora";
+export type Theme = "violet" | "orbit" | "ocean" | "mono" | "sun" | "aurora";
 const themes: { id: Theme; label: string; note: string; swatches: string[] }[] = [
+  { id: "violet", label: "Violet", note: "Mavi-mor gradyan, varsayılan", swatches: ["#2a6fa8", "#5b4fc4", "#5eead4"] },
   { id: "orbit", label: "Solar Orbit", note: "Derin uzay ve cyan", swatches: ["#081126", "#46c7e8", "#9185ff"] },
   { id: "ocean", label: "Ocean Clean", note: "Mavi ve beyaz", swatches: ["#f5faff", "#1769c2", "#61c6dc"] },
   { id: "mono", label: "Mono Focus", note: "Siyah ve beyaz", swatches: ["#090909", "#ffffff", "#a4a4a4"] },
@@ -16,11 +12,11 @@ const themes: { id: Theme; label: string; note: string; swatches: string[] }[] =
 ];
 
 export function ThemeSwitcher() {
-  const [theme, setTheme] = useState<Theme>("orbit");
+  const [theme, setTheme] = useState<Theme>("violet");
 
   useEffect(() => {
-    const saved = window.localStorage.getItem("planmoy-theme") as Theme | null;
-    const next = themes.some((item) => item.id === saved) ? saved! : "orbit";
+    const saved = window.localStorage.getItem("planmoy-theme-v2") as Theme | null;
+    const next = themes.some((item) => item.id === saved) ? saved! : "violet";
     setTheme(next);
     document.documentElement.dataset["theme"] = next;
   }, []);
@@ -28,7 +24,7 @@ export function ThemeSwitcher() {
   function choose(next: Theme) {
     setTheme(next);
     document.documentElement.dataset["theme"] = next;
-    window.localStorage.setItem("planmoy-theme", next);
+    window.localStorage.setItem("planmoy-theme-v2", next);
   }
 
   const current = themes.find((item) => item.id === theme) ?? themes[0]!;
