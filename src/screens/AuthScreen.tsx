@@ -9,7 +9,7 @@ import { tt, type Dict } from "../lib/i18n";
 // gösteriliyor — Demo, gerçek FireVibe'da olmayan, test kolaylığı için
 // eklenmiş bir istisna.
 
-type Screen = "choose" | "email";
+type Screen = "choose" | "email" | "phone";
 
 const copy = {
   eyebrow: { tr: "Güvenli çalışma alanı", en: "Secure workspace" } satisfies Dict,
@@ -71,6 +71,9 @@ export function AuthScreen({ onOpenLegal }: { onOpenLegal: () => void }) {
   const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [phone, setPhone] = useState("");
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -92,6 +95,33 @@ export function AuthScreen({ onOpenLegal }: { onOpenLegal: () => void }) {
     setBusy(true);
     setError(null);
     const { error } = await supabase.auth.signInAnonymously();
+    setBusy(false);
+    if (error) setError(error.message);
+  }
+
+  async function signInWithGoogle() {
+    setBusy(true);
+    setError(null);
+    const { error } = await supabase.auth.signInWithOAuth({ provider: "google" });
+    setBusy(false);
+    if (error) setError(error.message);
+  }
+
+  async function sendPhoneOtp(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    const { error } = await supabase.auth.signInWithOtp({ phone });
+    setBusy(false);
+    if (error) setError(error.message);
+    else setOtpSent(true);
+  }
+
+  async function verifyPhoneOtp(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    const { error } = await supabase.auth.verifyOtp({ phone, token: otp, type: "sms" });
     setBusy(false);
     if (error) setError(error.message);
   }
@@ -152,10 +182,10 @@ export function AuthScreen({ onOpenLegal }: { onOpenLegal: () => void }) {
 
           {screen === "choose" && (
             <div className="auth-choice-grid">
-              <ChooseTile icon={<span className="google-mark">G</span>} label={tt(copy.google)} status={tt(copy.soon)} onClick={() => {}} />
+              <ChooseTile icon={<span className="google-mark">G</span>} label={tt(copy.google)} onClick={signInWithGoogle} />
               <ChooseTile icon={<Mail size={17} />} label={tt(copy.emailBtn)} onClick={() => setScreen("email")} />
               <ChooseTile icon={<Sparkles size={17} />} label={tt(copy.demoBtn)} onClick={tryDemo} />
-              <ChooseTile icon={<Phone size={17} />} label={tt(copy.phone)} status={tt(copy.soon)} onClick={() => {}} />
+              <ChooseTile icon={<Phone size={17} />} label={tt(copy.phone)} onClick={() => setScreen("phone")} />
             </div>
           )}
 
@@ -215,8 +245,49 @@ export function AuthScreen({ onOpenLegal }: { onOpenLegal: () => void }) {
             </>
           )}
 
+          {screen === "phone" && (
+            <>
+              {!otpSent ? (
+                <form onSubmit={sendPhoneOtp}>
+                  <label>
+                    {tt({ tr: "Telefon numarası", en: "Phone number" })}
+                    <input required type="tel" autoComplete="tel" placeholder="+90 5xx xxx xx xx" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                  </label>
+                  {error && (
+                    <div className="form-error" role="alert">
+                      <p>{error}</p>
+                    </div>
+                  )}
+                  <button disabled={busy} className="auth-submit">
+                    {busy ? tt(copy.wait) : tt({ tr: "Kod gönder", en: "Send code" })}
+                    <ArrowRight size={16} />
+                  </button>
+                </form>
+              ) : (
+                <form onSubmit={verifyPhoneOtp}>
+                  <label>
+                    {tt({ tr: "SMS ile gelen kod", en: "Code from SMS" })}
+                    <input required autoComplete="one-time-code" value={otp} onChange={(e) => setOtp(e.target.value)} />
+                  </label>
+                  {error && (
+                    <div className="form-error" role="alert">
+                      <p>{error}</p>
+                    </div>
+                  )}
+                  <button disabled={busy} className="auth-submit">
+                    {busy ? tt(copy.wait) : tt({ tr: "Doğrula", en: "Verify" })}
+                    <ArrowRight size={16} />
+                  </button>
+                </form>
+              )}
+              <button type="button" className="auth-toggle" style={{ opacity: 0.6 }} onClick={() => { setScreen("choose"); setOtpSent(false); setError(null); }}>
+                ← {tt(copy.back)}
+              </button>
+            </>
+          )}
+
           <p className="auth-legal">
-            {tt(copy.legal)} <a onClick={onOpenLegal} style={{ cursor: "pointer" }}>{tt(copy.privacy)}</a>
+            {tt(copy.legal)} <a href="/privacy" onClick={(e) => { e.preventDefault(); onOpenLegal(); }} style={{ cursor: "pointer" }}>{tt(copy.privacy)}</a>
           </p>
           <p className="auth-security">
             <ShieldCheck size={14} /> {tt(copy.privacy)}
