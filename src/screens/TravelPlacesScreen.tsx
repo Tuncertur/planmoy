@@ -85,8 +85,8 @@ export function TravelPlacesScreen({ userId, category, title }: { userId: string
       {location.activeSource === "none" && (
         <div className="orbit-card p-4 text-sm">
           {tt({
-            tr: "Önce Keşfet veya İlgi Alanlarım sayfasından adresini gir — buradaki liste o konuma göre gelir.",
-            en: "First enter your address in Discover or My Interests — this list is based on that location.",
+            tr: "Üst bardaki konum kutusundan (📍) şehrini seç ya da GPS'e izin ver — buradaki liste o konuma göre gelir.",
+            en: "Set your city from the location box in the top bar (📍) or allow GPS — this list is based on that location.",
           })}
         </div>
       )}

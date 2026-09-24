@@ -70,19 +70,9 @@ export function DiscoverScreen({ userId }: { userId: string }) {
     setStatus("ready");
   }
 
-  function locate() {
-    setStatus("locating");
-    location.useGps();
-  }
-
   useEffect(() => {
     if (location.activeSource !== "none") runSearch(category);
   }, [location.activeSource]);
-
-  async function searchWithManualAddress() {
-    await location.saveManualAddress();
-    runSearch(category);
-  }
 
   const visible = places.filter((p) => `${p.name} ${p.address}`.toLocaleLowerCase("tr").includes(query.toLocaleLowerCase("tr")));
 
@@ -95,23 +85,9 @@ export function DiscoverScreen({ userId }: { userId: string }) {
         })}
       </p>
 
-      {/* Öncelik: önce elle girilen adres, GPS bazı ülkelerde yanlış konum
-          gösterdiği için yalnızca elle adres YOKSA GPS'e başvurulur. */}
-      <div className="orbit-card flex flex-col gap-2 p-3 sm:flex-row sm:items-center">
-        <label className="flex flex-1 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm">
-          <MapPin size={15} className="text-[var(--color-mist-500)]" />
-          <input
-            value={location.manualAddress}
-            onChange={(e) => location.setManualAddress(e.target.value)}
-            placeholder={tt({ tr: "Adresini yaz (örn. Kadıköy, İstanbul) — önceliklidir", en: "Type your address (e.g. downtown) — takes priority" })}
-            className="w-full bg-transparent outline-none"
-          />
-        </label>
-        <button onClick={searchWithManualAddress} className="rounded-xl bg-[var(--color-cyan-400)] px-4 py-2 text-sm font-medium text-[var(--color-space-950)]">
-          {tt({ tr: "Bu adrese göre ara", en: "Search from this address" })}
-        </button>
-      </div>
-
+      {/* Madde (kullanıcı isteği): konum artık TEK kaynak — üst bardaki
+          rozet/arama kutusu. Buradaki eski, tekrar eden elle-adres ve
+          GPS kutuları kaldırıldı, karışıklığa sebep oluyordu. */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <label className="flex flex-1 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm">
           <Search size={15} className="text-[var(--color-mist-500)]" />
@@ -122,15 +98,6 @@ export function DiscoverScreen({ userId }: { userId: string }) {
             className="w-full bg-transparent outline-none"
           />
         </label>
-        <button
-          onClick={locate}
-          disabled={status === "locating" || status === "loading"}
-          className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium hover:bg-white/10 disabled:opacity-60"
-          title={tt({ tr: "Sadece elle adres girmediysen kullanılır", en: "Only used if you haven't typed an address" })}
-        >
-          <Crosshair size={15} />
-          {status === "locating" ? tt({ tr: "Konum alınıyor…", en: "Getting location…" }) : tt({ tr: "Konumumu kullan (GPS)", en: "Use my location (GPS)" })}
-        </button>
       </div>
 
       <div className="flex items-center gap-2 text-xs text-[var(--color-mist-500)]">

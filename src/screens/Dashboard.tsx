@@ -349,6 +349,7 @@ export function Dashboard({ userId, email }: { userId: string; email: string }) 
         {![
           "flow", "tasks", "notes", "discover", "stylesync",
           "calendar", "sports", "space", "intelligence", "events", "account", "categories", "trip", "hotels", "restaurants", "places-to-visit", "personalize", "profile-share",
+          "medications", "emergency-call",
           "biz-location", "biz-appointments", "biz-customers", "biz-suggestions",
           "biz-staff", "biz-inventory", "biz-reports", "biz-marketing", "biz-settings",
           "biz-loyalty", "biz-competition", "biz-performance", "biz-supply", "biz-pricing",
