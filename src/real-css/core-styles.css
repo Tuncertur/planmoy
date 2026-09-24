@@ -380,3 +380,8 @@ html[data-theme="violet"] .stacked-form input,html[data-theme="violet"] .stacked
   .topbar > div:first-child { width: 100%; flex-basis: 100%; }
   .topbar > div:last-child { width: 100%; flex-basis: 100%; justify-content: flex-start; flex-wrap: wrap; row-gap: 8px; }
 }
+
+/* Madde: sidebar'daki pasif (se\u00e7ili olmayan) men\u00fc yaz\u0131lar\u0131 gri kal\u0131yordu,
+   beyaza \u00e7evriliyor (daha d\u00fc\u015f\u00fck opaklikla, aktif olandan ay\u0131rt edilebilsin diye). */
+html[data-theme="violet"] .nav-item { color: rgba(255,255,255,0.82) !important; }
+html[data-theme="violet"] .nav-item svg { color: rgba(255,255,255,0.75) !important; }
