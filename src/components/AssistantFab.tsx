@@ -129,7 +129,6 @@ export function AssistantFab({ isBusiness, go }: { isBusiness: boolean; go: (id:
       )}
       <button
         className={`assistant-fab ${open ? "is-open" : ""}`}
-        style={{ position: "fixed", right: 16, bottom: 16, left: "auto", top: "auto", zIndex: 90 }}
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? tt({ tr: "Yapay zekanı kapat", en: "Close your AI" }) : tt({ tr: "Yapay zekanda ara ve öneri al", en: "Search your AI and get advice" })}
       >
