@@ -19,8 +19,14 @@ const destinations = [
   { id: "account", label: { tr: "Hesap", en: "Account" }, keywords: "profil güvenlik hesabım silme" },
 ];
 
-export function AssistantFab({ isBusiness, go }: { isBusiness: boolean; go: (id: string) => void }) {
-  const [open, setOpen] = useState(false);
+export function AssistantFab({ isBusiness, go, open: openProp, onOpenChange }: { isBusiness: boolean; go: (id: string) => void; open?: boolean; onOpenChange?: (v: boolean) => void }) {
+  const [openState, setOpenState] = useState(false);
+  const open = openProp ?? openState;
+  const setOpen = (updater: boolean | ((v: boolean) => boolean)) => {
+    const next = typeof updater === "function" ? (updater as (v: boolean) => boolean)(open) : updater;
+    setOpenState(next);
+    onOpenChange?.(next);
+  };
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState("");
   const [suggestion, setSuggestion] = useState("");
@@ -127,14 +133,16 @@ export function AssistantFab({ isBusiness, go }: { isBusiness: boolean; go: (id:
           )}
         </section>
       )}
-      <button
-        className={`assistant-fab ${open ? "is-open" : ""}`}
-        onClick={() => setOpen((v) => !v)}
-        aria-label={open ? tt({ tr: "Yapay zekanı kapat", en: "Close your AI" }) : tt({ tr: "Yapay zekanda ara ve öneri al", en: "Search your AI and get advice" })}
-      >
-        <Flame size={21} />
-        <span>{tt({ tr: "Yapay zeka", en: "AI" })}</span>
-      </button>
+      {openProp === undefined && (
+        <button
+          className={`assistant-fab ${open ? "is-open" : ""}`}
+          onClick={() => setOpen((v) => !v)}
+          aria-label={open ? tt({ tr: "Yapay zekanı kapat", en: "Close your AI" }) : tt({ tr: "Yapay zekanda ara ve öneri al", en: "Search your AI and get advice" })}
+        >
+          <Flame size={21} />
+          <span>{tt({ tr: "Yapay zeka", en: "AI" })}</span>
+        </button>
+      )}
     </>
   );
 }

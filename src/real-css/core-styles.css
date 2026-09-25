@@ -13,7 +13,8 @@ html, body, #app { min-height: 100%; }
 footer { margin-top: 38px; padding-top: 18px; border-top: 1px solid var(--border); color: #898079; display: flex; align-items: center; gap: 15px; font-size: 10px; }.brand.small { color: #372b25; font-size: 16px; padding-left: 0; }.footer-link { margin-left: auto; display: flex; align-items: center; gap: 4px; }
 
 .space-canvas { max-width: 1240px; }.space-intro { min-height: 272px; display: flex; align-items: center; justify-content: space-between; position: relative; overflow: hidden; }.space-intro h2 { margin: 0; font-size: clamp(34px, 4vw, 54px); line-height: 1.02; letter-spacing: -.075em; }.space-intro h2 em { color: #db4d1b; font-style: normal; }.space-intro .intro { max-width: 420px; margin: 17px 0 0; color: var(--muted-foreground); font-size: 13px; line-height: 1.65; }.space-mark { width: 170px; height: 170px; margin-right: 7%; border-radius: 50%; display: grid; place-items: center; align-content: center; gap: 8px; border: 1px solid #df8051; color: #d85726; transform: rotate(-8deg); background: radial-gradient(circle, #fff2df 0 42%, transparent 43%); }.space-mark span { font-size: 10px; font-weight: 850; letter-spacing: .2em; text-align: center; line-height: 1.35; }.space-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 20px; }.search-field { display: flex; align-items: center; gap: 9px; width: min(340px, 100%); min-height: 43px; padding: 0 13px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); color: #847d75; }.search-field input { border: 0; outline: 0; width: 100%; background: transparent; color: var(--foreground); font: inherit; font-size: 12px; }.notes-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }.note-card { min-height: 190px; padding: 18px; border: 1px solid transparent; border-radius: 12px; box-shadow: 0 8px 22px oklch(.25 .03 30 / .045); }.note-card.sun { background: #fff0c9; border-color: #f2db9c; }.note-card.coral { background: #ffe1d8; border-color: #f2bbb0; }.note-card.mint { background: #dcefe2; border-color: #bddbc5; }.note-card.lavender { background: #eae3f4; border-color: #d3c6e4; }.note-card-top { display: flex; justify-content: space-between; align-items: center; color: #82756b; }.note-card-top button, .composer-head > button, .insight-banner > button { border: 0; background: transparent; padding: 5px; color: inherit; cursor: pointer; }.note-card-top button:hover { color: #b43b20; transform: scale(1.05); }.note-date { font-size: 10px; font-weight: 750; }.note-card h3 { margin: 24px 0 8px; font-size: 17px; letter-spacing: -.04em; }.note-card p { margin: 0; color: #554941; font-size: 13px; line-height: 1.6; white-space: pre-wrap; }.note-tag { display: inline-flex; align-items: center; gap: 2px; margin-top: 18px; font-size: 10px; font-weight: 800; color: #9a4c27; }.empty-space { min-height: 250px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }.empty-mark { width: 50px; height: 50px; display: grid; place-items: center; margin-bottom: 14px; border-radius: 50%; color: #d85726; background: #fff0df; }.empty-space h3 { margin: 0; font-size: 18px; }.empty-space p { max-width: 330px; margin: 7px 0 18px; color: var(--muted-foreground); font-size: 12px; line-height: 1.6; }.analyze-button { margin: 20px auto 0; display: flex; align-items: center; gap: 7px; border: 0; color: #ca4b1a; background: transparent; font-size: 11px; font-weight: 800; cursor: pointer; }.analyze-button:hover { color: #8e3013; }.insight-banner { display: flex; align-items: flex-start; gap: 11px; margin-bottom: 20px; padding: 14px 16px; border-left: 3px solid #e66a2b; background: #fff0df; color: #613522; }.insight-banner svg { color: #df5b20; margin-top: 2px; }.insight-banner div { flex: 1; }.insight-banner b { font-size: 11px; }.insight-banner p { margin: 4px 0 0; font-size: 12px; line-height: 1.5; }.note-overlay { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; padding: 20px; background: oklch(.15 .025 30 / .5); }.note-composer { width: min(100%, 510px); padding: 26px; border: 1px solid #e7d4c4; border-radius: 14px; background: #fffaf5; box-shadow: 0 22px 80px oklch(.15 .03 30 / .2); }.composer-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 23px; }.composer-head h2 { margin: 0; font-size: 25px; letter-spacing: -.06em; }.composer-head > button:hover { color: #d74d1b; }.note-composer label { display: grid; gap: 7px; margin-top: 15px; color: #62574e; font-size: 11px; font-weight: 800; }.note-composer input, .note-composer textarea { width: 100%; border: 1px solid #dacbc0; border-radius: 7px; background: #fff; color: #2c2520; padding: 12px; outline: 0; font: inherit; font-size: 13px; }.note-composer textarea { min-height: 120px; resize: vertical; line-height: 1.5; }.note-composer input:focus, .note-composer textarea:focus, .search-field:focus-within { border-color: #db6d32; box-shadow: 0 0 0 3px #db6d3225; }.composer-row { display: grid; grid-template-columns: 1fr 145px; gap: 16px; align-items: end; }.field-label { display: block; margin-top: 15px; color: #62574e; font-size: 11px; font-weight: 800; }.tone-picker { display: flex; gap: 9px; margin-top: 10px; }.tone-dot { width: 22px; height: 22px; border: 2px solid transparent; border-radius: 50%; cursor: pointer; }.tone-dot.selected { outline: 2px solid #52382b; outline-offset: 2px; }.tone-dot.sun { background: #f2c95e; }.tone-dot.coral { background: #e78670; }.tone-dot.mint { background: #85b992; }.tone-dot.lavender { background: #aa91c8; }.composer-submit { margin-top: 23px; width: 100%; justify-content: center; min-height: 44px; }.composer-note { margin: 12px 0 0; color: #988a7e; text-align: center; font-size: 10px; }
-@media (max-width: 900px) { .sidebar { width: 70px; padding: 24px 10px; align-items: center; }.brand { padding: 0; font-size: 0; }.brand:first-letter { font-size: 22px; }.brand span, .brand i, .workspace div, .workspace > svg, .side-caption, .fire-note span { display: none; }.workspace { border: 0; padding: 0; margin-top: 35px; }.side-nav { width: 100%; }.nav-item { justify-content: center; padding: 12px 0; }.nav-item span { display: none; }.fire-note { border: 0; padding: 12px 0; }.main-canvas { padding: 0 25px 30px; }.notes-grid { grid-template-columns: repeat(2, 1fr); } }
+/* (Eski ilk mobil blok kaldırıldı — dosyanın sonundaki tek, güncel
+   hamburger-çekmece bloğu artık tüm mobil sidebar davranışını yönetiyor.) */
 @media (max-width: 680px) { .main-canvas { padding: 0 16px 24px; }.topbar { height: 76px; }.sync { display: none; }.space-intro { min-height: 240px; }.space-mark { width: 100px; height: 100px; margin-right: 5px; font-size: 9px; }.space-mark span { font-size: 7px; }.space-intro h2 { font-size: 37px; }.space-toolbar { align-items: stretch; flex-direction: column; }.search-field { width: 100%; }.notes-grid { grid-template-columns: 1fr; }.note-card { min-height: 160px; }.composer-row { grid-template-columns: 1fr; } footer { flex-wrap: wrap; } }
 
 /* Category guide */
@@ -254,11 +255,6 @@ html[data-theme="aurora"] .theme-trigger { background:#171a3d; border-color:#3b3
 .nav-item { white-space: nowrap; }
 .nav-item svg { flex: 0 0 auto; width: 22px; height: 22px; stroke-width: 2.1; }
 @media (max-width: 900px) {
-  .sidebar { width: 76px; padding-inline: 10px; align-items: center; }
-  .main-canvas { width: calc(100% - 76px); }
-  .nav-item { justify-content: center; min-height: 48px; padding-inline: 0; }
-  .nav-item span { display: none; }
-  .nav-item svg { width: 25px; height: 25px; }
   .category-tabs { scrollbar-width: none; }
   .category-tabs::-webkit-scrollbar { display: none; }
 }
@@ -361,15 +357,8 @@ html[data-theme="violet"] .stacked-form input,html[data-theme="violet"] .stacked
 .topbar { padding-top: calc(env(safe-area-inset-top, 0px) + 10px); }
 .sidebar { padding-top: env(safe-area-inset-top, 0px); }
 
-@media (max-width: 900px) {
-  .sidebar { width: 84px !important; padding: 24px 8px !important; align-items: center; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-  .main-canvas { width: calc(100% - 84px); }
-  .nav-item { flex-direction: column !important; justify-content: center; gap: 4px !important; min-height: 56px; padding: 10px 2px !important; }
-  .nav-item span { display: -webkit-box !important; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; font-size: 9px !important; line-height: 1.15; text-align: center; white-space: normal !important; }
-  .nav-item svg { width: 22px; height: 22px; }
-  .category-tabs { scrollbar-width: none; }
-  .category-tabs::-webkit-scrollbar { display: none; }
-}
+/* (Eski "dar ikon rayı" bloğu kaldırıldı — artık sidebar kapalıyken
+   tamamen ekran dışında, açıkken tam genişlikte açılıyor.) */
 
 /* Madde (kullanıcı bildirdi — ekran görüntüsü): mobilde üst çubuktaki
    arama/bildirim/konum grubu, başlığı (h1) neredeyse sıfır genişliğe
@@ -385,3 +374,53 @@ html[data-theme="violet"] .stacked-form input,html[data-theme="violet"] .stacked
    beyaza \u00e7evriliyor (daha d\u00fc\u015f\u00fck opaklikla, aktif olandan ay\u0131rt edilebilsin diye). */
 html[data-theme="violet"] .nav-item { color: rgba(255,255,255,0.82) !important; }
 html[data-theme="violet"] .nav-item svg { color: rgba(255,255,255,0.75) !important; }
+
+/* ================================================================
+   Madde (kullanıcı isteği): mobilde sidebar art\u0131k s\u00fcrekli ekranda
+   durmuyor — varsay\u0131lan olarak GİZLİ, hamburger (\u2261) ikonuyla \u00fczerine
+   kayarak a\u00e7\u0131l\u0131yor. Bu, i\u00e7eri\u011fin her zaman sa\u011fa s\u0131k\u0131\u015f\u0131p elle
+   kayd\u0131r\u0131lmas\u0131 gerekme sorununu k\u00f6kten \u00e7\u00f6zer.
+   ================================================================ */
+.hamburger-btn, .nav-arrow-btn {
+  display: none;
+  align-items: center; justify-content: center;
+  width: 34px; height: 34px; border-radius: 9px;
+  border: 1px solid rgba(0,0,0,0.08); background: rgba(255,255,255,0.5);
+  color: inherit; opacity: 0.75; cursor: pointer; flex-shrink: 0;
+}
+.nav-arrow-btn:disabled { opacity: 0.3; cursor: default; }
+.nav-arrow-btn:not(:disabled):hover, .hamburger-btn:hover { opacity: 1; background: rgba(255,255,255,0.8); }
+
+@media (max-width: 900px) {
+  .hamburger-btn, .nav-arrow-btn { display: flex !important; }
+
+  .sidebar {
+    position: fixed !important;
+    top: 0; bottom: 0; left: 0;
+    width: 78vw !important;
+    max-width: 320px;
+    transform: translateX(-100%) !important;
+    transition: transform .25s ease;
+    z-index: 200 !important;
+    box-shadow: 0 0 40px rgba(0,0,0,0.3);
+    align-items: stretch !important;
+    padding: 20px 14px !important;
+  }
+  .sidebar.sidebar-open { transform: translateX(0) !important; }
+  .sidebar.sidebar-open::after {
+    content: ""; position: fixed; inset: 0 0 0 78vw;
+    background: rgba(10,10,20,0.45); z-index: -1;
+  }
+  /* Menü açıkken, genişletilmiş halde ikon+isim yan yana (masaüstü gibi) */
+  .sidebar .brand { font-size: inherit !important; padding: 0 8px !important; }
+  .sidebar .brand span, .sidebar .brand i, .sidebar .workspace div, .sidebar .workspace > svg, .sidebar .side-caption, .sidebar .fire-note span { display: revert !important; }
+  .sidebar .workspace { border: 1px solid rgba(255,255,255,0.2) !important; padding: 10px !important; margin-top: 16px !important; }
+  .sidebar .nav-item { flex-direction: row !important; justify-content: flex-start !important; gap: 12px !important; padding: 11px 12px !important; }
+  .sidebar .nav-item span { display: block !important; -webkit-line-clamp: unset; font-size: 13px !important; text-align: left !important; white-space: nowrap !important; }
+  .sidebar .fire-note { border-top: 1px solid rgba(255,255,255,0.2) !important; padding: 12px !important; }
+
+  .main-canvas { width: 100% !important; padding: 0 16px 30px !important; }
+  .topbar { flex-wrap: wrap; row-gap: 10px; height: auto !important; padding-bottom: 12px; }
+  .topbar > div:first-child { width: 100%; flex-basis: 100%; }
+  .topbar > div:last-child { width: 100%; flex-basis: 100%; justify-content: flex-start; flex-wrap: wrap; row-gap: 8px; }
+}

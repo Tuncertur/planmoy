@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import {
-  ArrowUpRight, CalendarDays, Check, ChevronRight, Compass, FileText,
+  ArrowUpRight, CalendarDays, Check, ChevronRight, ChevronLeft, Menu, Compass, FileText,
   HeartPulse, LayoutDashboard, ListChecks, Plus, Scissors, Settings2,
   Sparkles, Users, WandSparkles, Dumbbell, Brain, StickyNote, MapPin,
   Lightbulb, Flame, Layers3, UserCog, Plane, Building2, Utensils, Music, UserRound, Phone, Pill,
@@ -126,6 +126,32 @@ function NavItem({
 export function Dashboard({ userId, email }: { userId: string; email: string }) {
   const [mode, setMode] = useState<Mode>("personal");
   const [view, setView] = useState<ViewId>("flow");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [assistantOpen, setAssistantOpen] = useState(false);
+  const [viewHistory, setViewHistory] = useState<ViewId[]>(["flow"]);
+  const [historyIndex, setHistoryIndex] = useState(0);
+
+  // Madde (kullanıcı isteği): geri/ileri gezinme — tarayıcı gibi, hangi
+  // sayfalarda gezindiğini hatırlar.
+  function navigateTo(next: ViewId) {
+    setView(next);
+    setSidebarOpen(false);
+    setViewHistory((h) => {
+      const truncated = h.slice(0, historyIndex + 1);
+      return [...truncated, next];
+    });
+    setHistoryIndex((i) => i + 1);
+  }
+  function goBack() {
+    if (historyIndex === 0) return;
+    setHistoryIndex((i) => i - 1);
+    setView(viewHistory[historyIndex - 1]!);
+  }
+  function goForward() {
+    if (historyIndex >= viewHistory.length - 1) return;
+    setHistoryIndex((i) => i + 1);
+    setView(viewHistory[historyIndex + 1]!);
+  }
   const [dashboard, setDashboard] = useState<{ todayTasks: number; todayAppointments: number } | null>(null);
   const [personalOrder, setPersonalOrder] = useState<ViewId[]>(personalNavItems.map((n) => n.id));
   const [businessOrder, setBusinessOrder] = useState<ViewId[]>(businessNavItems.map((n) => n.id));
@@ -191,7 +217,7 @@ export function Dashboard({ userId, email }: { userId: string; email: string }) 
 
   return (
     <div className="app-shell overview-blue home-choice">
-      <aside className="sidebar">
+      <aside className={`sidebar ${sidebarOpen ? "sidebar-open" : ""}`}>
         <a href="/" className="brand" onClick={(e) => e.preventDefault()}>
           plan<span>moy</span>
           <i />
@@ -204,12 +230,23 @@ export function Dashboard({ userId, email }: { userId: string; email: string }) 
           </div>
         </div>
         <nav className="side-nav" aria-label="Ana menü">
+          <NavItem
+            item={{ id: "ai-assistant" as any, icon: <Flame size={17} />, label: { tr: "Yapay Zeka", en: "AI Assistant" } }}
+            active={assistantOpen}
+            onClick={() => {
+              setAssistantOpen((v) => !v);
+              setSidebarOpen(false);
+            }}
+            onDragStart={() => {}}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={() => {}}
+          />
           {orderedNavItems.map((item) => (
             <NavItem
               key={item.id}
               item={item}
               active={view === item.id}
-              onClick={() => (item as any).external ? window.open((item as any).external, "_blank") : setView(item.id)}
+              onClick={() => (item as any).external ? window.open((item as any).external, "_blank") : navigateTo(item.id)}
               onDragStart={() => (dragId.current = item.id)}
               onDragOver={(e) => e.preventDefault()}
               onDrop={() => handleDrop(item.id)}
@@ -234,14 +271,39 @@ export function Dashboard({ userId, email }: { userId: string; email: string }) 
 
       <main className="main-canvas">
         <header className="topbar">
-          <div>
-            <p className="eyebrow">Planmoy</p>
-            <h1>{tt(currentNavItems.find((n) => n.id === view)?.label ?? { tr: "Genel bakış", en: "Overview" })}</h1>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <button
+              className="hamburger-btn"
+              onClick={() => setSidebarOpen((v) => !v)}
+              aria-label={tt({ tr: "Menüyü aç/kapat", en: "Toggle menu" })}
+            >
+              <Menu size={20} />
+            </button>
+            <button
+              className="nav-arrow-btn"
+              onClick={goBack}
+              disabled={historyIndex === 0}
+              aria-label={tt({ tr: "Geri", en: "Back" })}
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <button
+              className="nav-arrow-btn"
+              onClick={goForward}
+              disabled={historyIndex >= viewHistory.length - 1}
+              aria-label={tt({ tr: "İleri", en: "Forward" })}
+            >
+              <ChevronRight size={18} />
+            </button>
+            <div>
+              <p className="eyebrow">Planmoy</p>
+              <h1>{tt(currentNavItems.find((n) => n.id === view)?.label ?? { tr: "Genel bakış", en: "Overview" })}</h1>
+            </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
             <NavSearch
               items={[...personalNavItems, ...businessNavItems].map((n) => ({ id: n.id, icon: n.icon, label: n.label, external: (n as any).external }))}
-              onSelect={(id, external) => (external ? window.open(external, "_blank") : setView(id as ViewId))}
+              onSelect={(id, external) => (external ? window.open(external, "_blank") : navigateTo(id as ViewId))}
             />
             <NotificationsBell userId={userId} />
             <DistrictSearch userId={userId} />
@@ -367,7 +429,7 @@ export function Dashboard({ userId, email }: { userId: string; email: string }) 
           <span>{tt({ tr: "Kişisel hayat ve işletme akışı, tek noktada.", en: "One clear flow for life and business." })}</span>
         </footer>
       </main>
-      <AssistantFab isBusiness={mode === "business"} go={(id) => setView(id as ViewId)} />
+      <AssistantFab isBusiness={mode === "business"} go={(id) => setView(id as ViewId)} open={assistantOpen} onOpenChange={setAssistantOpen} />
     </div>
   );
 }
