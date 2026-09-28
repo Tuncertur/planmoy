@@ -45,6 +45,7 @@ export async function refreshTravelData(location: LocationSource) {
       ? { address: location.savedManualAddress, categories: ["hotel", "restaurant", "places"], languageCode: "tr" }
       : { latitude: location.latitude, longitude: location.longitude, categories: ["hotel", "restaurant", "places"], languageCode: "tr" };
   const { data, error } = await supabase.functions.invoke("discover", { body });
+  if (data?.freePlan) return { ok: false as const, reason: "free-plan" };
   if (error || !data?.ok) return { ok: false as const, reason: data?.reason ?? "provider-error" };
   memoryCache = { groups: data.groups, at: Date.now(), capReached: !!data.capReached, capReason: data.capReason };
   notify();
@@ -58,17 +59,19 @@ export async function refreshTravelDataForAddress(address: string) {
   const { data, error } = await supabase.functions.invoke("discover", {
     body: { address, categories: ["hotel", "restaurant", "places"], languageCode: "tr" },
   });
+  if (data?.freePlan) return { ok: false as const, reason: "free-plan" };
   if (error || !data?.ok) return { ok: false as const, reason: data?.reason ?? "provider-error" };
   memoryCache = { groups: data.groups, at: Date.now(), capReached: !!data.capReached, capReason: data.capReason };
   notify();
   return { ok: true as const, capReached: !!data.capReached, capReason: data.capReason };
 }
 
-export function useTravelData(category: keyof Groups, location: LocationSource) {
+export function useTravelData(category: keyof Groups, location: LocationSource, enabled = true) {
   const [, setTick] = useState(0);
   const [status, setStatus] = useState<CacheStatus>(memoryCache ? "ready" : "idle");
 
   const refresh = useCallback(async () => {
+    if (!enabled) return;
     setStatus("loading");
     lastLocationKey = locationKey(location);
     const result = await refreshTravelData(location);
@@ -81,7 +84,7 @@ export function useTravelData(category: keyof Groups, location: LocationSource) 
         ? "missing-key"
         : "error"
     );
-  }, [location.activeSource, location.savedManualAddress, location.latitude, location.longitude]);
+  }, [enabled, location.activeSource, location.savedManualAddress, location.latitude, location.longitude]);
 
   useEffect(() => {
     const listener = () => setTick((v) => v + 1);
@@ -94,10 +97,10 @@ export function useTravelData(category: keyof Groups, location: LocationSource) 
   // Konum (elle adres ya da GPS) değişince liste yeniden çekilir. Aynı anahtar için
   // birden fazla bileşen aynı anda tetiklemesin diye anahtar hemen işaretlenir.
   useEffect(() => {
-    if (location.activeSource === "none") return;
+    if (!enabled || location.activeSource === "none") return;
     const key = locationKey(location);
     if (key !== lastLocationKey) refresh();
-  }, [location.activeSource, location.savedManualAddress, location.latitude, location.longitude]);
+  }, [enabled, location.activeSource, location.savedManualAddress, location.latitude, location.longitude]);
 
   const capOnly = !!memoryCache?.capReached && !Object.values(memoryCache.groups).some((g) => g.length > 0);
   return { places: memoryCache?.groups[category] ?? [], status: capOnly ? "cap-reached" : memoryCache ? "ready" : status, capReason: memoryCache?.capReason, refresh };

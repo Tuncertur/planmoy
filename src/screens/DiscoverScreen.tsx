@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Crosshair, Info, MapPin, Search, Star, ExternalLink } from "lucide-react";
 import { getNearbyPlaces, isWeekendWindow, type NearbyPlace } from "../lib/discover";
 import { useLocationSource } from "../lib/useLocationSource";
+import { usePlan } from "../lib/usePlan";
+import { CityGuidePanel } from "./../components/CityGuidePanel";
 import { tt } from "../lib/i18n";
 
 const categories = [
@@ -44,6 +46,8 @@ function formatDistance(meters: number) {
 
 export function DiscoverScreen({ userId }: { userId: string }) {
   const location = useLocationSource(userId);
+  const plan = usePlan(userId);
+  const live = plan !== null && plan !== "free";
   const [category, setCategory] = useState<(typeof categories)[number]>("restaurant");
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<"idle" | "locating" | "loading" | "missing-key" | "provider-error" | "cap-reached" | "ready">("idle");
@@ -74,10 +78,14 @@ export function DiscoverScreen({ userId }: { userId: string }) {
 
   // Konum (elle adres ya da GPS) değişince yeniden ara.
   useEffect(() => {
-    if (location.activeSource !== "none") runSearch(category);
-  }, [location.activeSource, location.savedManualAddress, location.latitude, location.longitude]);
+    if (live && location.activeSource !== "none") runSearch(category);
+  }, [live, location.activeSource, location.savedManualAddress, location.latitude, location.longitude]);
 
   const visible = places.filter((p) => `${p.name} ${p.address}`.toLocaleLowerCase("tr").includes(query.toLocaleLowerCase("tr")));
+
+  // Ücretsiz plan: canlı Google araması yerine ücretsiz şehir rehberi.
+  if (plan === null) return <p className="text-sm text-[var(--color-mist-500)]">{tt({ tr: "Yükleniyor…", en: "Loading…" })}</p>;
+  if (plan === "free") return <CityGuidePanel userId={userId} mode="discover" />;
 
   return (
     <div className="flex flex-col gap-5">

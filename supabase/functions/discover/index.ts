@@ -83,6 +83,16 @@ serve(async (req) => {
   // Fotoğraflar yalnızca ücretli planlarda (ücretsiz planda hiç indirilmez, maliyet sıfır).
   const plan = await getPlan(admin, user.id);
   const photosEnabled = plan !== "free";
+
+  // Ücretsiz plan: canlı Google verisi ÜCRETLİ özelliktir. Ücretsiz kullanıcı için Google'a
+  // hiç istek atılmaz, hiçbir maliyet oluşmaz (ön yüz şehir rehberini gösterir). İstemci
+  // atlatılsa bile bu kapı sunucuda olduğu için harcama sıfır kalır.
+  if (plan === "free") {
+    return new Response(
+      JSON.stringify({ ok: true, freePlan: true, radiusKm: radius / 1000, places: [], groups: { hotel: [], restaurant: [], places: [] } }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
   const hasCoords = typeof latitude === "number" && typeof longitude === "number";
   const roundedLoc = hasCoords ? `${latitude.toFixed(2)},${longitude.toFixed(2)}` : (address ?? "").trim().toLocaleLowerCase("tr");
 

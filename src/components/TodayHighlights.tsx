@@ -4,6 +4,9 @@ import { supabase } from "../lib/supabase";
 import { askAi } from "../lib/ai";
 import { useLocationSource } from "../lib/useLocationSource";
 import { useTravelData } from "../lib/useTravelData";
+import { usePlan } from "../lib/usePlan";
+import { resolveGuideCity } from "./CityGuidePanel";
+import { Link } from "react-router-dom";
 import { tt } from "../lib/i18n";
 
 // Kullanıcının isteğiyle: uygulama açıldığında (elle adres varsa o adrese,
@@ -15,8 +18,10 @@ import { tt } from "../lib/i18n";
 
 export function TodayHighlights({ userId }: { userId: string }) {
   const location = useLocationSource(userId);
-  const hotels = useTravelData("hotel", location);
-  const restaurants = useTravelData("restaurant", location);
+  const plan = usePlan(userId);
+  const live = plan !== null && plan !== "free";
+  const hotels = useTravelData("hotel", location, live);
+  const restaurants = useTravelData("restaurant", location, live);
   const [match, setMatch] = useState<{ home: string; away: string; league: string } | null>(null);
   const [outfit, setOutfit] = useState("");
   const [outfitStatus, setOutfitStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
@@ -48,8 +53,8 @@ export function TodayHighlights({ userId }: { userId: string }) {
     return (
       <div className="orbit-card p-4 text-sm text-[var(--color-mist-500)]">
         {tt({
-          tr: "Günün özetini görmek için Keşfet'ten adresini gir.",
-          en: "Enter your address in Discover to see today's highlights.",
+          tr: "Günün özetini görmek için üst bardaki konum kutusundan şehrini seç ya da GPS'e izin ver.",
+          en: "Set your city in the top bar location box or allow GPS to see today's highlights.",
         })}
       </div>
     );
@@ -57,23 +62,47 @@ export function TodayHighlights({ userId }: { userId: string }) {
 
   const topHotel = hotels.places[0];
   const topRestaurant = restaurants.places[0];
+  const guideCity = plan === "free" ? resolveGuideCity(location) : null;
 
   return (
     <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <article className="orbit-card p-4">
-        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--color-cyan-400)]/12">
-          <Hotel size={16} className="text-[var(--color-cyan-300)]" />
-        </span>
-        <p className="mt-2 text-xs text-[var(--color-mist-500)]">{tt({ tr: "Bölgedeki popüler otel", en: "Popular hotel nearby" })}</p>
-        <p className="mt-1 text-sm font-medium">{topHotel ? topHotel.name : "—"}</p>
-      </article>
-      <article className="orbit-card p-4">
-        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--color-cyan-400)]/12">
-          <Utensils size={16} className="text-[var(--color-cyan-300)]" />
-        </span>
-        <p className="mt-2 text-xs text-[var(--color-mist-500)]">{tt({ tr: "Bölgedeki popüler restoran", en: "Popular restaurant nearby" })}</p>
-        <p className="mt-1 text-sm font-medium">{topRestaurant ? topRestaurant.name : "—"}</p>
-      </article>
+      {plan === "free" ? (
+        <>
+          <article className="orbit-card p-4" data-testid="highlight-guide">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--color-cyan-400)]/12">
+              <Hotel size={16} className="text-[var(--color-cyan-300)]" />
+            </span>
+            <p className="mt-2 text-xs text-[var(--color-mist-500)]">{tt({ tr: "Şehrinin öne çıkan yeri", en: "Your city's top sight" })}</p>
+            <p className="mt-1 text-sm font-medium">{guideCity ? tt(guideCity.places[0]!.name) : "—"}</p>
+          </article>
+          <article className="orbit-card p-4">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--color-cyan-400)]/12">
+              <Utensils size={16} className="text-[var(--color-cyan-300)]" />
+            </span>
+            <p className="mt-2 text-xs text-[var(--color-mist-500)]">{tt({ tr: "Canlı otel ve restoran", en: "Live hotels and restaurants" })}</p>
+            <Link to="/pricing" className="mt-1 flex items-center gap-1 text-xs text-[var(--color-cyan-300)]">
+              <Sparkles size={12} /> {tt({ tr: "Ücretli planda", en: "On paid plans" })}
+            </Link>
+          </article>
+        </>
+      ) : (
+        <>
+          <article className="orbit-card p-4">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--color-cyan-400)]/12">
+              <Hotel size={16} className="text-[var(--color-cyan-300)]" />
+            </span>
+            <p className="mt-2 text-xs text-[var(--color-mist-500)]">{tt({ tr: "Bölgedeki popüler otel", en: "Popular hotel nearby" })}</p>
+            <p className="mt-1 text-sm font-medium">{topHotel ? topHotel.name : "—"}</p>
+          </article>
+          <article className="orbit-card p-4">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--color-cyan-400)]/12">
+              <Utensils size={16} className="text-[var(--color-cyan-300)]" />
+            </span>
+            <p className="mt-2 text-xs text-[var(--color-mist-500)]">{tt({ tr: "Bölgedeki popüler restoran", en: "Popular restaurant nearby" })}</p>
+            <p className="mt-1 text-sm font-medium">{topRestaurant ? topRestaurant.name : "—"}</p>
+          </article>
+        </>
+      )}
       <article className="orbit-card p-4">
         <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--color-cyan-400)]/12">
           <Trophy size={16} className="text-[var(--color-cyan-300)]" />
