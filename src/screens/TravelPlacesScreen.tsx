@@ -98,6 +98,18 @@ export function TravelPlacesScreen({ userId, category, title }: { userId: string
         </div>
       )}
 
+      {status === "cap-reached" && (
+        <div className="orbit-card flex items-start gap-3 p-4 text-sm">
+          <Info size={18} className="mt-0.5 shrink-0 text-[var(--color-gold-400)]" />
+          <p>{tt({ tr: "Bu ayki ücretsiz arama hakkın doldu. Planını yükselterek daha fazla yeni bölge arayabilirsin — daha önce aranmış bölgeler yine görünür.", en: "You've used this month's free search allowance. Upgrade your plan to search more new areas — previously searched areas still show." })}</p>
+        </div>
+      )}
+      {status === "error" && (
+        <div className="orbit-card flex items-start gap-3 p-4 text-sm">
+          <Info size={18} className="mt-0.5 shrink-0 text-[var(--color-gold-400)]" />
+          <p>{tt({ tr: "Liste şu an getirilemedi. 'Yenile'ye bas ya da konumunu yeniden seç.", en: "The list couldn't be loaded right now. Tap Refresh or re-select your location." })}</p>
+        </div>
+      )}
       {status === "loading" && <p className="text-sm text-[var(--color-mist-500)]">{tt({ tr: "Yükleniyor…", en: "Loading…" })}</p>}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

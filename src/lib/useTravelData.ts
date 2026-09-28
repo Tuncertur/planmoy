@@ -21,9 +21,17 @@ export type TravelPlace = {
 };
 
 type Groups = { hotel: TravelPlace[]; restaurant: TravelPlace[]; places: TravelPlace[] };
-type CacheStatus = "idle" | "loading" | "missing-key" | "error" | "ready";
+type CacheStatus = "idle" | "loading" | "missing-key" | "cap-reached" | "error" | "ready";
 
-let memoryCache: { groups: Groups; at: number } | null = null;
+let memoryCache: { groups: Groups; at: number; capReached?: boolean } | null = null;
+// Son çekilen KONUM anahtarı — konum (adres/GPS) değişince liste yeniden çekilir.
+let lastLocationKey: string | null = null;
+
+function locationKey(location: LocationSource): string {
+  if (location.activeSource === "manual") return `m:${location.savedManualAddress.trim().toLocaleLowerCase("tr")}`;
+  if (location.activeSource === "gps") return `g:${location.latitude?.toFixed(2)},${location.longitude?.toFixed(2)}`;
+  return "none";
+}
 const listeners = new Set<() => void>();
 
 function notify() {
@@ -34,13 +42,13 @@ export async function refreshTravelData(location: LocationSource) {
   if (location.activeSource === "none") return;
   const body =
     location.activeSource === "manual"
-      ? { address: location.manualAddress, categories: ["hotel", "restaurant", "places"], languageCode: "tr" }
+      ? { address: location.savedManualAddress, categories: ["hotel", "restaurant", "places"], languageCode: "tr" }
       : { latitude: location.latitude, longitude: location.longitude, categories: ["hotel", "restaurant", "places"], languageCode: "tr" };
   const { data, error } = await supabase.functions.invoke("discover", { body });
   if (error || !data?.ok) return { ok: false as const, reason: data?.reason ?? "provider-error" };
-  memoryCache = { groups: data.groups, at: Date.now() };
+  memoryCache = { groups: data.groups, at: Date.now(), capReached: !!data.capReached };
   notify();
-  return { ok: true as const };
+  return { ok: true as const, capReached: !!data.capReached };
 }
 
 /** Tatil planı oluşturulduğunda çağrılır — Oteller/Restoranlar/Gezilecek
@@ -51,9 +59,9 @@ export async function refreshTravelDataForAddress(address: string) {
     body: { address, categories: ["hotel", "restaurant", "places"], languageCode: "tr" },
   });
   if (error || !data?.ok) return { ok: false as const, reason: data?.reason ?? "provider-error" };
-  memoryCache = { groups: data.groups, at: Date.now() };
+  memoryCache = { groups: data.groups, at: Date.now(), capReached: !!data.capReached };
   notify();
-  return { ok: true as const };
+  return { ok: true as const, capReached: !!data.capReached };
 }
 
 export function useTravelData(category: keyof Groups, location: LocationSource) {
@@ -62,9 +70,18 @@ export function useTravelData(category: keyof Groups, location: LocationSource) 
 
   const refresh = useCallback(async () => {
     setStatus("loading");
+    lastLocationKey = locationKey(location);
     const result = await refreshTravelData(location);
-    setStatus(result?.ok ? "ready" : result?.reason === "missing-key" ? "missing-key" : "error");
-  }, [location.activeSource, location.manualAddress, location.latitude, location.longitude]);
+    setStatus(
+      result?.ok
+        ? result.capReached && !Object.values(memoryCache?.groups ?? {}).some((g) => g.length > 0)
+          ? "cap-reached"
+          : "ready"
+        : result?.reason === "missing-key"
+        ? "missing-key"
+        : "error"
+    );
+  }, [location.activeSource, location.savedManualAddress, location.latitude, location.longitude]);
 
   useEffect(() => {
     const listener = () => setTick((v) => v + 1);
@@ -74,9 +91,14 @@ export function useTravelData(category: keyof Groups, location: LocationSource) 
     };
   }, []);
 
+  // Konum (elle adres ya da GPS) değişince liste yeniden çekilir. Aynı anahtar için
+  // birden fazla bileşen aynı anda tetiklemesin diye anahtar hemen işaretlenir.
   useEffect(() => {
-    if (!memoryCache && location.activeSource !== "none") refresh();
-  }, [location.activeSource]);
+    if (location.activeSource === "none") return;
+    const key = locationKey(location);
+    if (key !== lastLocationKey) refresh();
+  }, [location.activeSource, location.savedManualAddress, location.latitude, location.longitude]);
 
-  return { places: memoryCache?.groups[category] ?? [], status: memoryCache ? "ready" : status, refresh };
+  const capOnly = !!memoryCache?.capReached && !Object.values(memoryCache.groups).some((g) => g.length > 0);
+  return { places: memoryCache?.groups[category] ?? [], status: capOnly ? "cap-reached" : memoryCache ? "ready" : status, refresh };
 }

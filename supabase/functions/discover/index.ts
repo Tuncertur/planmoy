@@ -119,6 +119,8 @@ serve(async (req) => {
     return urls;
   }
 
+  let capReached = false;
+
   async function fetchOne(cat: string) {
     const now = new Date();
     const weekStart = new Date(now);
@@ -136,7 +138,10 @@ serve(async (req) => {
     }
 
     const costCheck = await checkAndChargeCost(admin, user.id, 0.035);
-    if (!costCheck.allowed) return [];
+    if (!costCheck.allowed) {
+      capReached = true;
+      return [];
+    }
 
     const categoryQuery = CATEGORY_QUERIES[cat] ?? CATEGORY_QUERIES.places;
     const textQuery = hasCoords ? categoryQuery : `${categoryQuery} ${address ?? ""}`.trim();
@@ -201,9 +206,9 @@ serve(async (req) => {
     for (const cat of categories) {
       groups[cat] = await fetchOne(cat);
     }
-    return new Response(JSON.stringify({ ok: true, radiusKm: radius / 1000, groups }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ ok: true, radiusKm: radius / 1000, groups, capReached }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 
   const places = await fetchOne(category ?? "places");
-  return new Response(JSON.stringify({ ok: true, radiusKm: radius / 1000, places }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  return new Response(JSON.stringify({ ok: true, radiusKm: radius / 1000, places, capReached }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 });

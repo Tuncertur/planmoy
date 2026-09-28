@@ -10,6 +10,7 @@ export type LocationSource = {
   latitude: number | null;
   longitude: number | null;
   manualAddress: string;
+  savedManualAddress: string;
   hasGps: boolean;
   hasManual: boolean;
   activeSource: "manual" | "gps" | "none";
@@ -135,9 +136,10 @@ export function useLocationSource(userId: string): LocationSource {
     latitude: sharedLatitude,
     longitude: sharedLongitude,
     manualAddress: sharedManualAddress,
+    savedManualAddress: sharedSavedManualAddress,
     hasGps,
     hasManual,
-    activeSource: hasGps ? "gps" : hasManual ? "manual" : "none",
+    activeSource: hasManual ? "manual" : hasGps ? "gps" : "none",
     useGps: requestGps,
     setManualAddress: (v: string) => {
       sharedManualAddress = v;

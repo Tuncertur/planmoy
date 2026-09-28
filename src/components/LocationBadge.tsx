@@ -60,7 +60,8 @@ export function LocationBadge({ userId }: { userId: string }) {
           <button
             type="button"
             className="secondary-button"
-            onClick={() => {
+            onClick={async () => {
+              await location.clearManualAddress();
               location.useGps();
             }}
           >

@@ -46,7 +46,7 @@ export function DiscoverScreen({ userId }: { userId: string }) {
   const location = useLocationSource(userId);
   const [category, setCategory] = useState<(typeof categories)[number]>("restaurant");
   const [query, setQuery] = useState("");
-  const [status, setStatus] = useState<"idle" | "locating" | "loading" | "missing-key" | "provider-error" | "ready">("idle");
+  const [status, setStatus] = useState<"idle" | "locating" | "loading" | "missing-key" | "provider-error" | "cap-reached" | "ready">("idle");
   const [places, setPlaces] = useState<NearbyPlace[]>([]);
   const [radiusKm, setRadiusKm] = useState(isWeekendWindow() ? 100 : 50);
 
@@ -58,7 +58,7 @@ export function DiscoverScreen({ userId }: { userId: string }) {
     setStatus("loading");
     const result = await getNearbyPlaces(
       location.activeSource === "manual"
-        ? { address: location.manualAddress, category: cat, languageCode: "tr" }
+        ? { address: location.savedManualAddress, category: cat, languageCode: "tr" }
         : { latitude: location.latitude!, longitude: location.longitude!, category: cat, languageCode: "tr" }
     );
     if (!result.ok) {
@@ -67,12 +67,13 @@ export function DiscoverScreen({ userId }: { userId: string }) {
     }
     setRadiusKm(result.radiusKm);
     setPlaces(result.places);
-    setStatus("ready");
+    setStatus(result.capReached && result.places.length === 0 ? "cap-reached" : "ready");
   }
 
+  // Konum (elle adres ya da GPS) değişince yeniden ara.
   useEffect(() => {
     if (location.activeSource !== "none") runSearch(category);
-  }, [location.activeSource]);
+  }, [location.activeSource, location.savedManualAddress, location.latitude, location.longitude]);
 
   const visible = places.filter((p) => `${p.name} ${p.address}`.toLocaleLowerCase("tr").includes(query.toLocaleLowerCase("tr")));
 
@@ -136,6 +137,18 @@ export function DiscoverScreen({ userId }: { userId: string }) {
               en: "The Google Places connection isn't configured yet. Add GOOGLE_MAPS_API_KEY to show real businesses, distances, and Google ratings.",
             })}
           </p>
+        </div>
+      )}
+      {status === "provider-error" && (
+        <div className="orbit-card flex items-start gap-3 p-4 text-sm">
+          <Info size={18} className="mt-0.5 shrink-0 text-[var(--color-gold-400)]" />
+          <p>{tt({ tr: "Yerler şu an getirilemedi. Biraz sonra tekrar dene ya da konumunu (üst çubuk) yeniden seç.", en: "Places couldn't be loaded right now. Try again shortly or re-select your location (top bar)." })}</p>
+        </div>
+      )}
+      {status === "cap-reached" && (
+        <div className="orbit-card flex items-start gap-3 p-4 text-sm">
+          <Info size={18} className="mt-0.5 shrink-0 text-[var(--color-gold-400)]" />
+          <p>{tt({ tr: "Bu ayki ücretsiz arama hakkın doldu. Planını yükselterek daha fazla yeni bölge arayabilirsin — daha önce aranmış bölgeler yine görünür.", en: "You've used this month's free search allowance. Upgrade your plan to search more new areas — previously searched areas still show." })}</p>
         </div>
       )}
       {status === "idle" && (
