@@ -9,6 +9,10 @@ import { tt, type Dict } from "../lib/i18n";
 // gösteriliyor — Demo, gerçek FireVibe'da olmayan, test kolaylığı için
 // eklenmiş bir istisna.
 
+// Telefon (SMS) girişi ancak Supabase'de bir SMS sağlayıcısı (ör. Twilio) bağlandıktan sonra çalışır.
+// Bağlanana kadar kapalı ("Yakında") kalır; yoksa kullanıcı hata görür. Bağlayınca true yap.
+const PHONE_LOGIN_ENABLED = false;
+
 type Screen = "choose" | "email" | "phone";
 
 const copy = {
@@ -185,7 +189,7 @@ export function AuthScreen({ onOpenLegal }: { onOpenLegal: () => void }) {
               <ChooseTile icon={<span className="google-mark">G</span>} label={tt(copy.google)} onClick={signInWithGoogle} />
               <ChooseTile icon={<Mail size={17} />} label={tt(copy.emailBtn)} onClick={() => setScreen("email")} />
               <ChooseTile icon={<Sparkles size={17} />} label={tt(copy.demoBtn)} onClick={tryDemo} />
-              <ChooseTile icon={<Phone size={17} />} label={tt(copy.phone)} onClick={() => setScreen("phone")} />
+              <ChooseTile icon={<Phone size={17} />} label={tt(copy.phone)} status={PHONE_LOGIN_ENABLED ? undefined : tt(copy.soon)} onClick={() => setScreen("phone")} />
             </div>
           )}
 
