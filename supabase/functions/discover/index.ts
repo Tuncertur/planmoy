@@ -8,7 +8,7 @@
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
-import { checkAndChargeCost } from "../_shared/cost-cap.ts";
+import { checkAndChargeCost, getPlan } from "../_shared/cost-cap.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -80,6 +80,9 @@ serve(async (req) => {
 
   const { latitude, longitude, address, category, categories, languageCode } = await req.json();
   const radius = radiusForToday();
+  // Fotoğraflar yalnızca ücretli planlarda (ücretsiz planda hiç indirilmez, maliyet sıfır).
+  const plan = await getPlan(admin, user.id);
+  const photosEnabled = plan !== "free";
   const hasCoords = typeof latitude === "number" && typeof longitude === "number";
   const roundedLoc = hasCoords ? `${latitude.toFixed(2)},${longitude.toFixed(2)}` : (address ?? "").trim().toLocaleLowerCase("tr");
 
@@ -93,8 +96,12 @@ serve(async (req) => {
       return [];
     }
     if (!googlePhotoNames.length) return [];
+    // Fotoğraf indirme Google'a $0.007/adet ödetir — tavana yazılır, tavan doluysa indirilmez.
+    const photoCount = Math.min(3, googlePhotoNames.length);
+    const photoCheck = await checkAndChargeCost(admin, user.id, 0.007 * photoCount);
+    if (!photoCheck.allowed) return [];
     const urls: string[] = [];
-    for (let i = 0; i < Math.min(3, googlePhotoNames.length); i++) {
+    for (let i = 0; i < photoCount; i++) {
       try {
         const mediaRes = await fetch(
           `https://places.googleapis.com/v1/${googlePhotoNames[i]}/media?maxWidthPx=600&key=${apiKey}`
@@ -170,7 +177,7 @@ serve(async (req) => {
       rawPlaces.map(async (p: any) => {
         const placeId = p.id ?? crypto.randomUUID();
         const googlePhotoNames = Array.isArray(p.photos) ? p.photos.slice(0, 3).map((photo: any) => photo.name) : [];
-        const photos = await getOrCachePhotos(placeId, googlePhotoNames);
+        const photos = photosEnabled ? await getOrCachePhotos(placeId, googlePhotoNames) : [];
         return {
           id: placeId,
           name: p.displayName?.text ?? "Unnamed place",

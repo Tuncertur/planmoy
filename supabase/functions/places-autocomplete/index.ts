@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import { checkAndChargeCost } from "../_shared/cost-cap.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -51,6 +52,12 @@ serve(async (req) => {
   const { input, languageCode } = await req.json();
   if (!input || typeof input !== "string" || input.trim().length < 3 || input.length > 100) {
     return new Response(JSON.stringify({ ok: true, suggestions: [] }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  }
+
+  // Aylık maliyet tavanı ($2.83 / 1000 istek). Tavan dolunca boş öneri döner.
+  const costCheck = await checkAndChargeCost(admin, user.id, 0.00283);
+  if (!costCheck.allowed) {
+    return new Response(JSON.stringify({ ok: true, suggestions: [], capReached: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 
   const response = await fetch("https://places.googleapis.com/v1/places:autocomplete", {

@@ -2,11 +2,16 @@
 // tetiklediği tahmini gerçek dış-API maliyeti, ödediği abonelik
 // ücretinin bir kısmını (kâr payı bırakacak şekilde) aşmasın.
 const MONTHLY_COST_CAP_USD: Record<string, number> = {
-  free: 0.15,
+  free: 0.5,
   personal: 1.2,
   solo: 2.5,
   studio: 6.5,
 };
+
+export async function getPlan(admin: any, userId: string): Promise<string> {
+  const { data: sub } = await admin.from("subscriptions").select("plan, status").eq("user_id", userId).maybeSingle();
+  return sub?.status === "active" ? sub.plan ?? "free" : "free";
+}
 
 export async function checkAndChargeCost(admin: any, userId: string, estimatedCostUsd: number): Promise<{ allowed: boolean; reason?: string }> {
   const month = new Date().toISOString().slice(0, 7);
