@@ -48,6 +48,7 @@ export function DiscoverScreen({ userId }: { userId: string }) {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<"idle" | "locating" | "loading" | "missing-key" | "provider-error" | "cap-reached" | "ready">("idle");
   const [places, setPlaces] = useState<NearbyPlace[]>([]);
+  const [capReason, setCapReason] = useState<"user" | "pool" | undefined>(undefined);
   const [radiusKm, setRadiusKm] = useState(isWeekendWindow() ? 100 : 50);
 
   async function runSearch(cat: (typeof categories)[number]) {
@@ -66,6 +67,7 @@ export function DiscoverScreen({ userId }: { userId: string }) {
       return;
     }
     setRadiusKm(result.radiusKm);
+    setCapReason(result.capReason);
     setPlaces(result.places);
     setStatus(result.capReached && result.places.length === 0 ? "cap-reached" : "ready");
   }
@@ -148,7 +150,7 @@ export function DiscoverScreen({ userId }: { userId: string }) {
       {status === "cap-reached" && (
         <div className="orbit-card flex items-start gap-3 p-4 text-sm">
           <Info size={18} className="mt-0.5 shrink-0 text-[var(--color-gold-400)]" />
-          <p>{tt({ tr: "Bu ayki ücretsiz arama hakkın doldu. Planını yükselterek daha fazla yeni bölge arayabilirsin — daha önce aranmış bölgeler yine görünür.", en: "You've used this month's free search allowance. Upgrade your plan to search more new areas — previously searched areas still show." })}</p>
+          <p>{capReason === "pool" ? tt({ tr: "Bu ay ücretsiz aramalar için ayrılan genel havuz doldu. Ücretli planlarda canlı arama devam eder; ay başında havuz yenilenir.", en: "This month's shared pool of free searches is used up. Paid plans keep live search; the pool resets at the start of the month." }) : tt({ tr: "Bu ayki ücretsiz arama hakkın doldu. Planını yükselterek daha fazla yeni bölge arayabilirsin — daha önce aranmış bölgeler yine görünür.", en: "You've used this month's free search allowance. Upgrade your plan to search more new areas — previously searched areas still show." })}</p>
         </div>
       )}
       {status === "idle" && (

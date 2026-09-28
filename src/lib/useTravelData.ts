@@ -23,7 +23,7 @@ export type TravelPlace = {
 type Groups = { hotel: TravelPlace[]; restaurant: TravelPlace[]; places: TravelPlace[] };
 type CacheStatus = "idle" | "loading" | "missing-key" | "cap-reached" | "error" | "ready";
 
-let memoryCache: { groups: Groups; at: number; capReached?: boolean } | null = null;
+let memoryCache: { groups: Groups; at: number; capReached?: boolean; capReason?: "user" | "pool" } | null = null;
 // Son çekilen KONUM anahtarı — konum (adres/GPS) değişince liste yeniden çekilir.
 let lastLocationKey: string | null = null;
 
@@ -46,9 +46,9 @@ export async function refreshTravelData(location: LocationSource) {
       : { latitude: location.latitude, longitude: location.longitude, categories: ["hotel", "restaurant", "places"], languageCode: "tr" };
   const { data, error } = await supabase.functions.invoke("discover", { body });
   if (error || !data?.ok) return { ok: false as const, reason: data?.reason ?? "provider-error" };
-  memoryCache = { groups: data.groups, at: Date.now(), capReached: !!data.capReached };
+  memoryCache = { groups: data.groups, at: Date.now(), capReached: !!data.capReached, capReason: data.capReason };
   notify();
-  return { ok: true as const, capReached: !!data.capReached };
+  return { ok: true as const, capReached: !!data.capReached, capReason: data.capReason };
 }
 
 /** Tatil planı oluşturulduğunda çağrılır — Oteller/Restoranlar/Gezilecek
@@ -59,9 +59,9 @@ export async function refreshTravelDataForAddress(address: string) {
     body: { address, categories: ["hotel", "restaurant", "places"], languageCode: "tr" },
   });
   if (error || !data?.ok) return { ok: false as const, reason: data?.reason ?? "provider-error" };
-  memoryCache = { groups: data.groups, at: Date.now(), capReached: !!data.capReached };
+  memoryCache = { groups: data.groups, at: Date.now(), capReached: !!data.capReached, capReason: data.capReason };
   notify();
-  return { ok: true as const, capReached: !!data.capReached };
+  return { ok: true as const, capReached: !!data.capReached, capReason: data.capReason };
 }
 
 export function useTravelData(category: keyof Groups, location: LocationSource) {
@@ -100,5 +100,5 @@ export function useTravelData(category: keyof Groups, location: LocationSource) 
   }, [location.activeSource, location.savedManualAddress, location.latitude, location.longitude]);
 
   const capOnly = !!memoryCache?.capReached && !Object.values(memoryCache.groups).some((g) => g.length > 0);
-  return { places: memoryCache?.groups[category] ?? [], status: capOnly ? "cap-reached" : memoryCache ? "ready" : status, refresh };
+  return { places: memoryCache?.groups[category] ?? [], status: capOnly ? "cap-reached" : memoryCache ? "ready" : status, capReason: memoryCache?.capReason, refresh };
 }

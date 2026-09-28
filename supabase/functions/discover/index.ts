@@ -127,6 +127,7 @@ serve(async (req) => {
   }
 
   let capReached = false;
+  let capReason: string | undefined;
 
   async function fetchOne(cat: string) {
     const now = new Date();
@@ -147,6 +148,7 @@ serve(async (req) => {
     const costCheck = await checkAndChargeCost(admin, user.id, 0.035);
     if (!costCheck.allowed) {
       capReached = true;
+      capReason = costCheck.reason === "monthly-cost-cap-reached" ? "user" : "pool";
       return [];
     }
 
@@ -213,9 +215,9 @@ serve(async (req) => {
     for (const cat of categories) {
       groups[cat] = await fetchOne(cat);
     }
-    return new Response(JSON.stringify({ ok: true, radiusKm: radius / 1000, groups, capReached }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ ok: true, radiusKm: radius / 1000, groups, capReached, capReason }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 
   const places = await fetchOne(category ?? "places");
-  return new Response(JSON.stringify({ ok: true, radiusKm: radius / 1000, places, capReached }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  return new Response(JSON.stringify({ ok: true, radiusKm: radius / 1000, places, capReached, capReason }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 });

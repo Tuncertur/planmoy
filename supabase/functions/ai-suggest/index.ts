@@ -60,7 +60,7 @@ serve(async (req) => {
   if (!prompt.trim()) return json({ ok: false, reason: "empty", suggestion: null });
 
   const costCheck = await checkAndChargeCost(admin, user.id, COST_PER_CALL_USD);
-  if (!costCheck.allowed) return json({ ok: false, reason: "monthly-cost-cap-reached", suggestion: null });
+  if (!costCheck.allowed) return json({ ok: false, reason: costCheck.reason ?? "monthly-cost-cap-reached", suggestion: null });
 
   await admin.from("ai_usage_log").insert({ user_id: user.id, surface: "ai-suggest" });
 
