@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { ArrowRight, CalendarDays, Check, Mail, ShieldCheck, Sparkles, Users } from "lucide-react";
+import { ArrowRight, CalendarDays, Check, Eye, EyeOff, Mail, ShieldCheck, Sparkles, Users } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { tt, type Dict } from "../lib/i18n";
 
@@ -66,6 +66,7 @@ export function AuthScreen({ onOpenLegal }: { onOpenLegal: () => void }) {
   const [mode, setMode] = useState<"signin" | "signup">("signup");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -174,14 +175,25 @@ export function AuthScreen({ onOpenLegal }: { onOpenLegal: () => void }) {
                 </label>
                 <label>
                   {tt(copy.password)}
-                  <input
-                    required
-                    minLength={8}
-                    type="password"
-                    autoComplete={mode === "signin" ? "current-password" : "new-password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
+                  <span style={{ position: "relative", display: "block" }}>
+                    <input
+                      required
+                      minLength={8}
+                      type={showPassword ? "text" : "password"}
+                      autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      style={{ paddingRight: 40 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      aria-label={showPassword ? tt({ tr: "Şifreyi gizle", en: "Hide password" }) : tt({ tr: "Şifreyi göster", en: "Show password" })}
+                      style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: 0, padding: 4, cursor: "pointer", opacity: 0.6, display: "flex" }}
+                    >
+                      {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                    </button>
+                  </span>
                 </label>
                 {mode === "signup" && (
                   <label className="auth-consent">
