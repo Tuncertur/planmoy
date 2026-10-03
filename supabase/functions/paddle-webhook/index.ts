@@ -20,22 +20,29 @@ const supabaseAdmin = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
 );
 
+// DÜZELTME (QA denetimi): bu fonksiyon "tier"/"source"/"provider_subscription_id"
+// sütunlarına yazıyordu ama gerçek şemada (0012_subscriptions.sql) bunlar yok —
+// tablo "plan" ve "paddle_subscription_id" kullanıyor. Eşleşmeyince her upsert
+// veritabanı hatasıyla SESSİZCE başarısız oluyordu (sadece console.error, 200
+// dönülüyordu) — yani ödeme alınıp plan hiç aktifleşmeyebilirdi.
 async function upsertSubscription(
   userId: string,
-  tier: string,
-  status: "active" | "canceled" | "past_due" | "trialing",
-  providerSubscriptionId?: string,
+  plan: "free" | "personal" | "solo" | "studio",
+  status: "active" | "canceled" | "past_due" | "paused",
+  paddleSubscriptionId?: string,
+  paddleCustomerId?: string,
 ) {
   const row: Record<string, unknown> = {
     user_id: userId,
-    tier,
+    plan,
     status,
-    source: "paddle",
     updated_at: new Date().toISOString(),
   };
-  if (providerSubscriptionId) row.provider_subscription_id = providerSubscriptionId;
+  if (paddleSubscriptionId) row.paddle_subscription_id = paddleSubscriptionId;
+  if (paddleCustomerId) row.paddle_customer_id = paddleCustomerId;
   const { error } = await supabaseAdmin.from("subscriptions").upsert(row);
   if (error) console.error("Supabase upsert hatası:", error);
+  return error;
 }
 
 async function verifySignature(rawBody: string, header: string | null): Promise<boolean> {
