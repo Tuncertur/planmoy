@@ -31,6 +31,20 @@ let gpsTimeoutHandle: ReturnType<typeof setTimeout> | null = null;
 let prefsLoadedForUser: string | null = null;
 const listeners = new Set<() => void>();
 
+// KRİTİK (QA bulgusu): bu modül-seviyesi durum kullanıcıya özel DEĞİL.
+// Çıkış/kullanıcı değişiminde çağrılmazsa, yeni kullanıcı bir önceki
+// kullanıcının konumunu (kısa süreliğine, yeniden yüklenene kadar) görür.
+export function resetLocationSourceForUserChange() {
+  sharedLatitude = null;
+  sharedLongitude = null;
+  sharedManualAddress = "";
+  sharedSavedManualAddress = "";
+  sharedGpsStatus = "idle";
+  gpsAutoTried = false;
+  prefsLoadedForUser = null;
+  listeners.forEach((fn) => fn());
+}
+
 function notify() {
   listeners.forEach((fn) => fn());
 }

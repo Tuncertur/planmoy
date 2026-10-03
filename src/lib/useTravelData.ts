@@ -27,6 +27,15 @@ let memoryCache: { groups: Groups; at: number; capReached?: boolean; capReason?:
 // Son çekilen KONUM anahtarı — konum (adres/GPS) değişince liste yeniden çekilir.
 let lastLocationKey: string | null = null;
 
+// KRİTİK (QA bulgusu): aynı sebep — otel/restoran/keşif önbelleği
+// kullanıcıya özel değil, çıkışta temizlenmezse yeni kullanıcıya
+// bir önceki kullanıcının sonuçları (kısa süreliğine) görünebilir.
+export function resetTravelDataForUserChange() {
+  memoryCache = null;
+  lastLocationKey = null;
+  notify();
+}
+
 function locationKey(location: LocationSource): string {
   if (location.activeSource === "manual") return `m:${location.savedManualAddress.trim().toLocaleLowerCase("tr")}`;
   if (location.activeSource === "gps") return `g:${location.latitude?.toFixed(2)},${location.longitude?.toFixed(2)}`;
