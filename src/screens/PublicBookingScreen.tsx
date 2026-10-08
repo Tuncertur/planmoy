@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { findBlockedTerm } from "../lib/content-moderation";
 import { tt } from "../lib/i18n";
+import { useSession } from "../lib/useSession";
 
 // FireVibe'ın gerçek src/routes/book.tsx dosyasından taşınmıştır.
 // FireVibe sürümü sabit bir demo işletmeye ("deniz-klinik") bağlıydı —
@@ -19,6 +20,7 @@ type Config = { business: any; professional: any; service: any } | null;
 
 export function PublicBookingScreen() {
   const { slug } = useParams();
+  const { session } = useSession();
   const [config, setConfig] = useState<Config>(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const [sent, setSent] = useState(false);
@@ -30,18 +32,16 @@ export function PublicBookingScreen() {
 
   useEffect(() => {
     async function load() {
-      const { data: business } = await supabase.from("businesses").select("*").eq("slug", slug).maybeSingle();
-      if (!business) {
+      // DÜZELTME (F-06): businesses/services/professionals artık herkese
+      // açık "using(true)" RLS politikalarıyla okunmuyor (platform genelinde
+      // veri sızdırıyordu) — tek bir işletmeyi slug'a göre döndüren
+      // service-role Edge Function'a taşındı (get-shared-event ile aynı desen).
+      const { data, error } = await supabase.functions.invoke("get-public-booking-info", { body: { slug } });
+      if (error || !data?.ok) {
         setLoadFailed(true);
         return;
       }
-      const { data: professional } = await supabase.from("professionals").select("*").eq("business_id", business.id).limit(1).maybeSingle();
-      const { data: service } = await supabase.from("services").select("*").eq("business_id", business.id).limit(1).maybeSingle();
-      if (!professional || !service) {
-        setLoadFailed(true);
-        return;
-      }
-      setConfig({ business, professional, service });
+      setConfig({ business: data.business, professional: data.professional, service: data.service });
     }
     load();
   }, [slug]);
@@ -66,6 +66,12 @@ export function PublicBookingScreen() {
       starts_at: startsAt.toISOString(),
       ends_at: endsAt.toISOString(),
       status: "pending",
+      // DÜZELTME (F-03): oturum açmış kullanıcı kendi randevusuna owner_id
+      // olarak bağlanır (0022 migration'daki RLS politikasıyla eşleşir),
+      // böylece "randevularım" ekranında görünebilir. Oturum yoksa (anon
+      // ziyaretçi) owner_id gönderilmez, "public can request appointment"
+      // politikası (owner_id IS NULL) devam eder.
+      ...(session?.user?.id ? { owner_id: session.user.id } : {}),
     });
     setLoading(false);
     if (insertError) {

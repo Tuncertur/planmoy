@@ -25,17 +25,34 @@ const supabaseAdmin = createClient(
 // tablo "plan" ve "paddle_subscription_id" kullanıyor. Eşleşmeyince her upsert
 // veritabanı hatasıyla SESSİZCE başarısız oluyordu (sadece console.error, 200
 // dönülüyordu) — yani ödeme alınıp plan hiç aktifleşmeyebilirdi.
+// DÜZELTME (2. QA denetimi, F-04 — HIGH): occurredAt eklendi. Mevcut satırın
+// last_event_at'i, gelen olayın occurredAt'inden daha YENİyse yazma —
+// böylece ağ/retry kaynaklı sıra-dışı teslim edilen eski bir olay (örn. geç
+// gelen bir "subscription.updated: active"), daha yeni bir
+// "subscription.canceled"ın üzerine yazamaz.
 async function upsertSubscription(
   userId: string,
   plan: "free" | "personal" | "solo" | "studio",
   status: "active" | "canceled" | "past_due" | "paused",
+  occurredAt: string,
   paddleSubscriptionId?: string,
   paddleCustomerId?: string,
 ) {
+  const { data: existing } = await supabaseAdmin
+    .from("subscriptions")
+    .select("last_event_at")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (existing?.last_event_at && new Date(existing.last_event_at) > new Date(occurredAt)) {
+    console.warn("Sıra dışı (eski) webhook olayı yoksayıldı:", { userId, occurredAt, existing: existing.last_event_at });
+    return null;
+  }
+
   const row: Record<string, unknown> = {
     user_id: userId,
     plan,
     status,
+    last_event_at: occurredAt,
     updated_at: new Date().toISOString(),
   };
   if (paddleSubscriptionId) row.paddle_subscription_id = paddleSubscriptionId;
@@ -43,6 +60,23 @@ async function upsertSubscription(
   const { error } = await supabaseAdmin.from("subscriptions").upsert(row);
   if (error) console.error("Supabase upsert hatası:", error);
   return error;
+}
+
+// DÜZELTME (F-04): aynı event.id ikinci kez işlenmesin (Paddle "en az bir
+// kez" teslim eder, retry'lar aynı event'i tekrar gönderebilir).
+async function alreadyProcessed(eventId: string | undefined, eventType: string): Promise<boolean> {
+  if (!eventId) return false; // id yoksa dedup edemeyiz, normal akışa devam
+  const { error } = await supabaseAdmin.from("processed_webhook_events").insert({ event_id: eventId, event_type: eventType });
+  // insert çakışması (primary key ihlali) = bu event zaten işlenmiş
+  return !!error;
+}
+
+// DÜZELTME (F-04): yakalanmış geçerli bir imzalı istek süresiz tekrar
+// oynatılamasın — ts, şimdiki zamana göre 5 dakikadan eskiyse reddet.
+function isFreshTimestamp(tsSeconds: string): boolean {
+  const tsMs = Number(tsSeconds) * 1000;
+  if (!Number.isFinite(tsMs)) return false;
+  return Math.abs(Date.now() - tsMs) <= 5 * 60 * 1000;
 }
 
 async function verifySignature(rawBody: string, header: string | null): Promise<boolean> {
@@ -54,6 +88,8 @@ async function verifySignature(rawBody: string, header: string | null): Promise<
   const ts = parts["ts"];
   const h1 = parts["h1"];
   if (!ts || !h1) return false;
+
+  if (!isFreshTimestamp(ts)) return false; // F-04: eski/yakalanmış istekleri reddet (replay koruması)
 
   const signedPayload = `${ts}:${rawBody}`;
   const key = await crypto.subtle.importKey(
@@ -100,17 +136,25 @@ serve(async (req) => {
 
   try {
     const eventType = event.event_type;
+    const eventId: string | undefined = event.event_id ?? event.id;
+    const occurredAt: string = event.occurred_at ?? new Date().toISOString();
     const data = event.data || {};
     const customData = data.custom_data || {};
     const userId: string | undefined = customData.supabase_user_id;
     const tier: string | undefined = customData.tier;
+
+    // F-04: idempotency — aynı event.id ikinci kez gelirse (Paddle retry)
+    // sessizce 200 dön, tekrar işleme.
+    if (await alreadyProcessed(eventId, eventType)) {
+      return new Response(JSON.stringify({ received: true, duplicate: true }), { status: 200 });
+    }
 
     switch (eventType) {
       case "transaction.completed":
       case "subscription.created": {
         if (userId && tier) {
           const subId = data.subscription_id || data.id; // transaction'da subscription_id, subscription olayında id
-          await upsertSubscription(userId, tier, "active", subId);
+          await upsertSubscription(userId, tier, "active", occurredAt, subId);
         } else {
           console.error("userId veya tier bulunamadı (custom_data eksik)", { userId, tier, eventType });
         }
@@ -120,14 +164,14 @@ serve(async (req) => {
       case "subscription.updated": {
         if (userId && tier) {
           const status = data.status === "active" ? "active" : "past_due";
-          await upsertSubscription(userId, tier, status, data.id);
+          await upsertSubscription(userId, tier, status, occurredAt, data.id);
         }
         break;
       }
 
       case "subscription.canceled": {
         if (userId) {
-          await upsertSubscription(userId, "free", "canceled", data.id);
+          await upsertSubscription(userId, "free", "canceled", occurredAt, data.id);
         }
         break;
       }

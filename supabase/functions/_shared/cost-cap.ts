@@ -27,23 +27,35 @@ export async function checkAndChargeCost(admin: any, userId: string, estimatedCo
   const plan = await getPlan(admin, userId);
   const cap = MONTHLY_COST_CAP_USD[plan] ?? MONTHLY_COST_CAP_USD.free;
 
-  const { data: usage } = await admin.from("user_usage_cost").select("estimated_cost_usd").eq("user_id", userId).eq("month", month).maybeSingle();
-  const current = Number(usage?.estimated_cost_usd ?? 0);
-  if (current + estimatedCostUsd > cap) return { allowed: false, reason: "monthly-cost-cap-reached" };
+  // DÜZELTME (2. QA denetimi, F-02 — CRITICAL): önceki hâl SELECT ile okuyup
+  // JS'te karşılaştırıp sonra UPSERT ediyordu — bu üç adım arasında eşzamanlı
+  // istekler tavanı atlatabiliyordu (kanıtlı, bkz. 0021 migration yorumu).
+  // Artık tek bir atomik SQL fonksiyonu (satır kilidiyle) kullanıcı-başı
+  // tavanı kontrol edip aynı anda yazıyor — araya başka bir isteğin girmesi
+  // mümkün değil.
+  const { data: userOk, error: userErr } = await admin.rpc("charge_user_cost", {
+    p_user_id: userId,
+    p_month: month,
+    p_amount: estimatedCostUsd,
+    p_cap: cap,
+  });
+  if (userErr) return { allowed: false, reason: "pool-check-failed" }; // güvenli taraf: emin değilsek harcatma
+  if (!userOk) return { allowed: false, reason: "monthly-cost-cap-reached" };
 
   // Ücretsiz havuz (yalnızca ücretsiz plan; muaf hesaplar hariç)
   if (plan === "free") {
     const { data: exempt } = await admin.from("cost_exempt_users").select("user_id").eq("user_id", userId).maybeSingle();
     if (!exempt) {
       const { data: ok, error } = await admin.rpc("charge_free_pool", { p_month: month, p_amount: estimatedCostUsd, p_cap: FREE_POOL_CAP_USD });
-      if (error) return { allowed: false, reason: "pool-check-failed" }; // güvenli taraf: emin değilsek harcatma
-      if (!ok) return { allowed: false, reason: "free-pool-cap-reached" };
+      if (error || !ok) {
+        // Havuz reddetti ama kullanıcı-başı tavana zaten yazdık — geri al
+        // (telafi edici işlem), yoksa kullanıcının ledger'ı gerçek harcamadan
+        // fazla görünür ve bir dahaki istek haksız yere reddedilir.
+        await admin.rpc("charge_user_cost", { p_user_id: userId, p_month: month, p_amount: -estimatedCostUsd, p_cap: Number.MAX_SAFE_INTEGER });
+        return { allowed: false, reason: error ? "pool-check-failed" : "free-pool-cap-reached" };
+      }
     }
   }
 
-  await admin.from("user_usage_cost").upsert(
-    { user_id: userId, month, estimated_cost_usd: current + estimatedCostUsd, updated_at: new Date().toISOString() },
-    { onConflict: "user_id,month" }
-  );
   return { allowed: true };
 }

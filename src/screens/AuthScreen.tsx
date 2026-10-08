@@ -9,7 +9,7 @@ import { tt, type Dict } from "../lib/i18n";
 // gösteriliyor — Demo, gerçek FireVibe'da olmayan, test kolaylığı için
 // eklenmiş bir istisna.
 
-type Screen = "choose" | "email";
+type Screen = "choose" | "email" | "reset";
 
 const copy = {
   eyebrow: { tr: "Güvenli çalışma alanı", en: "Secure workspace" } satisfies Dict,
@@ -38,6 +38,11 @@ const copy = {
   emailBtn: { tr: "E-posta ile giriş", en: "Continue with email" } satisfies Dict,
   demoBtn: { tr: "Demo olarak giriş yap", en: "Sign in with demo" } satisfies Dict,
   back: { tr: "Geri", en: "Back" } satisfies Dict,
+  forgot: { tr: "Şifremi unuttum", en: "Forgot password" } satisfies Dict,
+  resetTitle: { tr: "Şifreni sıfırla.", en: "Reset your password." } satisfies Dict,
+  resetLead: { tr: "E-posta adresine bir sıfırlama bağlantısı göndereceğiz.", en: "We'll send a reset link to your email." } satisfies Dict,
+  resetSubmit: { tr: "Sıfırlama bağlantısı gönder", en: "Send reset link" } satisfies Dict,
+  resetSent: { tr: "E-postana bir bağlantı gönderdik. Gelen kutunu kontrol et.", en: "We've sent a link to your email. Check your inbox." } satisfies Dict,
 };
 
 function ChooseTile({
@@ -70,6 +75,19 @@ export function AuthScreen({ onOpenLegal }: { onOpenLegal: () => void }) {
   const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resetSent, setResetSent] = useState(false);
+
+  // DÜZELTME (2. QA denetimi, F-09): e-posta/şifre ile kayıtlı bir kullanıcının
+  // şifresini unutması durumunda hesabı kurtarmanın HİÇBİR yolu yoktu.
+  async function requestPasswordReset(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    setBusy(false);
+    if (error) setError(error.message);
+    else setResetSent(true);
+  }
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -155,8 +173,8 @@ export function AuthScreen({ onOpenLegal }: { onOpenLegal: () => void }) {
 
         <section className="auth-card">
           <p className="eyebrow">{tt(copy.eyebrow)}</p>
-          <h1>{screen === "choose" ? tt(copy.chooseTitle) : mode === "signin" ? tt(copy.signIn) : tt(copy.signUp)}</h1>
-          <p className="auth-lead">{tt(copy.lead)}</p>
+          <h1>{screen === "choose" ? tt(copy.chooseTitle) : screen === "reset" ? tt(copy.resetTitle) : mode === "signin" ? tt(copy.signIn) : tt(copy.signUp)}</h1>
+          {screen !== "reset" && <p className="auth-lead">{tt(copy.lead)}</p>}
 
           {screen === "choose" && (
             <div className="auth-choice-grid">
@@ -195,6 +213,20 @@ export function AuthScreen({ onOpenLegal }: { onOpenLegal: () => void }) {
                     </button>
                   </span>
                 </label>
+                {mode === "signin" && (
+                  <button
+                    type="button"
+                    className="auth-toggle"
+                    style={{ fontSize: 13, opacity: 0.75, textAlign: "right" }}
+                    onClick={() => {
+                      setError(null);
+                      setResetSent(false);
+                      setScreen("reset");
+                    }}
+                  >
+                    {tt(copy.forgot)}
+                  </button>
+                )}
                 {mode === "signup" && (
                   <label className="auth-consent">
                     <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
@@ -233,6 +265,35 @@ export function AuthScreen({ onOpenLegal }: { onOpenLegal: () => void }) {
             </>
           )}
 
+          {screen === "reset" && (
+            <>
+              {resetSent ? (
+                <div className="form-error" role="status" style={{ background: "rgba(16,185,129,0.12)", color: "#0f9d6b" }}>
+                  <p>{tt(copy.resetSent)}</p>
+                </div>
+              ) : (
+                <form onSubmit={requestPasswordReset}>
+                  <p className="auth-lead" style={{ marginTop: 0 }}>{tt(copy.resetLead)}</p>
+                  <label>
+                    {tt(copy.email)}
+                    <input required type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                  </label>
+                  {error && (
+                    <div className="form-error" role="alert">
+                      <p>{error}</p>
+                    </div>
+                  )}
+                  <button disabled={busy} className="auth-submit">
+                    {busy ? tt(copy.wait) : tt(copy.resetSubmit)}
+                    <ArrowRight size={16} />
+                  </button>
+                </form>
+              )}
+              <button type="button" className="auth-toggle" style={{ opacity: 0.6 }} onClick={() => { setScreen("email"); setMode("signin"); setResetSent(false); setError(null); }}>
+                ← {tt(copy.back)}
+              </button>
+            </>
+          )}
 
           <p className="auth-legal">
             {tt(copy.legal)} <a href="/privacy" onClick={(e) => { e.preventDefault(); onOpenLegal(); }} style={{ cursor: "pointer" }}>{tt(copy.privacy)}</a>
