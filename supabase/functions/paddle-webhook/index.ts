@@ -30,6 +30,25 @@ const supabaseAdmin = createClient(
 // böylece ağ/retry kaynaklı sıra-dışı teslim edilen eski bir olay (örn. geç
 // gelen bir "subscription.updated: active"), daha yeni bir
 // "subscription.canceled"ın üzerine yazamaz.
+const VALID_TIERS = new Set(["free", "personal", "solo", "studio"]);
+
+// DÜZELTME (2. QA denetimi, F-01 — CRITICAL'in sunucu tarafı güvencesi):
+// customData, Paddle'ın istemci-taraflı checkout modelinde kaçınılmaz olarak
+// istemciden geliyor (PricingScreen → openPaddleCheckout → Paddle overlay).
+// Bunu güvenli hale getiren katman burası: webhook, custom_data'daki
+// supabase_user_id'nin GERÇEKTEN var olan bir Supabase kullanıcısına ait
+// olduğunu doğrulamadan hiçbir yazma yapmaz — rastgele/bozuk bir id ile
+// subscriptions tablosuna çöp satır yazılamaz. (Not: bu, "bir kullanıcının
+// kendi hesabına girip, kendi kartıyla ödeyip custom_data'ya BAŞKA birinin
+// id'sini yazması" senaryosunu önlemez — bu, Paddle Billing'in istemci
+// taraflı overlay modelinin bilinen bir sınırıdır; tam önlem için Paddle'ın
+// sunucu-taraflı "Transaction" API'siyle checkout'u sunucuda başlatmak
+// gerekir, bu ayrı bir mimari değişikliktir ve bu turun kapsamı dışıdır.)
+async function userExists(userId: string): Promise<boolean> {
+  const { data, error } = await supabaseAdmin.auth.admin.getUserById(userId);
+  return !error && !!data?.user;
+}
+
 async function upsertSubscription(
   userId: string,
   plan: "free" | "personal" | "solo" | "studio",
@@ -38,6 +57,15 @@ async function upsertSubscription(
   paddleSubscriptionId?: string,
   paddleCustomerId?: string,
 ) {
+  if (!VALID_TIERS.has(plan)) {
+    console.error("Geçersiz tier, yoksayıldı:", { userId, plan });
+    return new Error("invalid-tier");
+  }
+  if (!(await userExists(userId))) {
+    console.error("custom_data.supabase_user_id gerçek bir kullanıcıya ait değil, yoksayıldı:", { userId });
+    return new Error("unknown-user");
+  }
+
   const { data: existing } = await supabaseAdmin
     .from("subscriptions")
     .select("last_event_at")

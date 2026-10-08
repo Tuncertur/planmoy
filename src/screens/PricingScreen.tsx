@@ -1,12 +1,19 @@
+import { useState } from "react";
 import { ArrowRight, Building2, Check, Clock3, ShieldCheck, Sparkles, UserRound } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { tt } from "../lib/i18n";
+import { useSession } from "../lib/useSession";
+import { isPlanPurchasable, openPaddleCheckout } from "../lib/paddle";
 
 // FireVibe'ın gerçek src/routes/pricing.tsx dosyasından taşınmıştır.
-// Ödeme/checkout bilinçli olarak bağlanmadı (kullanıcı kararı) —
-// butonlar kayıt ekranına götürüyor, gerçek bir satın alma yapmıyor.
+//
+// DÜZELTME (2. QA denetimi, F-01 — CRITICAL): ödeme/checkout artık Paddle.js
+// ile bağlı (bkz. ../lib/paddle.ts). Fiyat ID'leri ortam değişkenlerinden
+// okunur, uydurulmadı — doldurulmadıkları sürece ilgili plan butonu "yakında"
+// durumunda kalır ve checkout açmaz.
 
-type Plan = { name: string; price: string; description: string; features: { tr: string; en: string }[]; icon: React.ReactNode; featured?: boolean };
+type PlanSlug = "personal" | "solo" | "studio";
+type Plan = { slug?: PlanSlug; name: string; price: string; description: string; features: { tr: string; en: string }[]; icon: React.ReactNode; featured?: boolean };
 
 const plans: Plan[] = [
   {
@@ -21,6 +28,7 @@ const plans: Plan[] = [
     ],
   },
   {
+    slug: "personal",
     name: "Personal",
     price: "$1.99",
     description: tt({ tr: "Kişisel planlama için hafif ve güçlü.", en: "Lightweight and powerful personal planning." }),
@@ -32,6 +40,7 @@ const plans: Plan[] = [
     ],
   },
   {
+    slug: "solo",
     name: "Solo",
     price: "$4.99",
     description: tt({ tr: "Tek kişilik hizmet işletmeleri için.", en: "For one-person service businesses." }),
@@ -44,6 +53,7 @@ const plans: Plan[] = [
     ],
   },
   {
+    slug: "studio",
     name: "Studio",
     price: "$12.99",
     description: tt({ tr: "Büyüyen ekipler için hızlı çalışma alanı.", en: "A fast workspace for growing teams." }),
@@ -57,6 +67,27 @@ const plans: Plan[] = [
 ];
 
 export function PricingScreen() {
+  const { session } = useSession();
+  const navigate = useNavigate();
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+
+  async function handlePlanClick(plan: Plan) {
+    if (!plan.slug) return; // Free start — zaten /auth'a gidiyor (aşağıdaki Link)
+    if (!session) {
+      navigate("/"); // oturum yok — önce giriş/kayıt
+      return;
+    }
+    if (!isPlanPurchasable(plan.slug)) {
+      setCheckoutError(tt({ tr: "Bu plan için ödeme yakında açılacak.", en: "Payment for this plan is coming soon." }));
+      return;
+    }
+    setCheckoutError(null);
+    const result = await openPaddleCheckout({ plan: plan.slug, userId: session.user.id, email: session.user.email ?? "" });
+    if (!result.ok) {
+      setCheckoutError(tt({ tr: "Ödeme ekranı açılamadı, lütfen tekrar dene.", en: "Couldn't open checkout, please try again." }));
+    }
+  }
+
   return (
     <main className="pricing-page">
       <header className="pricing-header">
@@ -101,13 +132,26 @@ export function PricingScreen() {
                 </li>
               ))}
             </ul>
-            <Link to="/" className="pricing-cta">
-              {plan.name === "Free start" ? tt({ tr: "Ücretsiz başla", en: "Start free" }) : tt({ tr: "Bu planla başla", en: "Start with this plan" })}
-              <ArrowRight size={15} />
-            </Link>
+            {plan.slug ? (
+              <button type="button" className="pricing-cta" onClick={() => handlePlanClick(plan)}>
+                {tt({ tr: "Bu planla başla", en: "Start with this plan" })}
+                <ArrowRight size={15} />
+              </button>
+            ) : (
+              <Link to="/" className="pricing-cta">
+                {tt({ tr: "Ücretsiz başla", en: "Start free" })}
+                <ArrowRight size={15} />
+              </Link>
+            )}
           </article>
         ))}
       </section>
+
+      {checkoutError && (
+        <p className="pricing-note" role="alert" style={{ color: "#e5484d" }}>
+          {checkoutError}
+        </p>
+      )}
 
       <section className="pricing-ai-note">
         <Sparkles size={18} />
@@ -120,8 +164,8 @@ export function PricingScreen() {
       <p className="pricing-note">
         <b>{tt({ tr: "Kotalar ve farklar: ", en: "Limits and differences: " })}</b>
         {tt({
-          tr: "Ödeme veya checkout şu anda bağlı değil. Fiyatlar aktivasyon öncesi açıkça doğrulanır.",
-          en: "Payments and checkout are not connected yet. Prices will be confirmed clearly before activation.",
+          tr: "Ödeme Paddle üzerinden güvenle alınır. Kartına sadece seçtiğin planın ücreti yansıtılır.",
+          en: "Payments are securely processed via Paddle. Only your chosen plan's price is charged to your card.",
         })}{" "}
         <Link to="/legal">{tt({ tr: "Kullanım koşulları ve gizlilik", en: "Terms and privacy" })}</Link>
       </p>

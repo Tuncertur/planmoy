@@ -43,13 +43,14 @@ serve(async (req) => {
 
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
-  const { count } = await admin
-    .from("ai_usage_log")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", user.id)
-    .eq("surface", "ai-suggest")
-    .gte("created_at", new Date(Date.now() - 60 * 60 * 1000).toISOString());
-  if ((count ?? 0) >= HOURLY_LIMIT) return json({ ok: false, reason: "rate-limited", suggestion: null });
+  // DÜZELTME (F-05): SELECT count -> INSERT yerine tek atomik RPC (bkz.
+  // 0026 migration) — eşzamanlı istekler artık saatlik limiti atlatamaz.
+  const { data: withinLimit, error: limitErr } = await admin.rpc("check_and_log_ai_usage", {
+    p_user_id: user.id,
+    p_surface: "ai-suggest",
+    p_hourly_limit: HOURLY_LIMIT,
+  });
+  if (limitErr || !withinLimit) return json({ ok: false, reason: "rate-limited", suggestion: null });
 
   const apiKey = Deno.env.get("GEMINI_API_KEY");
   if (!apiKey) return json({ ok: false, reason: "missing-key", suggestion: null });
@@ -62,7 +63,8 @@ serve(async (req) => {
   const costCheck = await checkAndChargeCost(admin, user.id, COST_PER_CALL_USD);
   if (!costCheck.allowed) return json({ ok: false, reason: costCheck.reason ?? "monthly-cost-cap-reached", suggestion: null });
 
-  await admin.from("ai_usage_log").insert({ user_id: user.id, surface: "ai-suggest" });
+  // F-05: ai_usage_log satırı artık check_and_log_ai_usage() RPC'si içinde
+  // atomik olarak ekleniyor (yukarıda) — burada ayrıca eklemiyoruz.
 
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
