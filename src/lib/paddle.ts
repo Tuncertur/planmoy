@@ -1,18 +1,14 @@
 // Planmoy — Paddle.js checkout entegrasyonu (F-01 düzeltmesi).
 //
-// ÖNEMLİ SINIR (dürüstçe not edilmiştir): Paddle Billing'in istemci-taraflı
-// overlay checkout modeli, `customData`'yı istemci tarafında ayarlamayı
-// gerektirir — bu Paddle'ın kendi dokümante ettiği standart akıştır, burada
-// atlanamaz. Bunu güvenli hale getiren asıl katman sunucu tarafındadır:
-// `paddle-webhook`, gelen `custom_data.supabase_user_id`'nin GERÇEKTEN var
-// olan bir Supabase kullanıcısına ait olduğunu `auth.admin.getUserById` ile
-// doğrular ve sadece imzası geçerli, Paddle'dan gelen webhook isteklerine
-// göre durum günceller — istemci hiçbir zaman doğrudan `subscriptions`
-// tablosuna yazamaz (RLS: sadece service_role yazar, bkz. 0012 migration).
+// GÜVENLİK: kullanıcı kimliği ve fiyat istemciden alınmaz. Checkout, sunucuda
+// (`create-checkout` Edge Function) JWT doğrulanarak oluşturulan bir Paddle
+// transaction'ı üzerinden açılır; abonelik durumunu yalnızca imzası doğrulanmış
+// `paddle-webhook` yazar (istemci `subscriptions` tablosuna yazamaz, bkz. 0012).
 //
-// Fiyat ID'leri (`pri_...`) kasıtlı olarak UYDURULMADI — ortam
-// değişkenlerinden okunur. Doldurulmadıkları sürece ilgili plan butonu
-// "yakında" durumunda kalır, sahte/placeholder bir ID ile checkout açmaz.
+// Fiyat ID'leri (`pri_...`) UYDURULMADI ve istemcide yoktur; sunucu secret'larından
+// (PADDLE_PRICE_*) okunur. Tanımlı değilse "not-configured" döner, checkout açılmaz.
+
+import { supabase } from "./supabase";
 
 declare global {
   interface Window {
@@ -27,18 +23,8 @@ declare global {
 const CLIENT_TOKEN = import.meta.env.VITE_PADDLE_CLIENT_TOKEN as string | undefined;
 const ENVIRONMENT = (import.meta.env.VITE_PADDLE_ENVIRONMENT as string | undefined) ?? "production";
 
-export const PADDLE_PRICE_IDS: Record<"personal" | "solo" | "studio", string | undefined> = {
-  personal: import.meta.env.VITE_PADDLE_PRICE_PERSONAL as string | undefined,
-  solo: import.meta.env.VITE_PADDLE_PRICE_SOLO as string | undefined,
-  studio: import.meta.env.VITE_PADDLE_PRICE_STUDIO as string | undefined,
-};
-
 export function isPaddleConfigured(): boolean {
   return Boolean(CLIENT_TOKEN);
-}
-
-export function isPlanPurchasable(plan: "personal" | "solo" | "studio"): boolean {
-  return Boolean(CLIENT_TOKEN && PADDLE_PRICE_IDS[plan]);
 }
 
 let loadPromise: Promise<void> | null = null;
@@ -62,30 +48,18 @@ function loadPaddleScript(): Promise<void> {
   return loadPromise;
 }
 
-// Checkout açar. `userId` ve `email` oturumdan (auth.uid()) gelir — istemci
-// kodu bunları her zaman GERÇEK oturumdan okur, elle değiştirilebilir bir
-// form alanından değil. Webhook tarafı bunu tekrar doğrular (bkz. yukarıdaki not).
-export async function openPaddleCheckout(params: {
-  plan: "personal" | "solo" | "studio";
-  userId: string;
-  email: string;
-}): Promise<{ ok: boolean; reason?: string }> {
-  const priceId = PADDLE_PRICE_IDS[params.plan];
-  if (!CLIENT_TOKEN || !priceId) {
-    return { ok: false, reason: "not-configured" };
-  }
+// Checkout açar. Kullanıcı kimliği ve fiyat ID'si İSTEMCİDEN GELMEZ: istemci yalnızca
+// plan adını gönderir, `create-checkout` Edge Function'ı JWT'den kullanıcıyı doğrular,
+// fiyatı sunucu secret'larından okur, custom_data'yı sunucuda yazar ve transactionId döner.
+export async function openPaddleCheckout(plan: "personal" | "solo" | "studio"): Promise<{ ok: boolean; reason?: string }> {
+  if (!CLIENT_TOKEN) return { ok: false, reason: "not-configured" };
+  const { data, error } = await supabase.functions.invoke("create-checkout", { body: { plan } });
+  if (error || !data?.ok) return { ok: false, reason: data?.reason ?? "server-error" };
   try {
     await loadPaddleScript();
   } catch {
     return { ok: false, reason: "script-load-failed" };
   }
-  window.Paddle!.Checkout.open({
-    items: [{ priceId, quantity: 1 }],
-    customer: { email: params.email },
-    customData: {
-      supabase_user_id: params.userId,
-      tier: params.plan,
-    },
-  });
+  window.Paddle!.Checkout.open({ transactionId: data.transactionId });
   return { ok: true };
 }

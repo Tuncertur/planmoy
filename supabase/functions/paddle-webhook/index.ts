@@ -51,7 +51,7 @@ async function userExists(userId: string): Promise<boolean> {
 
 async function upsertSubscription(
   userId: string,
-  plan: "free" | "personal" | "solo" | "studio",
+  plan: string, // çalışma anında VALID_TIERS ile doğrulanır
   status: "active" | "canceled" | "past_due" | "paused",
   occurredAt: string,
   paddleSubscriptionId?: string,
@@ -59,11 +59,11 @@ async function upsertSubscription(
 ) {
   if (!VALID_TIERS.has(plan)) {
     console.error("Geçersiz tier, yoksayıldı:", { userId, plan });
-    return new Error("invalid-tier");
+    return null; // kalıcı hata: yeniden denemek işe yaramaz, 200 dön
   }
   if (!(await userExists(userId))) {
     console.error("custom_data.supabase_user_id gerçek bir kullanıcıya ait değil, yoksayıldı:", { userId });
-    return new Error("unknown-user");
+    return null; // kalıcı hata: yeniden denemek işe yaramaz, 200 dön
   }
 
   const { data: existing } = await supabaseAdmin
@@ -86,8 +86,12 @@ async function upsertSubscription(
   if (paddleSubscriptionId) row.paddle_subscription_id = paddleSubscriptionId;
   if (paddleCustomerId) row.paddle_customer_id = paddleCustomerId;
   const { error } = await supabaseAdmin.from("subscriptions").upsert(row);
-  if (error) console.error("Supabase upsert hatası:", error);
-  return error;
+  if (error) {
+    // Geçici hata (DB): fırlat -> handler 500 döner, işaret kaldırılır, Paddle yeniden dener.
+    console.error("Supabase upsert hatası:", error);
+    throw new Error("subscription-upsert-failed");
+  }
+  return null;
 }
 
 // DÜZELTME (F-04): aynı event.id ikinci kez işlenmesin (Paddle "en az bir
@@ -99,12 +103,23 @@ async function alreadyProcessed(eventId: string | undefined, eventType: string):
   return !!error;
 }
 
-// DÜZELTME (F-04): yakalanmış geçerli bir imzalı istek süresiz tekrar
-// oynatılamasın — ts, şimdiki zamana göre 5 dakikadan eskiyse reddet.
+// İşleme başarısız olursa işaret kaldırılır; yoksa Paddle'ın meşru yeniden denemesi
+// "duplicate" sanılıp sessizce yutulurdu ve olay kalıcı olarak kaybolurdu.
+async function releaseProcessed(eventId: string | undefined) {
+  if (!eventId) return;
+  await supabaseAdmin.from("processed_webhook_events").delete().eq("event_id", eventId);
+}
+
+// DÜZELTME (F-04): çok eski imzalı istekleri reddet. Paddle canlıda başarısız
+// teslimatları 3 güne kadar yeniden dener ve yeniden denemede `ts`'in yenilenip
+// yenilenmediği dokümante değil — bu yüzden 5 dakikalık pencere meşru retry'ları
+// de reddedebilirdi. Pencere 4 gün (3 günlük retry + pay). Asıl replay koruması
+// kalıcı event_id tekilleştirmesi + occurred_at sıralamasıdır (aşağıda).
+const MAX_SIGNATURE_AGE_MS = 4 * 24 * 60 * 60 * 1000;
 function isFreshTimestamp(tsSeconds: string): boolean {
   const tsMs = Number(tsSeconds) * 1000;
   if (!Number.isFinite(tsMs)) return false;
-  return Math.abs(Date.now() - tsMs) <= 5 * 60 * 1000;
+  return Math.abs(Date.now() - tsMs) <= MAX_SIGNATURE_AGE_MS;
 }
 
 async function verifySignature(rawBody: string, header: string | null): Promise<boolean> {
@@ -212,6 +227,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({ received: true }), { status: 200 });
   } catch (err) {
     console.error("Webhook işleme hatası:", err);
+    await releaseProcessed(event?.event_id ?? event?.id);
     return new Response("Internal error", { status: 500 });
   }
 });

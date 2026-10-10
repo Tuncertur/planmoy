@@ -3,7 +3,7 @@ import { ArrowRight, Building2, Check, Clock3, ShieldCheck, Sparkles, UserRound 
 import { Link, useNavigate } from "react-router-dom";
 import { tt } from "../lib/i18n";
 import { useSession } from "../lib/useSession";
-import { isPlanPurchasable, openPaddleCheckout } from "../lib/paddle";
+import { openPaddleCheckout } from "../lib/paddle";
 
 // FireVibe'ın gerçek src/routes/pricing.tsx dosyasından taşınmıştır.
 //
@@ -77,14 +77,16 @@ export function PricingScreen() {
       navigate("/"); // oturum yok — önce giriş/kayıt
       return;
     }
-    if (!isPlanPurchasable(plan.slug)) {
-      setCheckoutError(tt({ tr: "Bu plan için ödeme yakında açılacak.", en: "Payment for this plan is coming soon." }));
-      return;
-    }
     setCheckoutError(null);
-    const result = await openPaddleCheckout({ plan: plan.slug, userId: session.user.id, email: session.user.email ?? "" });
+    const result = await openPaddleCheckout(plan.slug);
     if (!result.ok) {
-      setCheckoutError(tt({ tr: "Ödeme ekranı açılamadı, lütfen tekrar dene.", en: "Couldn't open checkout, please try again." }));
+      setCheckoutError(
+        result.reason === "not-configured"
+          ? tt({ tr: "Bu plan için ödeme yakında açılacak.", en: "Payment for this plan is coming soon." })
+          : result.reason === "anonymous-user"
+            ? tt({ tr: "Satın almak için Google veya e-posta ile giriş yapmalısın (Demo hesabıyla olmaz).", en: "Sign in with Google or email to subscribe (not possible with a Demo account)." })
+            : tt({ tr: "Ödeme ekranı açılamadı, lütfen tekrar dene.", en: "Couldn't open checkout, please try again." })
+      );
     }
   }
 
