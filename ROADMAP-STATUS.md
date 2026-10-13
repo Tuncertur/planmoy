@@ -17,7 +17,7 @@ Güncel yerel commit: ca3b42f (+ bu dosya). Hiçbir şey GitHub'a push edilmedi,
 
 ## Paddle (UYUMSUZLUK: secret'larda ortam=sandbox ama fiyatlar live; sandbox fiyatları oluşturulunca düzeltilecek)
 - Price ID'ler alındı (Personal/Solo/Studio); Supabase secret'ları girildi: PADDLE_ENVIRONMENT=sandbox, PADDLE_PRICE_PERSONAL/SOLO/STUDIO.
-- EKSİK: PADDLE_API_KEY, PADDLE_WEBHOOK_SECRET.
+- EKSİK: PADDLE_API_KEY, PADDLE_WEBHOOK_SECRET. Sandbox hesabı açıldı, 3 sandbox fiyatı oluşturuldu (aşağıda).
 - DİKKAT: codemagic.yaml iOS build'ine live client token + production yazıyor; sandbox testiyle uyuşmaz (mobil aşamada ayrılacak).
 
 ## Paddle Price ID kaydı (gizli değil; HANGİ ORTAM = DOĞRULANACAK)
@@ -25,6 +25,13 @@ Güncel yerel commit: ca3b42f (+ bu dosya). Hiçbir şey GitHub'a push edilmedi,
 - Solo: pri_01m2kd4t5r8p85prrsgydfrhyy
 - Studio: pri_01m2kdf2a0wq5hm0y3wmk1qb9x
 - DOĞRULANDI (kullanıcı, 13 Eki): Planmoy Personal/Solo/Studio ürünleri LIVE panelde (vendors.paddle.com) var; ID eşleşmesi henüz tek tek teyit edilmedi. Sandbox'ta karşılığı yok. Supabase'e PADDLE_ENVIRONMENT=sandbox yazıldı; ortam eşleşmezse düzeltilecek. Bu ID'ler SİLİNMEZ (live'a geçişte kullanılabilir).
+
+## Paddle SANDBOX Price ID'leri (13 Eki, kullanıcı oluşturdu; gizli değil)
+- Personal 2.99: pri_01m4trrma3ysk7fnq3zys6jx8g
+- Solo 4.99: pri_01m4trxnpmm3fpb8nczg96nc2b
+- Studio 12.99: pri_01m4tsst3cjd8vnstn3qe4jprm
+- Supabase PADDLE_PRICE_* bu sandbox ID'leriyle güncellenecek (komut kullanıcıya verildi; uygulandı mı = teyit bekliyor).
+- Live ID'ler (yukarıda) canlıya geçişte kullanılır; Personal live ID 1.99'dur, 2.99 için yeni live fiyat açılacak.
 
 ## FİYAT KARARI (13 Eki): Personal 1.99 -> 2.99 USD/ay (Solo 4.99, Studio 12.99 aynı)
 - [x] Kod: src/screens/PricingScreen.tsx "$2.99" (yerel commit, push yok)
