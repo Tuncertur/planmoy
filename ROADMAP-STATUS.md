@@ -15,7 +15,7 @@ Güncel yerel commit: ca3b42f (+ bu dosya). Hiçbir şey GitHub'a push edilmedi,
 | 8 | Prod yedek + rollback | Workflow hazır, NOT TESTED |
 | 9 | Release build + cihaz testleri | NOT TESTED |
 
-## Paddle (sandbox varsayımı)
+## Paddle (UYUMSUZLUK: secret'larda ortam=sandbox ama fiyatlar live; sandbox fiyatları oluşturulunca düzeltilecek)
 - Price ID'ler alındı (Personal/Solo/Studio); Supabase secret'ları girildi: PADDLE_ENVIRONMENT=sandbox, PADDLE_PRICE_PERSONAL/SOLO/STUDIO.
 - EKSİK: PADDLE_API_KEY, PADDLE_WEBHOOK_SECRET.
 - DİKKAT: codemagic.yaml iOS build'ine live client token + production yazıyor; sandbox testiyle uyuşmaz (mobil aşamada ayrılacak).
@@ -24,7 +24,7 @@ Güncel yerel commit: ca3b42f (+ bu dosya). Hiçbir şey GitHub'a push edilmedi,
 - Personal: pri_01m2kcv8rgk9zrzxcn9011tt3r
 - Solo: pri_01m2kd4t5r8p85prrsgydfrhyy
 - Studio: pri_01m2kdf2a0wq5hm0y3wmk1qb9x
-- Bu ID'lerin sandbox'ta mı live'da mı oluşturulduğu henüz doğrulanmadı. Supabase'e PADDLE_ENVIRONMENT=sandbox yazıldı; ortam eşleşmezse düzeltilecek. Bu ID'ler SİLİNMEZ (live'a geçişte kullanılabilir).
+- DOĞRULANDI (kullanıcı, 13 Eki): Planmoy Personal/Solo/Studio ürünleri LIVE panelde (vendors.paddle.com) var; ID eşleşmesi henüz tek tek teyit edilmedi. Sandbox'ta karşılığı yok. Supabase'e PADDLE_ENVIRONMENT=sandbox yazıldı; ortam eşleşmezse düzeltilecek. Bu ID'ler SİLİNMEZ (live'a geçişte kullanılabilir).
 
 ## Engeller
 1. Paddle API key + webhook secret (kullanıcı).
