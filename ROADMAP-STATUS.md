@@ -26,6 +26,14 @@ Güncel yerel commit: ca3b42f (+ bu dosya). Hiçbir şey GitHub'a push edilmedi,
 - Studio: pri_01m2kdf2a0wq5hm0y3wmk1qb9x
 - DOĞRULANDI (kullanıcı, 13 Eki): Planmoy Personal/Solo/Studio ürünleri LIVE panelde (vendors.paddle.com) var; ID eşleşmesi henüz tek tek teyit edilmedi. Sandbox'ta karşılığı yok. Supabase'e PADDLE_ENVIRONMENT=sandbox yazıldı; ortam eşleşmezse düzeltilecek. Bu ID'ler SİLİNMEZ (live'a geçişte kullanılabilir).
 
+## FİYAT KARARI (13 Eki): Personal 1.99 -> 2.99 USD/ay (Solo 4.99, Studio 12.99 aynı)
+- [x] Kod: src/screens/PricingScreen.tsx "$2.99" (yerel commit, push yok)
+- [ ] Paddle SANDBOX: Personal fiyatı 2.99 olarak oluşturulacak (kullanıcı)
+- [ ] Paddle LIVE (canlıya geçerken): yeni 2.99 fiyatı aç, eski 1.99 fiyatını ARŞİVLE (silme), yeni pri_ ID'yi PADDLE_PRICE_PERSONAL'a yaz (kullanıcı + Claude)
+- [ ] Apple/Google abonelik ürünleri fiyat 2.99'a göre açılacak (ID'ler silinmez/yeniden kullanılamaz; önce fiyat kesin)
+- [ ] Web sitesi / mağaza metinleri / ekran görüntülerinde 1.99 geçen yer var mı kontrol et
+- NOT: yukarıdaki live Personal ID (pri_01m2kcv8…) 1.99'dur; 2.99 için KULLANILMAYACAK.
+
 ## Engeller
 1. Paddle API key + webhook secret (kullanıcı).
 2. planmoy-ops özel deposu + SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD, BACKUP_PASSWORD (kullanıcı).

@@ -30,7 +30,7 @@ const plans: Plan[] = [
   {
     slug: "personal",
     name: "Personal",
-    price: "$1.99",
+    price: "$2.99",
     description: tt({ tr: "Kişisel planlama için hafif ve güçlü.", en: "Lightweight and powerful personal planning." }),
     icon: <UserRound size={20} />,
     features: [
