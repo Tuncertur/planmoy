@@ -20,6 +20,12 @@ Güncel yerel commit: ca3b42f (+ bu dosya). Hiçbir şey GitHub'a push edilmedi,
 - EKSİK: PADDLE_API_KEY, PADDLE_WEBHOOK_SECRET.
 - DİKKAT: codemagic.yaml iOS build'ine live client token + production yazıyor; sandbox testiyle uyuşmaz (mobil aşamada ayrılacak).
 
+## Paddle Price ID kaydı (gizli değil; HANGİ ORTAM = DOĞRULANACAK)
+- Personal: pri_01m2kcv8rgk9zrzxcn9011tt3r
+- Solo: pri_01m2kd4t5r8p85prrsgydfrhyy
+- Studio: pri_01m2kdf2a0wq5hm0y3wmk1qb9x
+- Bu ID'lerin sandbox'ta mı live'da mı oluşturulduğu henüz doğrulanmadı. Supabase'e PADDLE_ENVIRONMENT=sandbox yazıldı; ortam eşleşmezse düzeltilecek. Bu ID'ler SİLİNMEZ (live'a geçişte kullanılabilir).
+
 ## Engeller
 1. Paddle API key + webhook secret (kullanıcı).
 2. planmoy-ops özel deposu + SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD, BACKUP_PASSWORD (kullanıcı).
