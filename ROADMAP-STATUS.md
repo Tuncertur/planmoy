@@ -12,7 +12,7 @@ Güncel yerel commit: ca3b42f (+ bu dosya). Hiçbir şey GitHub'a push edilmedi,
 | 5 | Şifre sıfırlama e-postası | NOT TESTED |
 | 6 | Eski mobil sürümler için geçiş | Plan var (0025 en son); NOT TESTED |
 | 7 | Android/iOS ödeme kuralları | KARAR BEKLİYOR (K1); kodda mobil IAP yok |
-| 8 | Prod yedek + rollback | Workflow hazır, NOT TESTED |
+| 8 | Prod yedek + rollback | Yedek + geri yükleme testi PASS (14 Eki 2026, planmoy-ops run 38574123391: 29 public tablo + auth.users 69/identities 2 sayıları eşit; şifreli artifact 30 gün). Rollback prosedürü hazır, NOT TESTED |
 | 9 | Release build + cihaz testleri | NOT TESTED |
 
 ## Paddle (UYUMSUZLUK: secret'larda ortam=sandbox ama fiyatlar live; sandbox fiyatları oluşturulunca düzeltilecek)
@@ -47,4 +47,11 @@ Güncel yerel commit: ca3b42f (+ bu dosya). Hiçbir şey GitHub'a push edilmedi,
 3. K1 mobil ödeme kararı, F-07 onayı (kullanıcı).
 4. Push / migration / deploy için ayrı açık onay (kullanıcı).
 
-Sürüm: 2026-10-13 v1
+## Canlı durum (14 Eki 2026, salt okuma raporu)
+- Supabase Planmoy: PostgreSQL 17.6. Proje free planda duraklamıştı (kullanıcı uyandırdı); canlıya çıkışta Pro önerilir (kullanıcı kararı).
+- schema_migrations BOŞ: migration'lar CLI ile uygulanmamış; 0023 tablosu (processed_webhook_events) canlıda YOK => 0021-0026 uygulanmamış sayılır.
+- Edge Functions canlıda: discover, ai-suggest, sports-fixtures, check-artist-concerts, delete-account, get-shared-event, get-shared-profile, paddle-webhook (v11, 19 Eyl), places-autocomplete. EKSİK: create-checkout, get-public-booking-info.
+- Gerçek veri var: ai_usage_log 536, place_photos_cache 257, user_preferences 11, subscriptions 1, auth.users 69.
+- Paddle sandbox: 5 secret yazıldı (webhook secret 14 Eki); sandbox uçtan uca test NOT TESTED (deploy onayı bekliyor).
+
+Sürüm: 2026-10-14 v2
