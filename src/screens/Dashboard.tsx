@@ -48,29 +48,41 @@ type ViewId =
   | "biz-staff" | "biz-inventory" | "biz-reports" | "biz-marketing" | "biz-settings"
   | "biz-loyalty" | "biz-competition" | "biz-performance" | "biz-supply" | "biz-pricing";
 
+// Sıra politikası (2026-10-15): günlük kullanılanlar üstte (genel bakış, zaman, görev, ilaç),
+// sonra keşif/seyahat, sonra kişiselleştirme, en altta plan + hesap. "Acil Arama (112)"
+// sıralamanın dışında, kenar çubuğunun en altına sabitlenir (bkz. PINNED_NAV_ID).
+const PINNED_NAV_ID: ViewId = "emergency-call";
+
+// "/" ile başlayan adres aynı sekmede açılır (uygulama içi sayfa), diğerleri yeni sekmede.
+function openExternal(url: string) {
+  if (url.startsWith("/")) window.location.assign(url);
+  else window.open(url, "_blank");
+}
+
 const personalNavItems: { id: ViewId; icon: React.ReactNode; label: Dict; external?: string }[] = [
   { id: "flow", icon: <LayoutDashboard size={17} />, label: { tr: "Genel bakış", en: "Overview" } },
-  { id: "emergency-call", icon: <Phone size={17} />, label: { tr: "Acil Arama", en: "Emergency Call" } },
   { id: "calendar", icon: <CalendarDays size={17} />, label: { tr: "Zaman akışı", en: "Time flow" } },
   { id: "tasks", icon: <ListChecks size={17} />, label: { tr: "Yapılacaklar", en: "Tasks" } },
   { id: "medications", icon: <Pill size={17} />, label: { tr: "İlaç Hatırlatma", en: "Medication Reminders" } },
   { id: "stylesync", icon: <WandSparkles size={17} />, label: { tr: "StyleSync", en: "StyleSync" } },
   { id: "discover", icon: <Compass size={17} />, label: { tr: "Keşfet", en: "Discover" } },
-  { id: "hotels", icon: <Building2 size={17} />, label: { tr: "Oteller", en: "Hotels" } },
   { id: "restaurants", icon: <Utensils size={17} />, label: { tr: "Restoranlar", en: "Restaurants" } },
+  { id: "hotels", icon: <Building2 size={17} />, label: { tr: "Oteller", en: "Hotels" } },
   { id: "places-to-visit", icon: <MapPin size={17} />, label: { tr: "Gezilecek Yerler", en: "Places to Visit" } },
   { id: "trip", icon: <Plane size={17} />, label: { tr: "Tatil Planla", en: "Plan a Trip" } },
-  { id: "sports", icon: <Dumbbell size={17} />, label: { tr: "Spor akışı", en: "Sports flow" } },
   { id: "events", icon: <Users size={17} />, label: { tr: "Etkinlikler", en: "Events" } },
+  { id: "sports", icon: <Dumbbell size={17} />, label: { tr: "Spor akışı", en: "Sports flow" } },
   { id: "space", icon: <FileText size={17} />, label: { tr: "İlgi alanlarım", en: "My interests" } },
-  { id: "personalize", icon: <Sparkles size={17} />, label: { tr: "Kişiselleştir", en: "Personalize" } },
   { id: "notes", icon: <StickyNote size={17} />, label: { tr: "Boş Alan", en: "Empty space" } },
   { id: "intelligence", icon: <Brain size={17} />, label: { tr: "Yapay zeka", en: "Intelligence" } },
   { id: "categories", icon: <Layers3 size={17} />, label: { tr: "Kategori rehberi", en: "Category guide" } },
-  { id: "account", icon: <UserCog size={17} />, label: { tr: "Hesap", en: "Account" } },
+  { id: "personalize", icon: <Sparkles size={17} />, label: { tr: "Kişiselleştir", en: "Personalize" } },
   { id: "profile-share", icon: <UserRound size={17} />, label: { tr: "Profil Paylaş", en: "Share Profile" } },
   { id: "ext-flights" as ViewId, icon: <Plane size={17} />, label: { tr: "Uçaklar", en: "Flights" }, external: "https://www.google.com/travel/flights" },
   { id: "ext-concerts" as ViewId, icon: <Music size={17} />, label: { tr: "Konserler", en: "Concerts" }, external: "https://www.google.com/search?q=concerts+near+me" },
+  { id: "plan" as ViewId, icon: <Sparkles size={17} />, label: { tr: "Plan ve abonelik", en: "Plans & subscription" }, external: "/pricing" },
+  { id: "account", icon: <UserCog size={17} />, label: { tr: "Hesap", en: "Account" } },
+  { id: PINNED_NAV_ID, icon: <Phone size={17} />, label: { tr: "Acil Arama (112)", en: "Emergency Call (112)" } },
 ];
 
 const businessNavItems: { id: ViewId; icon: React.ReactNode; label: Dict }[] = [
@@ -199,8 +211,10 @@ export function Dashboard({ userId, email }: { userId: string; email: string }) 
   }
 
   const orderedNavItems = currentOrder
+    .filter((id) => id !== PINNED_NAV_ID)
     .map((id) => currentNavItems.find((n) => n.id === id))
     .filter(Boolean) as typeof currentNavItems;
+  const pinnedNavItem = mode === "personal" ? personalNavItems.find((n) => n.id === PINNED_NAV_ID) : undefined;
 
   useEffect(() => {
     supabase
@@ -246,13 +260,25 @@ export function Dashboard({ userId, email }: { userId: string; email: string }) 
               key={item.id}
               item={item}
               active={view === item.id}
-              onClick={() => (item as any).external ? window.open((item as any).external, "_blank") : navigateTo(item.id)}
+              onClick={() => (item as any).external ? openExternal((item as any).external) : navigateTo(item.id)}
               onDragStart={() => (dragId.current = item.id)}
               onDragOver={(e) => e.preventDefault()}
               onDrop={() => handleDrop(item.id)}
             />
           ))}
         </nav>
+        {pinnedNavItem && (
+          <div style={{ padding: "6px 12px 0" }}>
+            <NavItem
+              item={pinnedNavItem}
+              active={view === pinnedNavItem.id}
+              onClick={() => navigateTo(pinnedNavItem.id)}
+              onDragStart={() => {}}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={() => {}}
+            />
+          </div>
+        )}
         <div className="sidebar-bottom">
           <p style={{ fontSize: 10, color: "var(--space-muted, #7893ad)", padding: "0 12px 8px" }}>
             {tt({ tr: "İpucu: Menü öğelerini sürükleyerek sırasını değiştirebilirsin — tercihin hesabına kaydedilir.", en: "Tip: drag menu items to reorder them — your preference is saved to your account." })}
@@ -303,7 +329,7 @@ export function Dashboard({ userId, email }: { userId: string; email: string }) 
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
             <NavSearch
               items={[...personalNavItems, ...businessNavItems].map((n) => ({ id: n.id, icon: n.icon, label: n.label, external: (n as any).external }))}
-              onSelect={(id, external) => (external ? window.open(external, "_blank") : navigateTo(id as ViewId))}
+              onSelect={(id, external) => (external ? openExternal(external) : navigateTo(id as ViewId))}
             />
             <NotificationsBell userId={userId} />
             <DistrictSearch userId={userId} />
