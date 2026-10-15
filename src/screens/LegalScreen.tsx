@@ -36,7 +36,7 @@ export function LegalScreen({ onBack }: { onBack: () => void }) {
                 {tt({ tr: "(Tuncer Turhan tarafından işletilmektedir — şahıs, tüzel kişilik bulunmamaktadır)", en: "(operated by Tuncer Turhan — sole individual, no registered company)" })}
               </span>
               <br />
-              {tt({ tr: "E-posta", en: "Email" })}: destek@planmoy.app
+              {tt({ tr: "E-posta", en: "Email" })}: destek@planmoy.com
             </p>
           </div>
         </section>
@@ -164,8 +164,8 @@ export function LegalScreen({ onBack }: { onBack: () => void }) {
             <h2>{tt({ tr: "8. Başvuru Yöntemi", en: "8. How to Exercise Your Rights" })}</h2>
             <p>
               {tt({
-                tr: "Yukarıdaki haklarını kullanmak için destek@planmoy.app adresine, kimliğini doğrulayacak bilgilerle birlikte yazılı olarak başvurabilirsin. Talepler en geç 30 gün içinde sonuçlandırılır. Hesap içinden doğrudan silme talebinde de bulunabilirsin (Hesap Ayarları > Hesabı Sil).",
-                en: "To exercise the rights above, write to destek@planmoy.app with information to verify your identity. Requests are resolved within 30 days at the latest. You can also request deletion directly from Account Settings.",
+                tr: "Yukarıdaki haklarını kullanmak için destek@planmoy.com adresine, kimliğini doğrulayacak bilgilerle birlikte yazılı olarak başvurabilirsin. Talepler en geç 30 gün içinde sonuçlandırılır. Hesap içinden doğrudan silme talebinde de bulunabilirsin (Hesap Ayarları > Hesabı Sil).",
+                en: "To exercise the rights above, write to destek@planmoy.com with information to verify your identity. Requests are resolved within 30 days at the latest. You can also request deletion directly from Account Settings.",
               })}
             </p>
           </div>
@@ -187,3 +187,4 @@ export function LegalScreen({ onBack }: { onBack: () => void }) {
     </main>
   );
 }
+// Sürüm: 2026-10-15 v2 — destek e-postası planmoy.com'a düzeltildi
