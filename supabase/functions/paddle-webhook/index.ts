@@ -49,6 +49,38 @@ async function userExists(userId: string): Promise<boolean> {
   return !error && !!data?.user;
 }
 
+// DÜZELTME (sandbox yaşam döngüsü testi, 2026-10-16): (1) plan yükseltmede custom_data.tier
+// değişmediği için veritabanı eski planda kalıyordu → plan artık aboneliğin GERÇEK fiyat
+// kimliğinden türetilir (PADDLE_PRICE_* secret'ları; canlıya geçişte secret'larla birlikte döner).
+// (2) subscription.updated içinde "canceled"/"paused" durumları "past_due"ya düşüyordu → durum
+// eşlemesi Paddle durumlarına göre düzeltildi ("trialing" erişim verir).
+const PRICE_TIER: Record<string, string> = {};
+for (const [envName, tierName] of [
+  ["PADDLE_PRICE_PERSONAL", "personal"],
+  ["PADDLE_PRICE_SOLO", "solo"],
+  ["PADDLE_PRICE_STUDIO", "studio"],
+] as const) {
+  const priceId = Deno.env.get(envName);
+  if (priceId) PRICE_TIER[priceId] = tierName;
+}
+function tierFromItems(data: any): string | undefined {
+  const priceId = data?.items?.[0]?.price?.id;
+  return priceId ? PRICE_TIER[priceId] : undefined;
+}
+function mapStatus(paddleStatus: string | undefined): "active" | "canceled" | "past_due" | "paused" {
+  switch (paddleStatus) {
+    case "active":
+    case "trialing":
+      return "active";
+    case "canceled":
+      return "canceled";
+    case "paused":
+      return "paused";
+    default:
+      return "past_due";
+  }
+}
+
 async function upsertSubscription(
   userId: string,
   plan: string, // çalışma anında VALID_TIERS ile doğrulanır
@@ -205,9 +237,14 @@ serve(async (req) => {
       }
 
       case "subscription.updated": {
-        if (userId && tier) {
-          const status = data.status === "active" ? "active" : "past_due";
-          await upsertSubscription(userId, tier, status, occurredAt, data.id);
+        if (userId) {
+          const status = mapStatus(data.status);
+          const plan = status === "canceled" ? "free" : (tierFromItems(data) ?? tier);
+          if (plan) {
+            await upsertSubscription(userId, plan, status, occurredAt, data.id);
+          } else {
+            console.error("subscription.updated: plan belirlenemedi (fiyat kimliği ve custom_data.tier yok)", { eventType });
+          }
         }
         break;
       }
