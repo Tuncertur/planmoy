@@ -1,3 +1,4 @@
+import { effectivePlan } from "./entitlement.ts";
 // Planmoy — Paylaşımlı maliyet tavanı kontrolü.
 //
 // İKİ katmanlı koruma (kullanıcının "ödediğinden fazlasını harcatma" kuralı):
@@ -18,8 +19,13 @@ export const FREE_POOL_CAP_USD = 50;
 export type CostResult = { allowed: boolean; reason?: "monthly-cost-cap-reached" | "free-pool-cap-reached" | "pool-check-failed" };
 
 export async function getPlan(admin: any, userId: string): Promise<string> {
-  const { data: sub } = await admin.from("subscriptions").select("plan, status").eq("user_id", userId).maybeSingle();
-  return sub?.status === "active" ? sub.plan ?? "free" : "free";
+  const { data: sub, error } = await admin
+    .from("subscriptions")
+    .select("plan, status, past_due_since, cancel_at, scheduled_action")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) return "free"; // güvenli taraf: okunamazsa ücretli hak verme
+  return effectivePlan(sub, Date.now());
 }
 
 export async function checkAndChargeCost(admin: any, userId: string, estimatedCostUsd: number): Promise<CostResult> {

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { AlertTriangle, CheckCircle2, LogOut, ShieldCheck, Trash2 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { tt } from "../lib/i18n";
+import { SubscriptionCard } from "../components/SubscriptionCard";
 
 // FireVibe'ın gerçek src/routes/account.tsx dosyasından taşınmıştır.
 // Hesap silme, gerçek şemamızda "on delete cascade" olduğu için
@@ -23,8 +24,18 @@ export function AccountScreen({ email }: { email: string }) {
       body: { confirmation: confirm },
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     });
+    // Supabase, 4xx/5xx yanıtında `data`yı vermez; gövdeden gerekçeyi oku.
+    let reason: string | undefined = data?.reason;
+    if (fnError && !reason) {
+      try { reason = (await (fnError as { context?: Response }).context?.json())?.reason; } catch { /* gövde yok */ }
+    }
     if (fnError || !data?.ok) {
-      setError(tt({ tr: "Hesap silinemedi. Lütfen tekrar deneyin.", en: "We could not delete your account. Please try again." }));
+      const messages: Record<string, string> = {
+        "subscription-cancel-failed": tt({ tr: "Aboneliğin iptal edilemediği için hesabın SİLİNMEDİ ve ücretlendirme devam edebilir. Lütfen tekrar dene; olmazsa destek ile iletişime geç.", en: "We couldn't cancel your subscription, so your account was NOT deleted and billing may continue. Please try again; if it keeps failing, contact support." }),
+        unverifiable: tt({ tr: "Abonelik durumun doğrulanamadı, bu yüzden hesabın silinmedi. Biraz sonra tekrar dene.", en: "We couldn't verify your subscription, so your account was not deleted. Please try again shortly." }),
+        "delete-failed": tt({ tr: "Aboneliğin iptal edildi ancak hesap silinemedi. Lütfen tekrar dene.", en: "Your subscription was cancelled but the account could not be deleted. Please try again." }),
+      };
+      setError(messages[reason ?? ""] ?? tt({ tr: "Hesap silinemedi. Lütfen tekrar deneyin.", en: "We could not delete your account. Please try again." }));
       setBusy(false);
       return;
     }
@@ -50,6 +61,8 @@ export function AccountScreen({ email }: { email: string }) {
             <LogOut size={15} /> {tt({ tr: "Çıkış yap", en: "Sign out" })}
           </button>
         </section>
+
+        <SubscriptionCard />
 
         <section className="account-card danger-card">
           <AlertTriangle size={22} />

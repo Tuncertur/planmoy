@@ -10,89 +10,14 @@
 //  - Kullanıcı sorgusu hata verirse "kullanıcı yok" varsayılmaz (yalnızca açık 404/user_not_found).
 //  - Eski (occurred_at'i daha eski) olaylar güncel durumu bozamaz; yazma, compare-and-set ile yapılır.
 
-export type PaidTier = "personal" | "solo" | "studio";
-export type Tier = "free" | PaidTier;
-export type SubStatus = "active" | "canceled" | "past_due" | "paused";
-
-export const PRICE_ENV_BY_TIER: Record<PaidTier, string> = {
-  personal: "PADDLE_PRICE_PERSONAL",
-  solo: "PADDLE_PRICE_SOLO",
-  studio: "PADDLE_PRICE_STUDIO",
-};
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-// ---------------------------------------------------------------------------
-// Fiyat -> plan eşlemesi
-// ---------------------------------------------------------------------------
-export function buildPriceTierMap(getEnv: (name: string) => string | undefined): Record<string, PaidTier> {
-  const map: Record<string, PaidTier> = {};
-  for (const tier of Object.keys(PRICE_ENV_BY_TIER) as PaidTier[]) {
-    const priceId = getEnv(PRICE_ENV_BY_TIER[tier]);
-    if (!priceId) continue;
-    if (map[priceId]) throw new Error(`Aynı fiyat kimliği iki plana atanmış (${map[priceId]} ve ${tier})`);
-    map[priceId] = tier;
-  }
-  return map;
-}
-
-export function extractPriceIds(data: any): string[] {
-  const ids = new Set<string>();
-  for (const item of Array.isArray(data?.items) ? data.items : []) {
-    const id = item?.price?.id ?? item?.price_id;
-    if (typeof id === "string") ids.add(id);
-  }
-  // transaction.completed: details.line_items[].price_id yedek yol
-  for (const li of Array.isArray(data?.details?.line_items) ? data.details.line_items : []) {
-    if (typeof li?.price_id === "string") ids.add(li.price_id);
-  }
-  return [...ids];
-}
-
-export type TierResult =
-  | { kind: "tier"; tier: PaidTier }
-  | { kind: "unknown" } // fiyat yok ya da haritada değil
-  | { kind: "ambiguous" }; // birden fazla farklı plan fiyatı
-
-export function tierFromData(data: any, priceTier: Record<string, PaidTier>): TierResult {
-  const tiers = new Set<PaidTier>();
-  for (const id of extractPriceIds(data)) {
-    const t = priceTier[id];
-    if (t) tiers.add(t);
-  }
-  if (tiers.size === 0) return { kind: "unknown" };
-  if (tiers.size > 1) return { kind: "ambiguous" };
-  return { kind: "tier", tier: [...tiers][0] };
-}
-
-// ---------------------------------------------------------------------------
-// Durum eşlemesi (Paddle -> subscriptions.status check kısıtı)
-// ---------------------------------------------------------------------------
-export function mapStatus(paddleStatus: string | undefined): { status: SubStatus; known: boolean } {
-  switch (paddleStatus) {
-    case "active":
-    case "trialing":
-      return { status: "active", known: true };
-    case "canceled":
-      return { status: "canceled", known: true };
-    case "paused":
-      return { status: "paused", known: true };
-    case "past_due":
-      return { status: "past_due", known: true };
-    default:
-      return { status: "past_due", known: false }; // bilinmeyen durumda erişimi verme
-  }
-}
-
-// Bazı subscription.* olaylarında status eksikse olay adından türet.
-const STATUS_BY_EVENT: Record<string, string> = {
-  "subscription.activated": "active",
-  "subscription.resumed": "active",
-  "subscription.trialing": "trialing",
-  "subscription.past_due": "past_due",
-  "subscription.paused": "paused",
-  "subscription.canceled": "canceled",
-};
+import {
+  buildPriceTierMap, extractPriceIds, mapStatus, PRICE_ENV_BY_TIER, STATUS_BY_EVENT, tierFromData, UUID_RE,
+  type PaidTier, type SubStatus, type Tier, type TierResult,
+} from "../_shared/paddle-core.ts";
+// Test ve diğer modüller için yeniden dışa aktarım (geriye uyumluluk)
+import { parseUserAllowlist, userAllowedFor } from "../_shared/paddle-core.ts";
+export { buildPriceTierMap, extractPriceIds, mapStatus, parseUserAllowlist, PRICE_ENV_BY_TIER, tierFromData, userAllowedFor };
+export type { PaidTier, SubStatus, Tier, TierResult };
 
 // ---------------------------------------------------------------------------
 // Karar: bir olay veritabanında ne değiştirir?
@@ -103,6 +28,9 @@ export interface ExistingRow {
   paddle_subscription_id: string | null;
   paddle_customer_id?: string | null;
   last_event_at: string | null;
+  past_due_since?: string | null;
+  pending_plan?: string | null;
+  pending_plan_at?: string | null;
 }
 
 export interface WriteRow {
@@ -114,6 +42,12 @@ export interface WriteRow {
   paddle_subscription_id?: string;
   paddle_customer_id?: string;
   current_period_end?: string;
+  // 0029 alanları: undefined = dokunma, null = temizle
+  cancel_at?: string | null;
+  scheduled_action?: "cancel" | "pause" | null;
+  past_due_since?: string | null;
+  pending_plan?: null;
+  pending_plan_at?: null;
 }
 
 export type Decision =
@@ -168,6 +102,27 @@ export function decide(
     if (typeof data?.customer_id === "string") row.paddle_customer_id = data.customer_id;
     const periodEnd = data?.current_billing_period?.ends_at;
     if (eventType.startsWith("subscription.") && typeof periodEnd === "string" && status !== "canceled") row.current_period_end = periodEnd;
+
+    // Ödeme sorunu başlangıcı (3 günlük hoşgörü bundan sayılır): zaten past_due ise ilk anı KORU.
+    row.past_due_since = status === "past_due" ? (sameSub && existing?.status === "past_due" && existing.past_due_since ? existing.past_due_since : occurredAt) : null;
+
+    // Paddle'daki bekleyen iptal/duraklatma (yalnız subscription.* olaylarında alan bulunur).
+    if (eventType.startsWith("subscription.") && data && "scheduled_change" in data) {
+      const sc = data.scheduled_change;
+      if (status !== "canceled" && (sc?.action === "cancel" || sc?.action === "pause") && typeof sc?.effective_at === "string") {
+        row.scheduled_action = sc.action;
+        row.cancel_at = sc.effective_at;
+      } else {
+        row.scheduled_action = null;
+        row.cancel_at = null;
+      }
+    }
+
+    // Dönem sonu düşürme isteği: plan DEĞİŞTİYSE (yükseltme/uygulanmış düşürme), iptal olduysa ya da başka abonelikse temizle.
+    if (existing?.pending_plan && (!sameSub || plan !== existing.plan || status === "canceled")) {
+      row.pending_plan = null;
+      row.pending_plan_at = null;
+    }
     return row;
   };
 
@@ -212,6 +167,8 @@ export interface Deps {
   releaseEvent(eventId: string): Promise<void>;
   /** true/false; yalnızca açık "kullanıcı yok" yanıtı false döner, diğer hatalar FIRLATILIR. */
   userExists(userId: string): Promise<boolean>;
+  /** Sandbox'ta yalnızca izinli test kullanıcıları (bkz. paddle-core userAllowedFor); izinsizse olay yazılmaz. */
+  userAllowed(userId: string): boolean;
   findUserBySubscription(subscriptionId: string): Promise<string | null>;
   getSubscription(userId: string): Promise<ExistingRow | null>;
   /** expected: okunan satır (yoksa null). Başkası araya girdiyse "conflict". Diğer hatalar FIRLATILIR. */
@@ -264,6 +221,11 @@ export async function handleEvent(deps: Deps, event: any): Promise<HandlerResult
     if (!(await deps.userExists(userId))) {
       deps.log.error("ORPHAN: olay silinmiş/olmayan bir kullanıcıya ait (Paddle'da abonelik hâlâ aktif olabilir)", { eventType, subId });
       return { status: 200, body: { received: true, skipped: "user-not-found" } };
+    }
+
+    if (!deps.userAllowed(userId)) {
+      deps.log.error("webhook atlandı: kullanıcı bu ortamda izinli değil (sandbox izin listesi / ortam belirsiz)", { eventType, subId });
+      return { status: 200, body: { received: true, skipped: "user-not-allowed" } };
     }
 
     const existing = await deps.getSubscription(userId);

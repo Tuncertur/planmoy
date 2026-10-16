@@ -52,14 +52,19 @@ function loadPaddleScript(): Promise<void> {
 // plan adını gönderir, `create-checkout` Edge Function'ı JWT'den kullanıcıyı doğrular,
 // fiyatı sunucu secret'larından okur, custom_data'yı sunucuda yazar ve transactionId döner.
 // Aktif aboneliği olan kullanıcıda checkout AÇILMAZ: sunucu planı mevcut abonelik üzerinden değiştirir
-// ve `changed: true` döner (yeni plan webhook ile birkaç saniye içinde yansır).
+// ve `changed: true` döner (yeni plan webhook ile birkaç saniye içinde yansır). Düşürme dönem sonuna ZAMANLANIR (`scheduled`).
 export async function openPaddleCheckout(
   plan: "personal" | "solo" | "studio",
-): Promise<{ ok: boolean; reason?: string; changed?: boolean; direction?: "upgrade" | "downgrade" }> {
+): Promise<{
+  ok: boolean; reason?: string; changed?: boolean; direction?: "upgrade" | "downgrade";
+  scheduled?: boolean; effectiveAt?: string; pendingCleared?: boolean;
+}> {
   if (!CLIENT_TOKEN) return { ok: false, reason: "not-configured" };
   const { data, error } = await supabase.functions.invoke("create-checkout", { body: { plan } });
   if (error || !data?.ok) return { ok: false, reason: data?.reason ?? "server-error" };
   if (data.changed) return { ok: true, changed: true, direction: data.direction };
+  if (data.scheduled) return { ok: true, scheduled: true, direction: data.direction, effectiveAt: data.effectiveAt };
+  if (data.pendingCleared) return { ok: true, pendingCleared: true };
   try {
     await loadPaddleScript();
   } catch {

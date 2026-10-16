@@ -14,7 +14,7 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import {
-  buildPriceTierMap, claimResultFromInsertError, handleEvent, UNIQUE_VIOLATION, userExistsFromAuthResult, verifySignature,
+  buildPriceTierMap, claimResultFromInsertError, parseUserAllowlist, userAllowedFor, handleEvent, UNIQUE_VIOLATION, userExistsFromAuthResult, verifySignature,
   type Deps, type ExistingRow, type WriteRow,
 } from "./logic.ts";
 
@@ -43,6 +43,11 @@ function makeDeps(): Deps {
       return userExistsFromAuthResult(data, error as { status?: number; code?: string } | null);
     },
 
+    userAllowed(userId) {
+      const e = Deno.env.get("PADDLE_ENVIRONMENT");
+      return userAllowedFor(e === "sandbox" || e === "production" ? e : null, parseUserAllowlist(Deno.env.get("SANDBOX_TEST_USER_IDS")), userId);
+    },
+
     async findUserBySubscription(subscriptionId) {
       const { data, error } = await supabaseAdmin
         .from("subscriptions")
@@ -56,7 +61,7 @@ function makeDeps(): Deps {
     async getSubscription(userId) {
       const { data, error } = await supabaseAdmin
         .from("subscriptions")
-        .select("plan, status, paddle_subscription_id, paddle_customer_id, last_event_at")
+        .select("plan, status, paddle_subscription_id, paddle_customer_id, last_event_at, past_due_since, pending_plan, pending_plan_at")
         .eq("user_id", userId)
         .maybeSingle();
       if (error) throw new Error(`abonelik okuma hatası: ${error.message}`);

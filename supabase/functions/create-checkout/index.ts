@@ -6,15 +6,18 @@
 //
 // Davranış:
 //  - Aktif aboneliği olmayan kullanıcı: Paddle işlemi (transaction) oluşturulur / bekleyen işlem yeniden kullanılır.
-//  - Aktif aboneliği olan kullanıcı: yeni abonelik AÇILMAZ; plan mevcut Paddle aboneliği üzerinden değişir.
+//  - Aktif aboneliği olan kullanıcı: yeni abonelik AÇILMAZ. Yükseltme hemen (Paddle PATCH); DÜŞÜRME dönem sonunda
+//    uygulanmak üzere `pending_plan` olarak saklanır (uygulayan: reconcile-subscriptions).
 //
 // Gerekli Supabase secrets (yoksa fonksiyon "not-configured" döner, canlıya sessizce düşmez):
 //   PADDLE_API_KEY, PADDLE_ENVIRONMENT ("sandbox" | "production"),
 //   PADDLE_PRICE_PERSONAL, PADDLE_PRICE_SOLO, PADDLE_PRICE_STUDIO
-// Gerekli tablo: checkout_locks (migration 0027).
+// Sandbox izolasyonu: PADDLE_ENVIRONMENT=sandbox iken yalnızca SANDBOX_TEST_USER_IDS listesindeki kullanıcılar ödeme açabilir (fail-closed).
+// Gerekli tablolar/sütunlar: checkout_locks (0027), subscriptions.pending_plan* (0029).
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import { parseUserAllowlist, userAllowedFor } from "../_shared/paddle-core.ts";
 import { handleCheckout, PRICE_ENV, type CheckoutDeps, type ExistingSub, type Lock, type LockStore, type PaddleApi } from "./logic.ts";
 
 const corsHeaders = {
@@ -63,7 +66,7 @@ function makePaddle(base: string, apiKey: string): PaddleApi {
       if (res.status === 404) return null;
       if (!res.ok) throw new Error(`Paddle abonelik okunamadı: ${res.status}`);
       const d = (await res.json())?.data;
-      return d ? { status: d.status, scheduled_change: d.scheduled_change ?? null } : null;
+      return d ? { status: d.status, scheduled_change: d.scheduled_change ?? null, period_end: d.current_billing_period?.ends_at ?? null } : null;
     },
     async changePlan(subscriptionId, priceId, prorationMode) {
       const res = await call("PATCH", `/subscriptions/${encodeURIComponent(subscriptionId)}`, {
@@ -134,15 +137,24 @@ serve(async (req) => {
     now: () => Date.now(),
     environment,
     hasApiKey: apiKey.length > 0,
+    userAllowed: (id) => userAllowedFor(environment, parseUserAllowlist(Deno.env.get("SANDBOX_TEST_USER_IDS")), id),
     priceFor: (plan) => Deno.env.get(PRICE_ENV[plan]) || undefined,
     async getSubscription(userId) {
       const { data, error } = await admin
         .from("subscriptions")
-        .select("plan, status, paddle_subscription_id")
+        .select("plan, status, paddle_subscription_id, pending_plan, pending_plan_at, current_period_end")
         .eq("user_id", userId)
         .maybeSingle();
       if (error) throw new Error(`abonelik okuma hatası: ${error.message}`);
       return (data as ExistingSub | null) ?? null;
+    },
+    async setPending(userId, plan, effectiveAt) {
+      const { error } = await admin.from("subscriptions").update({ pending_plan: plan, pending_plan_at: effectiveAt }).eq("user_id", userId);
+      if (error) throw new Error(`bekleyen düşürme yazılamadı: ${error.message}`);
+    },
+    async clearPending(userId) {
+      const { error } = await admin.from("subscriptions").update({ pending_plan: null, pending_plan_at: null }).eq("user_id", userId);
+      if (error) throw new Error(`bekleyen düşürme temizlenemedi: ${error.message}`);
     },
     locks: makeLockStore(admin),
     paddle: makePaddle(base, apiKey),

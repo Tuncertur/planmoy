@@ -8,6 +8,9 @@
 //  - Kalan risk (bekleyen iki farklı işlemin ikisinin de ödenmesi) webhook'ta "ÇİFT ABONELİK" olarak
 //    tespit edilir ve DB'ye yazılmaz (bkz. paddle-webhook/logic.ts).
 
+import { UPGRADE_MODE } from "../_shared/paddle-core.ts";
+export { UPGRADE_MODE };
+
 export type PaidTier = "personal" | "solo" | "studio";
 export const PAID_TIERS: PaidTier[] = ["personal", "solo", "studio"];
 export const TIER_RANK: Record<PaidTier, number> = { personal: 1, solo: 2, studio: 3 };
@@ -24,11 +27,15 @@ export interface ExistingSub {
   plan: string;
   status: string;
   paddle_subscription_id: string | null;
+  pending_plan?: string | null;
+  pending_plan_at?: string | null;
+  current_period_end?: string | null;
 }
 
 export type CheckoutPlanDecision =
   | { kind: "new" }
   | { kind: "change"; direction: "upgrade" | "downgrade"; subscriptionId: string }
+  | { kind: "clear-pending" } // mevcut plana yeniden tıklama: bekleyen dönem sonu düşürmeyi iptal eder
   | { kind: "block"; reason: "same-plan" | "payment-issue" | "paused" | "subscription-inconsistent" };
 
 export function decideCheckout(existing: ExistingSub | null, requested: PaidTier): CheckoutPlanDecision {
@@ -39,7 +46,7 @@ export function decideCheckout(existing: ExistingSub | null, requested: PaidTier
     return { kind: "block", reason: "subscription-inconsistent" };
   }
   const current = existing.plan as PaidTier;
-  if (current === requested) return { kind: "block", reason: "same-plan" };
+  if (current === requested) return existing.pending_plan ? { kind: "clear-pending" } : { kind: "block", reason: "same-plan" };
   return {
     kind: "change",
     direction: TIER_RANK[requested] > TIER_RANK[current] ? "upgrade" : "downgrade",
@@ -47,12 +54,8 @@ export function decideCheckout(existing: ExistingSub | null, requested: PaidTier
   };
 }
 
-// Paddle: yükseltmede hemen orantılı tahsilat; düşürmede orantılı kredi bir sonraki yenilemede.
-export const PRORATION: Record<"upgrade" | "downgrade", string> = {
-  upgrade: "prorated_immediately",
-  downgrade: "prorated_next_billing_period",
-};
-
+// Yükseltme: hemen orantılı tahsilat. DÜŞÜRME: Paddle'da dönem sonuna zamanlanamaz; istek `pending_plan` olarak saklanır
+// ve yenilemeden hemen önce `reconcile-subscriptions` (apply-downgrades) uygular. Kullanıcı o zamana kadar mevcut planı kullanır.
 // ---------------------------------------------------------------------------
 // Kilit (checkout_locks): user_id PK, plan, transaction_id, expires_at
 // ---------------------------------------------------------------------------
@@ -111,7 +114,7 @@ export async function claimLock(
 export interface PaddleApi {
   createTransaction(priceId: string, userId: string, plan: PaidTier): Promise<string>; // transactionId; hata -> fırlat
   getTransactionStatus(transactionId: string): Promise<string | null>;
-  getSubscription(subscriptionId: string): Promise<{ status: string; scheduled_change: unknown } | null>;
+  getSubscription(subscriptionId: string): Promise<{ status: string; scheduled_change: unknown; period_end?: string | null } | null>;
   changePlan(subscriptionId: string, priceId: string, prorationMode: string): Promise<void>;
 }
 
@@ -120,9 +123,14 @@ export interface CheckoutDeps {
   /** "sandbox" | "production"; başka/boş değer -> null (fail-closed). */
   environment: "sandbox" | "production" | null;
   hasApiKey: boolean;
+  /** Sandbox'ta yalnızca izinli test kullanıcıları (paddle-core userAllowedFor). */
+  userAllowed(userId: string): boolean;
   priceFor(plan: PaidTier): string | undefined;
   getSubscription(userId: string): Promise<ExistingSub | null>;
   locks: LockStore;
+  /** Dönem sonu düşürme isteğini yazar / temizler (service role). Hata -> fırlat. */
+  setPending(userId: string, plan: PaidTier, effectiveAt: string): Promise<void>;
+  clearPending(userId: string): Promise<void>;
   paddle: PaddleApi;
   log: { error: (...a: unknown[]) => void; warn: (...a: unknown[]) => void };
 }
@@ -141,19 +149,35 @@ export async function handleCheckout(deps: CheckoutDeps, userId: string, planInp
   const priceId = deps.priceFor(plan);
   if (!deps.hasApiKey || !priceId || !deps.environment) return refuse("not-configured"); // fail-closed: ortam belirsizse canlıya düşme
 
+  if (!deps.userAllowed(userId)) return refuse("not-allowed"); // sandbox izolasyonu: canlı DB'ye test ödemesi yazılmasın
+
   try {
     const existing = await deps.getSubscription(userId);
     const d = decideCheckout(existing, plan);
 
     if (d.kind === "block") return refuse(d.reason);
 
+    if (d.kind === "clear-pending") {
+      await deps.clearPending(userId);
+      return { status: 200, body: { ok: true, pendingCleared: true } };
+    }
+
     if (d.kind === "change") {
       const live = await deps.paddle.getSubscription(d.subscriptionId);
       if (!live) return refuse("subscription-inconsistent");
       if (live.status !== "active" && live.status !== "trialing") return refuse(live.status === "past_due" ? "payment-issue" : "subscription-not-active");
       if (live.scheduled_change) return refuse("scheduled-change-pending"); // Paddle: bekleyen değişiklik varken kalem güncellenemez
-      await deps.paddle.changePlan(d.subscriptionId, priceId, PRORATION[d.direction]);
-      return { status: 200, body: { ok: true, changed: true, direction: d.direction } };
+
+      if (d.direction === "upgrade") {
+        await deps.paddle.changePlan(d.subscriptionId, priceId, UPGRADE_MODE);
+        return { status: 200, body: { ok: true, changed: true, direction: "upgrade" } };
+      }
+      // Düşürme: dönem sonunda uygulanır
+      const effectiveAt = live.period_end ?? existing?.current_period_end ?? null;
+      if (!effectiveAt || !Number.isFinite(Date.parse(effectiveAt))) return refuse("period-unknown");
+      if (existing?.pending_plan === plan) return { status: 200, body: { ok: true, scheduled: true, direction: "downgrade", effectiveAt, already: true } };
+      await deps.setPending(userId, plan, effectiveAt);
+      return { status: 200, body: { ok: true, scheduled: true, direction: "downgrade", effectiveAt } };
     }
 
     // Yeni abonelik: kilit al

@@ -82,11 +82,19 @@ export function PricingScreen() {
     setCheckoutNotice(null);
     const result = await openPaddleCheckout(plan.slug);
     if (result.ok && result.changed) {
-      setCheckoutNotice(
-        result.direction === "upgrade"
-          ? tt({ tr: "Planın yükseltiliyor; birkaç saniye içinde etkinleşir.", en: "Your plan is being upgraded; it takes effect within seconds." })
-          : tt({ tr: "Planın düşürülüyor; fark bir sonraki yenilemede hesaplanır.", en: "Your plan is being downgraded; the difference is applied at your next renewal." })
-      );
+      setCheckoutNotice(tt({ tr: "Planın yükseltiliyor; birkaç saniye içinde etkinleşir.", en: "Your plan is being upgraded; it takes effect within seconds." }));
+      return;
+    }
+    if (result.ok && result.scheduled) {
+      const d = result.effectiveAt ? new Date(result.effectiveAt).toLocaleDateString() : "";
+      setCheckoutNotice(tt({
+        tr: `Plan düşürme ${d} tarihinde (dönem sonu) uygulanacak; o zamana kadar mevcut planını kullanırsın.`,
+        en: `Your plan will be downgraded on ${d} (end of period); you keep your current plan until then.`,
+      }));
+      return;
+    }
+    if (result.ok && result.pendingCleared) {
+      setCheckoutNotice(tt({ tr: "Planlanan düşürme iptal edildi; mevcut planında devam ediyorsun.", en: "The scheduled downgrade was cancelled; you stay on your current plan." }));
       return;
     }
     if (!result.ok) {
@@ -97,6 +105,7 @@ export function PricingScreen() {
         "payment-issue": tt({ tr: "Aboneliğinde ödeme sorunu var; plan değiştirmeden önce ödeme yöntemini güncellemelisin.", en: "Your subscription has a payment issue; update your payment method before changing plans." }),
         paused: tt({ tr: "Aboneliğin duraklatılmış; plan değiştirilemez.", en: "Your subscription is paused; the plan can't be changed." }),
         "scheduled-change-pending": tt({ tr: "Aboneliğinde bekleyen bir iptal/değişiklik var; plan şimdi değiştirilemez.", en: "Your subscription has a pending cancellation/change; the plan can't be changed now." }),
+        "period-unknown": tt({ tr: "Dönem sonu tarihi alınamadı; plan düşürme şimdi yapılamıyor, daha sonra tekrar dene.", en: "Couldn't determine the period end; the downgrade can't be scheduled now, try later." }),
         "checkout-in-progress": tt({ tr: "Ödeme ekranı hazırlanıyor, birkaç saniye sonra tekrar dene.", en: "Checkout is being prepared, try again in a few seconds." }),
         "payment-processing": tt({ tr: "Ödemen işleniyor; birkaç dakika içinde planın etkinleşir. Tekrar ödeme yapma.", en: "Your payment is being processed; your plan activates within minutes. Do not pay again." }),
       };

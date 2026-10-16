@@ -3,7 +3,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
 import {
-  buildPriceTierMap, claimResultFromInsertError, decide, handleEvent, mapStatus, tierFromData, userExistsFromAuthResult, verifySignature,
+  buildPriceTierMap, claimResultFromInsertError, decide, parseUserAllowlist, userAllowedFor, handleEvent, mapStatus, tierFromData, userExistsFromAuthResult, verifySignature,
   type Deps, type ExistingRow, type PaidTier, type WriteRow,
 } from "./logic.ts";
 
@@ -187,7 +187,7 @@ test("abonelik dışı işlem (subscription_id yok) yoksayılır", () => {
 // ---------------- handleEvent (idempotency, hata ayrımı, uçtan uca) ----------------
 function fake(opts: {
   existing?: ExistingRow | null; userOk?: boolean | Error; claimError?: Error; writeError?: Error;
-  conflictOnce?: boolean; releaseError?: Error; priceTier?: Record<string, PaidTier>; bySub?: string | null;
+  conflictOnce?: boolean; allowed?: boolean; releaseError?: Error; priceTier?: Record<string, PaidTier>; bySub?: string | null;
 } = {}) {
   let store: ExistingRow | null = opts.existing === undefined ? null : opts.existing;
   const claimed = new Set<string>();
@@ -216,6 +216,7 @@ function fake(opts: {
       if (opts.userOk instanceof Error) throw opts.userOk;
       return opts.userOk ?? true;
     },
+    userAllowed() { return opts.allowed ?? true; },
     async findUserBySubscription() { return opts.bySub === undefined ? null : opts.bySub; },
     async getSubscription() { return store; },
     async writeSubscription(_u, _expected, r) {
@@ -383,4 +384,76 @@ test("userExists: yalnızca açık 404/user_not_found 'yok'; belirsiz hata 'yok'
   assert.throws(() => userExistsFromAuthResult(null, { status: 500 }), /getUserById/);
   assert.throws(() => userExistsFromAuthResult(null, { status: 401, code: "bad_jwt" }), /getUserById/);
   assert.throws(() => userExistsFromAuthResult(null, {}), /getUserById/);
+});
+
+// ---------------- 0029 alanları: hoşgörü, bekleyen iptal, bekleyen düşürme ----------------
+test("past_due_since: ilk past_due anı kaydedilir, tekrar eden past_due'da KORUNUR, active'e dönünce temizlenir", () => {
+  const first = written(dec("subscription.past_due", subData({ status: "past_due" }), T2, row()));
+  assert.equal(first.past_due_since, T2);
+  const again = written(dec("subscription.updated", subData({ status: "past_due" }), T3, row({ status: "past_due", last_event_at: T2, past_due_since: T2 })));
+  assert.equal(again.past_due_since, T2); // hoşgörü süresi her olayla sıfırlanmaz
+  const recovered = written(dec("transaction.completed", txnData(), T3, row({ status: "past_due", last_event_at: T2, past_due_since: T2 })));
+  assert.equal(recovered.past_due_since, null);
+  const active = written(dec("subscription.updated", subData(), T3, row({ status: "past_due", last_event_at: T2, past_due_since: T2 })));
+  assert.equal(active.past_due_since, null);
+  const canceled = written(dec("subscription.canceled", subData({ status: "canceled" }), T3, row({ status: "past_due", last_event_at: T2, past_due_since: T2 })));
+  assert.equal(canceled.past_due_since, null);
+});
+
+test("past_due_since: başka abonelikten devralınan kayıtta eski anı taşımaz", () => {
+  const ended = row({ plan: "free", status: "canceled", past_due_since: T0 });
+  const r = written(dec("subscription.created", subData({ id: SUB_B, status: "past_due" }), T2, ended));
+  assert.equal(r.past_due_since, T2);
+});
+
+test("bekleyen iptal: scheduled_change -> cancel_at/scheduled_action; kalkarsa ya da iptal olursa temizlenir", () => {
+  const eff = "2026-11-16T08:00:00Z";
+  const set = written(dec("subscription.updated", subData({ scheduled_change: { action: "cancel", effective_at: eff } }), T2, row()));
+  assert.deepEqual([set.scheduled_action, set.cancel_at], ["cancel", eff]);
+  const pause = written(dec("subscription.updated", subData({ scheduled_change: { action: "pause", effective_at: eff } }), T2, row()));
+  assert.deepEqual([pause.scheduled_action, pause.cancel_at], ["pause", eff]);
+  const cleared = written(dec("subscription.updated", subData({ scheduled_change: null }), T3, row({ last_event_at: T2 })));
+  assert.deepEqual([cleared.scheduled_action, cleared.cancel_at], [null, null]);
+  const canceled = written(dec("subscription.canceled", subData({ status: "canceled", scheduled_change: { action: "cancel", effective_at: eff } }), T3, row()));
+  assert.deepEqual([canceled.scheduled_action, canceled.cancel_at], [null, null]);
+  const weird = written(dec("subscription.updated", subData({ scheduled_change: { action: "delete", effective_at: eff } }), T2, row()));
+  assert.deepEqual([weird.scheduled_action, weird.cancel_at], [null, null]);
+});
+
+test("transaction olayları bekleyen iptal alanlarına DOKUNMAZ (undefined)", () => {
+  const r = written(dec("transaction.completed", txnData(), T3, row({ status: "past_due", last_event_at: T2 })));
+  assert.equal("scheduled_action" in r, false);
+  assert.equal("cancel_at" in r, false);
+});
+
+test("dönem sonu düşürme isteği: plan değişince/iptalde temizlenir, aynı planda yenilemede korunur", () => {
+  const pending = row({ plan: "studio", pending_plan: "personal", pending_plan_at: "2026-11-16T00:00:00Z" });
+  const renewal = written(dec("subscription.updated", subData({ items: [{ price: { id: P.studio } }] }), T2, pending));
+  assert.equal("pending_plan" in renewal, false); // dokunulmadı: korunur
+  const upgraded = written(dec("subscription.updated", subData({ items: [{ price: { id: P.solo } }] }), T2, row({ plan: "personal", pending_plan: "personal", pending_plan_at: "2026-11-16T00:00:00Z" })));
+  assert.deepEqual([upgraded.pending_plan, upgraded.pending_plan_at], [null, null]);
+  const applied = written(dec("subscription.updated", subData({ items: [{ price: { id: P.personal } }] }), T2, pending));
+  assert.deepEqual([applied.plan, applied.pending_plan], ["personal", null]);
+  const canceled = written(dec("subscription.canceled", subData({ status: "canceled" }), T2, pending));
+  assert.deepEqual([canceled.pending_plan, canceled.pending_plan_at], [null, null]);
+});
+
+test("sandbox izolasyonu: izinli olmayan kullanıcının olayı DB'ye YAZILMAZ (200 skipped, error log)", async () => {
+  const f = fake({ allowed: false });
+  const r = await handleEvent(f.deps, ev("evt_1", "subscription.created", T1, subData()));
+  assert.equal(r.status, 200);
+  assert.equal(r.body.skipped, "user-not-allowed");
+  assert.equal(f.writes.length, 0);
+  assert.ok(f.logs.error.length > 0);
+});
+
+test("parseUserAllowlist/userAllowedFor: sandbox yalnız listedekileri, production herkesi, belirsiz ortam kimseyi kabul etmez", () => {
+  const A = "11111111-1111-4111-8111-111111111111", B = "22222222-2222-4222-8222-222222222222";
+  const allow = parseUserAllowlist(` ${A.toUpperCase()}, not-a-uuid ,`);
+  assert.equal(allow.size, 1);
+  assert.equal(userAllowedFor("sandbox", allow, A), true);
+  assert.equal(userAllowedFor("sandbox", allow, B), false);
+  assert.equal(userAllowedFor("sandbox", parseUserAllowlist(""), A), false); // boş liste => kimse
+  assert.equal(userAllowedFor("production", allow, B), true);
+  assert.equal(userAllowedFor(null, allow, A), false);
 });

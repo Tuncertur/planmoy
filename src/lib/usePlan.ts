@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { supabase } from "./supabase";
+import { effectivePlan } from "../../supabase/functions/_shared/entitlement";
 
 // Kullanıcının aktif abonelik planı: "free" | "personal" | "solo" | "studio".
-// null = henüz yükleniyor. Abonelik yoksa ya da aktif değilse "free".
+// null = henüz yükleniyor. Hak kuralları: _shared/entitlement.ts (past_due için 3 gün hoşgörü).
 // Sunucu (discover fonksiyonu) planı KENDİ kontrol eder; bu hook yalnızca gereksiz
 // istek atmamak ve doğru ekranı göstermek içindir.
 const cache = new Map<string, { plan: string; at: number }>();
@@ -20,12 +21,12 @@ export function usePlan(userId: string): string | null {
     let cancelled = false;
     supabase
       .from("subscriptions")
-      .select("plan, status")
+      .select("plan, status, past_due_since, cancel_at, scheduled_action")
       .eq("user_id", userId)
       .maybeSingle()
       .then(
         ({ data }) => {
-          const value = data?.status === "active" ? (data.plan ?? "free") : "free";
+          const value = effectivePlan(data, Date.now());
           cache.set(userId, { plan: value, at: Date.now() });
           if (!cancelled) setPlan(value);
         },

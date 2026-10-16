@@ -8,6 +8,7 @@ import {
 
 const USER = "11111111-1111-4111-8111-111111111111";
 const NOW = Date.UTC(2026, 9, 16, 9, 0, 0);
+const PERIOD_END = "2026-11-16T08:00:00Z";
 const PRICES: Record<PaidTier, string> = { personal: "pri_p", solo: "pri_s", studio: "pri_t" };
 const sub = (o: Partial<ExistingSub> = {}): ExistingSub => ({ plan: "personal", status: "active", paddle_subscription_id: "sub_A", ...o });
 
@@ -24,6 +25,7 @@ test("decideCheckout: aktif abonelik -> yeni abonelik AÇILMAZ; yükseltme/düş
   assert.deepEqual(decideCheckout(sub(), "studio"), { kind: "change", direction: "upgrade", subscriptionId: "sub_A" });
   assert.deepEqual(decideCheckout(sub({ plan: "studio" }), "personal"), { kind: "change", direction: "downgrade", subscriptionId: "sub_A" });
   assert.deepEqual(decideCheckout(sub({ plan: "solo" }), "solo"), { kind: "block", reason: "same-plan" });
+  assert.deepEqual(decideCheckout(sub({ plan: "solo", pending_plan: "personal", pending_plan_at: "x" }), "solo"), { kind: "clear-pending" });
 });
 
 test("decideCheckout: past_due / paused / tutarsız kayıt engellenir", () => {
@@ -87,7 +89,8 @@ test("claimLock: devralma yarışı kaybedilirse 'busy' (çift işlem yok)", asy
 // ---------------- istek işleme ----------------
 function build(o: {
   existing?: ExistingSub | null; env?: "sandbox" | "production" | null; apiKey?: boolean; lock?: ReturnType<typeof lockStore>;
-  txnStatus?: string | null; liveSub?: { status: string; scheduled_change: unknown } | null; createFails?: boolean; changeFails?: boolean;
+  txnStatus?: string | null; liveSub?: { status: string; scheduled_change: unknown; period_end?: string | null } | null; createFails?: boolean; changeFails?: boolean;
+  pendingFails?: boolean; allowed?: boolean;
 } = {}) {
   const lock = o.lock ?? lockStore();
   const calls: string[] = [];
@@ -98,7 +101,10 @@ function build(o: {
     hasApiKey: o.apiKey ?? true,
     priceFor: (p) => PRICES[p],
     getSubscription: async () => (o.existing === undefined ? null : o.existing),
+    userAllowed: () => o.allowed ?? true,
     locks: lock.store,
+    async setPending(_u, plan, at) { if (o.pendingFails) throw new Error("db down"); calls.push(`pending:${plan}:${at}`); },
+    async clearPending() { calls.push("clearPending"); },
     paddle: {
       async createTransaction(priceId, userId, plan) {
         calls.push(`create:${priceId}:${plan}`); n++;
@@ -107,7 +113,7 @@ function build(o: {
         return `txn_${n}`;
       },
       async getTransactionStatus() { return o.txnStatus === undefined ? "ready" : o.txnStatus; },
-      async getSubscription() { return o.liveSub === undefined ? { status: "active", scheduled_change: null } : o.liveSub; },
+      async getSubscription() { return o.liveSub === undefined ? { status: "active", scheduled_change: null, period_end: PERIOD_END } : o.liveSub; },
       async changePlan(subId, priceId, mode) { calls.push(`change:${subId}:${priceId}:${mode}`); if (o.changeFails) throw new Error("paddle 400"); },
     },
     log: { error: () => {}, warn: () => {} },
@@ -175,11 +181,44 @@ test("aktif aboneliği olana yeni checkout AÇILMAZ: yükseltme mevcut abonelikt
   assert.equal(b.lock.row, null); // kilit/işlem hiç oluşmadı
 });
 
-test("düşürme: mevcut abonelikte, orantılı kredi bir sonraki yenilemede", async () => {
+test("düşürme DÖNEM SONUNDA uygulanır: Paddle'a dokunulmaz, bekleyen plan dönem sonu tarihiyle saklanır", async () => {
   const b = build({ existing: sub({ plan: "studio" }) });
   const r = await handleCheckout(b.deps, USER, "personal");
-  assert.deepEqual(r.body, { ok: true, changed: true, direction: "downgrade" });
-  assert.deepEqual(b.calls, ["change:sub_A:pri_p:prorated_next_billing_period"]);
+  assert.deepEqual(r.body, { ok: true, scheduled: true, direction: "downgrade", effectiveAt: PERIOD_END });
+  assert.deepEqual(b.calls, [`pending:personal:${PERIOD_END}`]); // changePlan / create YOK
+});
+
+test("düşürme: dönem sonu Paddle'dan yoksa DB'deki current_period_end kullanılır; ikisi de yoksa reddedilir", async () => {
+  const fromDb = build({ existing: sub({ plan: "studio", current_period_end: "2026-12-01T00:00:00Z" }), liveSub: { status: "active", scheduled_change: null, period_end: null } });
+  assert.equal((await handleCheckout(fromDb.deps, USER, "solo")).body.effectiveAt, "2026-12-01T00:00:00Z");
+  const none = build({ existing: sub({ plan: "studio" }), liveSub: { status: "active", scheduled_change: null, period_end: null } });
+  assert.equal((await handleCheckout(none.deps, USER, "solo")).body.reason, "period-unknown");
+  assert.equal(none.calls.length, 0);
+});
+
+test("bekleyen düşürme: aynı plan tekrar istenirse 'already'; farklı düşük plan istenirse değiştirilir; mevcut plana tıklamak iptal eder", async () => {
+  const pend = sub({ plan: "studio", pending_plan: "personal", pending_plan_at: PERIOD_END });
+  const again = build({ existing: pend });
+  assert.equal((await handleCheckout(again.deps, USER, "personal")).body.already, true);
+  assert.equal(again.calls.length, 0);
+  const swap = build({ existing: pend });
+  assert.equal((await handleCheckout(swap.deps, USER, "solo")).body.scheduled, true);
+  assert.deepEqual(swap.calls, [`pending:solo:${PERIOD_END}`]);
+  const cancel = build({ existing: pend });
+  assert.deepEqual((await handleCheckout(cancel.deps, USER, "studio")).body, { ok: true, pendingCleared: true });
+  assert.deepEqual(cancel.calls, ["clearPending"]);
+});
+
+test("bekleyen düşürme yazılamazsa fail-closed (provider-error), Paddle'a dokunulmaz", async () => {
+  const b = build({ existing: sub({ plan: "studio" }), pendingFails: true });
+  assert.equal((await handleCheckout(b.deps, USER, "personal")).body.reason, "provider-error");
+  assert.equal(b.calls.length, 0);
+});
+
+test("bekleyen düşürme varken yükseltme yapılabilir (webhook plan değişince bekleyeni temizler)", async () => {
+  const b = build({ existing: sub({ plan: "solo", pending_plan: "personal", pending_plan_at: PERIOD_END }) });
+  assert.deepEqual((await handleCheckout(b.deps, USER, "studio")).body, { ok: true, changed: true, direction: "upgrade" });
+  assert.deepEqual(b.calls, ["change:sub_A:pri_t:prorated_immediately"]);
 });
 
 test("aynı plan, past_due, paused: hiçbir Paddle çağrısı yok", async () => {
@@ -228,5 +267,12 @@ test("veritabanı okuma hatası: fail-closed (ödeme açılmaz)", async () => {
   b.deps.getSubscription = async () => { throw new Error("db down"); };
   const r = await handleCheckout(b.deps, USER, "solo");
   assert.equal(r.body.ok, false);
+  assert.equal(b.calls.length, 0);
+});
+
+test("sandbox izolasyonu: izinli olmayan kullanıcı not-allowed; Paddle/kilit/DB'ye dokunulmaz", async () => {
+  const b = build({ allowed: false });
+  const r = await handleCheckout(b.deps, USER, "personal");
+  assert.deepEqual(r.body, { ok: false, reason: "not-allowed" });
   assert.equal(b.calls.length, 0);
 });
