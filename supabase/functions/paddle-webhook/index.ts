@@ -1,270 +1,113 @@
 // supabase/functions/paddle-webhook/index.ts
 //
 // Paddle'dan gelen ödeme olaylarını dinler ve `subscriptions` tablosunu
-// GÜVENLİ şekilde (service role ile) günceller.
+// GÜVENLİ şekilde (service role ile) günceller. Karar mantığı ve imza doğrulaması
+// `logic.ts` içindedir (otomatik testli); bu dosya yalnızca ortamı bağlar.
 //
-// Kurulum sonrası Paddle Dashboard > Developer Tools > Notifications
-// kısmında bu fonksiyonun URL'sini bir "Notification destination" olarak
-// eklemeniz gerekir:
-//   https://<PROJECT_REF>.supabase.co/functions/v1/paddle-webhook
-// Oradan alacağınız "Signing secret"i PADDLE_WEBHOOK_SECRET olarak
-// Supabase secrets'a kaydedin.
+// Kurulum: Paddle > Developer tools > Notifications'a şu URL'yi "notification destination"
+// olarak ekleyin: https://<PROJECT_REF>.supabase.co/functions/v1/paddle-webhook
+// Oradaki "signing secret" PADDLE_WEBHOOK_SECRET olarak Supabase secrets'a yazılır.
+//
+// Sandbox/canlı ayrımı: her ortamın kendi destination'ı ve imza secret'ı vardır; yanlış ortamın
+// olayı imza doğrulamasında reddedilir. Plan, PADDLE_PRICE_* secret'larıyla eşlenir.
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import {
+  buildPriceTierMap, claimResultFromInsertError, handleEvent, UNIQUE_VIOLATION, userExistsFromAuthResult, verifySignature,
+  type Deps, type ExistingRow, type WriteRow,
+} from "./logic.ts";
 
-const webhookSecret = Deno.env.get("PADDLE_WEBHOOK_SECRET")!;
+const webhookSecret = Deno.env.get("PADDLE_WEBHOOK_SECRET");
 
-const supabaseAdmin = createClient(
-  Deno.env.get("SUPABASE_URL")!,
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-);
+const supabaseAdmin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
-// DÜZELTME (QA denetimi): bu fonksiyon "tier"/"source"/"provider_subscription_id"
-// sütunlarına yazıyordu ama gerçek şemada (0012_subscriptions.sql) bunlar yok —
-// tablo "plan" ve "paddle_subscription_id" kullanıyor. Eşleşmeyince her upsert
-// veritabanı hatasıyla SESSİZCE başarısız oluyordu (sadece console.error, 200
-// dönülüyordu) — yani ödeme alınıp plan hiç aktifleşmeyebilirdi.
-// DÜZELTME (2. QA denetimi, F-04 — HIGH): occurredAt eklendi. Mevcut satırın
-// last_event_at'i, gelen olayın occurredAt'inden daha YENİyse yazma —
-// böylece ağ/retry kaynaklı sıra-dışı teslim edilen eski bir olay (örn. geç
-// gelen bir "subscription.updated: active"), daha yeni bir
-// "subscription.canceled"ın üzerine yazamaz.
-const VALID_TIERS = new Set(["free", "personal", "solo", "studio"]);
+function makeDeps(): Deps {
+  return {
+    priceTier: buildPriceTierMap((n) => Deno.env.get(n)),
+    now: () => new Date().toISOString(),
+    log: { info: console.log, warn: console.warn, error: console.error },
 
-// DÜZELTME (2. QA denetimi, F-01 — CRITICAL'in sunucu tarafı güvencesi):
-// customData, Paddle'ın istemci-taraflı checkout modelinde kaçınılmaz olarak
-// istemciden geliyor (PricingScreen → openPaddleCheckout → Paddle overlay).
-// Bunu güvenli hale getiren katman burası: webhook, custom_data'daki
-// supabase_user_id'nin GERÇEKTEN var olan bir Supabase kullanıcısına ait
-// olduğunu doğrulamadan hiçbir yazma yapmaz — rastgele/bozuk bir id ile
-// subscriptions tablosuna çöp satır yazılamaz. (Not: bu, "bir kullanıcının
-// kendi hesabına girip, kendi kartıyla ödeyip custom_data'ya BAŞKA birinin
-// id'sini yazması" senaryosunu önlemez — bu, Paddle Billing'in istemci
-// taraflı overlay modelinin bilinen bir sınırıdır; tam önlem için Paddle'ın
-// sunucu-taraflı "Transaction" API'siyle checkout'u sunucuda başlatmak
-// gerekir, bu ayrı bir mimari değişikliktir ve bu turun kapsamı dışıdır.)
-async function userExists(userId: string): Promise<boolean> {
-  const { data, error } = await supabaseAdmin.auth.admin.getUserById(userId);
-  return !error && !!data?.user;
-}
+    async claimEvent(eventId, eventType) {
+      const { error } = await supabaseAdmin.from("processed_webhook_events").insert({ event_id: eventId, event_type: eventType });
+      return claimResultFromInsertError(error); // yalnızca gerçek unique ihlali "duplicate"
+    },
 
-// DÜZELTME (sandbox yaşam döngüsü testi, 2026-10-16): (1) plan yükseltmede custom_data.tier
-// değişmediği için veritabanı eski planda kalıyordu → plan artık aboneliğin GERÇEK fiyat
-// kimliğinden türetilir (PADDLE_PRICE_* secret'ları; canlıya geçişte secret'larla birlikte döner).
-// (2) subscription.updated içinde "canceled"/"paused" durumları "past_due"ya düşüyordu → durum
-// eşlemesi Paddle durumlarına göre düzeltildi ("trialing" erişim verir).
-const PRICE_TIER: Record<string, string> = {};
-for (const [envName, tierName] of [
-  ["PADDLE_PRICE_PERSONAL", "personal"],
-  ["PADDLE_PRICE_SOLO", "solo"],
-  ["PADDLE_PRICE_STUDIO", "studio"],
-] as const) {
-  const priceId = Deno.env.get(envName);
-  if (priceId) PRICE_TIER[priceId] = tierName;
-}
-function tierFromItems(data: any): string | undefined {
-  const priceId = data?.items?.[0]?.price?.id;
-  return priceId ? PRICE_TIER[priceId] : undefined;
-}
-function mapStatus(paddleStatus: string | undefined): "active" | "canceled" | "past_due" | "paused" {
-  switch (paddleStatus) {
-    case "active":
-    case "trialing":
-      return "active";
-    case "canceled":
-      return "canceled";
-    case "paused":
-      return "paused";
-    default:
-      return "past_due";
-  }
-}
+    async releaseEvent(eventId) {
+      const { error } = await supabaseAdmin.from("processed_webhook_events").delete().eq("event_id", eventId);
+      if (error) throw new Error(`işaret silinemedi: ${error.message}`);
+    },
 
-async function upsertSubscription(
-  userId: string,
-  plan: string, // çalışma anında VALID_TIERS ile doğrulanır
-  status: "active" | "canceled" | "past_due" | "paused",
-  occurredAt: string,
-  paddleSubscriptionId?: string,
-  paddleCustomerId?: string,
-) {
-  if (!VALID_TIERS.has(plan)) {
-    console.error("Geçersiz tier, yoksayıldı:", { userId, plan });
-    return null; // kalıcı hata: yeniden denemek işe yaramaz, 200 dön
-  }
-  if (!(await userExists(userId))) {
-    console.error("custom_data.supabase_user_id gerçek bir kullanıcıya ait değil, yoksayıldı:", { userId });
-    return null; // kalıcı hata: yeniden denemek işe yaramaz, 200 dön
-  }
+    async userExists(userId) {
+      const { data, error } = await supabaseAdmin.auth.admin.getUserById(userId);
+      return userExistsFromAuthResult(data, error as { status?: number; code?: string } | null);
+    },
 
-  const { data: existing } = await supabaseAdmin
-    .from("subscriptions")
-    .select("last_event_at")
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (existing?.last_event_at && new Date(existing.last_event_at) > new Date(occurredAt)) {
-    console.warn("Sıra dışı (eski) webhook olayı yoksayıldı:", { userId, occurredAt, existing: existing.last_event_at });
-    return null;
-  }
+    async findUserBySubscription(subscriptionId) {
+      const { data, error } = await supabaseAdmin
+        .from("subscriptions")
+        .select("user_id")
+        .eq("paddle_subscription_id", subscriptionId)
+        .maybeSingle();
+      if (error) throw new Error(`abonelik araması hatası: ${error.message}`);
+      return data?.user_id ?? null;
+    },
 
-  const row: Record<string, unknown> = {
-    user_id: userId,
-    plan,
-    status,
-    last_event_at: occurredAt,
-    updated_at: new Date().toISOString(),
+    async getSubscription(userId) {
+      const { data, error } = await supabaseAdmin
+        .from("subscriptions")
+        .select("plan, status, paddle_subscription_id, paddle_customer_id, last_event_at")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (error) throw new Error(`abonelik okuma hatası: ${error.message}`);
+      return (data as ExistingRow | null) ?? null;
+    },
+
+    // Compare-and-set: okunan last_event_at hâlâ aynıysa yaz; yoksa "conflict" (500 -> Paddle yeniden dener).
+    async writeSubscription(userId, expected: ExistingRow | null, row: WriteRow) {
+      if (!expected) {
+        const { error } = await supabaseAdmin.from("subscriptions").insert(row);
+        if (!error) return "ok";
+        if (error.code === UNIQUE_VIOLATION) return "conflict";
+        throw new Error(`abonelik insert hatası: ${error.code ?? ""} ${error.message}`);
+      }
+      let q = supabaseAdmin.from("subscriptions").update(row).eq("user_id", userId);
+      q = expected.last_event_at ? q.eq("last_event_at", expected.last_event_at) : q.is("last_event_at", null);
+      const { data, error } = await q.select("user_id");
+      if (error) throw new Error(`abonelik update hatası: ${error.code ?? ""} ${error.message}`);
+      return data && data.length > 0 ? "ok" : "conflict";
+    },
   };
-  if (paddleSubscriptionId) row.paddle_subscription_id = paddleSubscriptionId;
-  if (paddleCustomerId) row.paddle_customer_id = paddleCustomerId;
-  const { error } = await supabaseAdmin.from("subscriptions").upsert(row);
-  if (error) {
-    // Geçici hata (DB): fırlat -> handler 500 döner, işaret kaldırılır, Paddle yeniden dener.
-    console.error("Supabase upsert hatası:", error);
-    throw new Error("subscription-upsert-failed");
-  }
-  return null;
-}
-
-// DÜZELTME (F-04): aynı event.id ikinci kez işlenmesin (Paddle "en az bir
-// kez" teslim eder, retry'lar aynı event'i tekrar gönderebilir).
-async function alreadyProcessed(eventId: string | undefined, eventType: string): Promise<boolean> {
-  if (!eventId) return false; // id yoksa dedup edemeyiz, normal akışa devam
-  const { error } = await supabaseAdmin.from("processed_webhook_events").insert({ event_id: eventId, event_type: eventType });
-  // insert çakışması (primary key ihlali) = bu event zaten işlenmiş
-  return !!error;
-}
-
-// İşleme başarısız olursa işaret kaldırılır; yoksa Paddle'ın meşru yeniden denemesi
-// "duplicate" sanılıp sessizce yutulurdu ve olay kalıcı olarak kaybolurdu.
-async function releaseProcessed(eventId: string | undefined) {
-  if (!eventId) return;
-  await supabaseAdmin.from("processed_webhook_events").delete().eq("event_id", eventId);
-}
-
-// DÜZELTME (F-04): çok eski imzalı istekleri reddet. Paddle canlıda başarısız
-// teslimatları 3 güne kadar yeniden dener ve yeniden denemede `ts`'in yenilenip
-// yenilenmediği dokümante değil — bu yüzden 5 dakikalık pencere meşru retry'ları
-// de reddedebilirdi. Pencere 4 gün (3 günlük retry + pay). Asıl replay koruması
-// kalıcı event_id tekilleştirmesi + occurred_at sıralamasıdır (aşağıda).
-const MAX_SIGNATURE_AGE_MS = 4 * 24 * 60 * 60 * 1000;
-function isFreshTimestamp(tsSeconds: string): boolean {
-  const tsMs = Number(tsSeconds) * 1000;
-  if (!Number.isFinite(tsMs)) return false;
-  return Math.abs(Date.now() - tsMs) <= MAX_SIGNATURE_AGE_MS;
-}
-
-async function verifySignature(rawBody: string, header: string | null): Promise<boolean> {
-  if (!header) return false;
-  // Paddle-Signature başlığı: "ts=1234567890;h1=abcdef..."
-  const parts = Object.fromEntries(
-    header.split(";").map((p) => p.split("=") as [string, string]),
-  );
-  const ts = parts["ts"];
-  const h1 = parts["h1"];
-  if (!ts || !h1) return false;
-
-  if (!isFreshTimestamp(ts)) return false; // F-04: eski/yakalanmış istekleri reddet (replay koruması)
-
-  const signedPayload = `${ts}:${rawBody}`;
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(webhookSecret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const sigBuffer = await crypto.subtle.sign(
-    "HMAC",
-    key,
-    new TextEncoder().encode(signedPayload),
-  );
-  const computedHex = Array.from(new Uint8Array(sigBuffer))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-  // Sabit zamanlı karşılaştırma (basit === yerine) — zamanlama tabanlı
-  // yan kanal saldırılarına karşı ek bir önlem.
-  if (computedHex.length !== h1.length) return false;
-  let diff = 0;
-  for (let i = 0; i < computedHex.length; i++) {
-    diff |= computedHex.charCodeAt(i) ^ h1.charCodeAt(i);
-  }
-  return diff === 0;
 }
 
 serve(async (req) => {
-  const rawBody = await req.text();
-  const signature = req.headers.get("Paddle-Signature");
+  if (!webhookSecret) {
+    console.error("PADDLE_WEBHOOK_SECRET tanımlı değil — olaylar işlenmiyor");
+    return new Response("Not configured", { status: 500 }); // 2xx dönme: Paddle yeniden denesin
+  }
 
-  const valid = await verifySignature(rawBody, signature);
+  const rawBody = await req.text(); // imza için HAM gövde
+  const valid = await verifySignature(rawBody, req.headers.get("Paddle-Signature"), webhookSecret, Date.now());
   if (!valid) {
     console.error("Geçersiz Paddle imzası");
     return new Response("Invalid signature", { status: 400 });
   }
 
-  let event: any;
+  let event: unknown;
   try {
     event = JSON.parse(rawBody);
-  } catch (err) {
+  } catch {
     return new Response("Invalid JSON", { status: 400 });
   }
 
+  let deps: Deps;
   try {
-    const eventType = event.event_type;
-    const eventId: string | undefined = event.event_id ?? event.id;
-    const occurredAt: string = event.occurred_at ?? new Date().toISOString();
-    const data = event.data || {};
-    const customData = data.custom_data || {};
-    const userId: string | undefined = customData.supabase_user_id;
-    const tier: string | undefined = customData.tier;
-
-    // F-04: idempotency — aynı event.id ikinci kez gelirse (Paddle retry)
-    // sessizce 200 dön, tekrar işleme.
-    if (await alreadyProcessed(eventId, eventType)) {
-      return new Response(JSON.stringify({ received: true, duplicate: true }), { status: 200 });
-    }
-
-    switch (eventType) {
-      case "transaction.completed":
-      case "subscription.created": {
-        if (userId && tier) {
-          const subId = data.subscription_id || data.id; // transaction'da subscription_id, subscription olayında id
-          await upsertSubscription(userId, tier, "active", occurredAt, subId);
-        } else {
-          console.error("userId veya tier bulunamadı (custom_data eksik)", { userId, tier, eventType });
-        }
-        break;
-      }
-
-      case "subscription.updated": {
-        if (userId) {
-          const status = mapStatus(data.status);
-          const plan = status === "canceled" ? "free" : (tierFromItems(data) ?? tier);
-          if (plan) {
-            await upsertSubscription(userId, plan, status, occurredAt, data.id);
-          } else {
-            console.error("subscription.updated: plan belirlenemedi (fiyat kimliği ve custom_data.tier yok)", { eventType });
-          }
-        }
-        break;
-      }
-
-      case "subscription.canceled": {
-        if (userId) {
-          await upsertSubscription(userId, "free", "canceled", occurredAt, data.id);
-        }
-        break;
-      }
-
-      default:
-        // Diğer olayları şimdilik yoksayıyoruz.
-        break;
-    }
-
-    return new Response(JSON.stringify({ received: true }), { status: 200 });
+    deps = makeDeps();
   } catch (err) {
-    console.error("Webhook işleme hatası:", err);
-    await releaseProcessed(event?.event_id ?? event?.id);
-    return new Response("Internal error", { status: 500 });
+    console.error("Yapılandırma hatası:", err instanceof Error ? err.message : err);
+    return new Response("Misconfigured", { status: 500 });
   }
+
+  const result = await handleEvent(deps, event);
+  return new Response(JSON.stringify(result.body), { status: result.status, headers: { "Content-Type": "application/json" } });
 });

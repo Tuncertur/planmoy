@@ -70,6 +70,7 @@ export function PricingScreen() {
   const { session } = useSession();
   const navigate = useNavigate();
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [checkoutNotice, setCheckoutNotice] = useState<string | null>(null);
 
   async function handlePlanClick(plan: Plan) {
     if (!plan.slug) return; // Free start — zaten /auth'a gidiyor (aşağıdaki Link)
@@ -78,15 +79,28 @@ export function PricingScreen() {
       return;
     }
     setCheckoutError(null);
+    setCheckoutNotice(null);
     const result = await openPaddleCheckout(plan.slug);
-    if (!result.ok) {
-      setCheckoutError(
-        result.reason === "not-configured"
-          ? tt({ tr: "Bu plan için ödeme yakında açılacak.", en: "Payment for this plan is coming soon." })
-          : result.reason === "anonymous-user"
-            ? tt({ tr: "Satın almak için Google veya e-posta ile giriş yapmalısın (Demo hesabıyla olmaz).", en: "Sign in with Google or email to subscribe (not possible with a Demo account)." })
-            : tt({ tr: "Ödeme ekranı açılamadı, lütfen tekrar dene.", en: "Couldn't open checkout, please try again." })
+    if (result.ok && result.changed) {
+      setCheckoutNotice(
+        result.direction === "upgrade"
+          ? tt({ tr: "Planın yükseltiliyor; birkaç saniye içinde etkinleşir.", en: "Your plan is being upgraded; it takes effect within seconds." })
+          : tt({ tr: "Planın düşürülüyor; fark bir sonraki yenilemede hesaplanır.", en: "Your plan is being downgraded; the difference is applied at your next renewal." })
       );
+      return;
+    }
+    if (!result.ok) {
+      const messages: Record<string, string> = {
+        "not-configured": tt({ tr: "Bu plan için ödeme yakında açılacak.", en: "Payment for this plan is coming soon." }),
+        "anonymous-user": tt({ tr: "Satın almak için Google veya e-posta ile giriş yapmalısın (Demo hesabıyla olmaz).", en: "Sign in with Google or email to subscribe (not possible with a Demo account)." }),
+        "same-plan": tt({ tr: "Bu plana zaten abonesin.", en: "You are already subscribed to this plan." }),
+        "payment-issue": tt({ tr: "Aboneliğinde ödeme sorunu var; plan değiştirmeden önce ödeme yöntemini güncellemelisin.", en: "Your subscription has a payment issue; update your payment method before changing plans." }),
+        paused: tt({ tr: "Aboneliğin duraklatılmış; plan değiştirilemez.", en: "Your subscription is paused; the plan can't be changed." }),
+        "scheduled-change-pending": tt({ tr: "Aboneliğinde bekleyen bir iptal/değişiklik var; plan şimdi değiştirilemez.", en: "Your subscription has a pending cancellation/change; the plan can't be changed now." }),
+        "checkout-in-progress": tt({ tr: "Ödeme ekranı hazırlanıyor, birkaç saniye sonra tekrar dene.", en: "Checkout is being prepared, try again in a few seconds." }),
+        "payment-processing": tt({ tr: "Ödemen işleniyor; birkaç dakika içinde planın etkinleşir. Tekrar ödeme yapma.", en: "Your payment is being processed; your plan activates within minutes. Do not pay again." }),
+      };
+      setCheckoutError(messages[result.reason ?? ""] ?? tt({ tr: "Ödeme ekranı açılamadı, lütfen tekrar dene.", en: "Couldn't open checkout, please try again." }));
     }
   }
 
@@ -148,6 +162,12 @@ export function PricingScreen() {
           </article>
         ))}
       </section>
+
+      {checkoutNotice && (
+        <p className="pricing-note" role="status">
+          {checkoutNotice}
+        </p>
+      )}
 
       {checkoutError && (
         <p className="pricing-note" role="alert" style={{ color: "#e5484d" }}>
