@@ -19,21 +19,24 @@ export function usePlan(userId: string): string | null {
       return;
     }
     let cancelled = false;
-    supabase
-      .from("subscriptions")
-      .select("plan, status, past_due_since, cancel_at, scheduled_action")
-      .eq("user_id", userId)
-      .maybeSingle()
-      .then(
-        ({ data }) => {
-          const value = effectivePlan(data, Date.now());
-          cache.set(userId, { plan: value, at: Date.now() });
-          if (!cancelled) setPlan(value);
-        },
-        () => {
-          if (!cancelled) setPlan("free");
-        }
-      );
+    // 0029 sütunları (past_due_since, cancel_at, scheduled_action) canlıda henüz yoksa sorgu hata verir:
+    // bu durumda temel sütunlarla yeniden dene (ücretli kullanıcı yanlışlıkla "free" görünmesin).
+    const load = async () => {
+      const full = await supabase.from("subscriptions").select("plan, status, past_due_since, cancel_at, scheduled_action").eq("user_id", userId).maybeSingle();
+      if (!full.error) return full.data;
+      const basic = await supabase.from("subscriptions").select("plan, status").eq("user_id", userId).maybeSingle();
+      return basic.error ? null : basic.data;
+    };
+    load().then(
+      (data) => {
+        const value = effectivePlan(data, Date.now());
+        cache.set(userId, { plan: value, at: Date.now() });
+        if (!cancelled) setPlan(value);
+      },
+      () => {
+        if (!cancelled) setPlan("free");
+      }
+    );
     return () => {
       cancelled = true;
     };

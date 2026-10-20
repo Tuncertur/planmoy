@@ -82,7 +82,11 @@ export function PricingScreen() {
     setCheckoutNotice(null);
     const result = await openPaddleCheckout(plan.slug);
     if (result.ok && result.changed) {
-      setCheckoutNotice(tt({ tr: "Planın yükseltiliyor; birkaç saniye içinde etkinleşir.", en: "Your plan is being upgraded; it takes effect within seconds." }));
+      setCheckoutNotice(
+        result.direction === "downgrade"
+          ? tt({ tr: "Planın düşürülüyor; fark bir sonraki yenilemede hesaplanır.", en: "Your plan is being downgraded; the difference is applied at your next renewal." })
+          : tt({ tr: "Planın yükseltiliyor; birkaç saniye içinde etkinleşir.", en: "Your plan is being upgraded; it takes effect within seconds." })
+      );
       return;
     }
     if (result.ok && result.scheduled) {

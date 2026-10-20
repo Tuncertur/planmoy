@@ -21,9 +21,12 @@ export function SubscriptionCard() {
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   const load = useCallback(async () => {
-    const { data, error } = await supabase.from("subscriptions")
+    const full = await supabase.from("subscriptions")
       .select("plan, status, current_period_end, cancel_at, scheduled_action, past_due_since, pending_plan, pending_plan_at").maybeSingle();
-    setRow(error ? null : (data as Row | null));
+    if (!full.error) { setRow(full.data as Row | null); return; }
+    // 0029 henüz uygulanmamışsa eski sütunlarla göster (kart yine plan/durum/yenileme tarihini verir).
+    const basic = await supabase.from("subscriptions").select("plan, status, current_period_end").maybeSingle();
+    setRow(basic.error ? null : ({ cancel_at: null, scheduled_action: null, past_due_since: null, pending_plan: null, pending_plan_at: null, ...basic.data } as Row));
   }, []);
   useEffect(() => { void load(); }, [load]);
 
