@@ -10,6 +10,7 @@ export type NearbyPlace = {
   mapsUrl: string | null;
   websiteUrl: string | null;
   category: string;
+  photos?: string[];
 };
 
 export type DiscoverResult =

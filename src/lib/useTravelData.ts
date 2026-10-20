@@ -18,6 +18,7 @@ export type TravelPlace = {
   mapsUrl: string | null;
   websiteUrl: string | null;
   category: string;
+  photos?: string[];
 };
 
 type Groups = { hotel: TravelPlace[]; restaurant: TravelPlace[]; places: TravelPlace[] };
@@ -54,7 +55,6 @@ export async function refreshTravelData(location: LocationSource) {
       ? { address: location.savedManualAddress, categories: ["hotel", "restaurant", "places"], languageCode: "tr" }
       : { latitude: location.latitude, longitude: location.longitude, categories: ["hotel", "restaurant", "places"], languageCode: "tr" };
   const { data, error } = await supabase.functions.invoke("discover", { body });
-  if (data?.freePlan) return { ok: false as const, reason: "free-plan" };
   if (error || !data?.ok) return { ok: false as const, reason: data?.reason ?? "provider-error" };
   memoryCache = { groups: data.groups, at: Date.now(), capReached: !!data.capReached, capReason: data.capReason };
   notify();
@@ -68,7 +68,6 @@ export async function refreshTravelDataForAddress(address: string) {
   const { data, error } = await supabase.functions.invoke("discover", {
     body: { address, categories: ["hotel", "restaurant", "places"], languageCode: "tr" },
   });
-  if (data?.freePlan) return { ok: false as const, reason: "free-plan" };
   if (error || !data?.ok) return { ok: false as const, reason: data?.reason ?? "provider-error" };
   memoryCache = { groups: data.groups, at: Date.now(), capReached: !!data.capReached, capReason: data.capReason };
   notify();

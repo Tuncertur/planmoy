@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { ExternalLink, Globe2, Info, MapPin, Phone, RefreshCw, Star } from "lucide-react";
 import { useLocationSource } from "../lib/useLocationSource";
 import { usePlan } from "../lib/usePlan";
-import { CityGuidePanel } from "../components/CityGuidePanel";
+import { PlacePhotos } from "../components/PlacePhotos";
 import { useTravelData, type TravelPlace } from "../lib/useTravelData";
 import { supabase } from "../lib/supabase";
 import { tt } from "../lib/i18n";
@@ -29,7 +29,7 @@ const PRICE_LABEL: Record<string, string> = {
 export function TravelPlacesScreen({ userId, category, title }: { userId: string; category: "hotel" | "restaurant" | "places"; title: string }) {
   const location = useLocationSource(userId);
   const plan = usePlan(userId);
-  const live = plan !== null && plan !== "free";
+  const live = plan !== null;
   const { places, status, capReason, refresh } = useTravelData(category, location, live);
   const [sortBy, setSortBy] = useState<"rating" | "price">("rating");
 
@@ -55,9 +55,7 @@ export function TravelPlacesScreen({ userId, category, title }: { userId: string
     return (b.rating ?? 0) - (a.rating ?? 0);
   });
 
-  // Ücretsiz plan: canlı Google verisi yerine ücretsiz şehir rehberi (API maliyeti yok).
   if (plan === null) return <p className="text-sm text-[var(--color-mist-500)]">{tt({ tr: "Yükleniyor…", en: "Loading…" })}</p>;
-  if (plan === "free") return <CityGuidePanel userId={userId} mode={category === "places" ? "places" : category} />;
 
   return (
     <div className="flex flex-col gap-4">
@@ -122,7 +120,8 @@ export function TravelPlacesScreen({ userId, category, title }: { userId: string
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {sorted.map((place: TravelPlace) => (
-          <article key={place.id} className="orbit-card p-4">
+          <article key={place.id} className="orbit-card overflow-hidden p-4">
+            <PlacePhotos photos={place.photos} alt={place.name} />
             <h3 className="font-medium">{place.name}</h3>
             <p className="mt-1 flex items-start gap-1.5 text-xs text-[var(--color-mist-500)]">
               <MapPin size={12} className="mt-0.5 shrink-0" /> {place.address}
