@@ -80,19 +80,11 @@ serve(async (req) => {
 
   const { latitude, longitude, address, category, categories, languageCode } = await req.json();
   const radius = radiusForToday();
-  // Fotoğraflar yalnızca ücretli planlarda (ücretsiz planda hiç indirilmez, maliyet sıfır).
+  // Ücretsiz plan da canlı sonuç ve fotoğraf görür (kullanıcı kararı); maliyet kontrolü:
+  // paylaşımlı arama/fotoğraf önbelleği + kullanıcı-başı tavan + ücretsiz havuz (cost-cap.ts).
+  // Ücretsiz planda yer başına 1 fotoğraf, ücretli planda 3.
   const plan = await getPlan(admin, user.id);
-  const photosEnabled = plan !== "free";
-
-  // Ücretsiz plan: canlı Google verisi ÜCRETLİ özelliktir. Ücretsiz kullanıcı için Google'a
-  // hiç istek atılmaz, hiçbir maliyet oluşmaz (ön yüz şehir rehberini gösterir). İstemci
-  // atlatılsa bile bu kapı sunucuda olduğu için harcama sıfır kalır.
-  if (plan === "free") {
-    return new Response(
-      JSON.stringify({ ok: true, freePlan: true, radiusKm: radius / 1000, places: [], groups: { hotel: [], restaurant: [], places: [] } }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
+  const photosPerPlace = plan === "free" ? 1 : 3;
   const hasCoords = typeof latitude === "number" && typeof longitude === "number";
   const roundedLoc = hasCoords ? `${latitude.toFixed(2)},${longitude.toFixed(2)}` : (address ?? "").trim().toLocaleLowerCase("tr");
 
@@ -100,14 +92,14 @@ serve(async (req) => {
     try {
       const { data: cached } = await admin.from("place_photos_cache").select("photo_urls").eq("place_id", placeId).maybeSingle();
       if (cached?.photo_urls && Array.isArray(cached.photo_urls) && cached.photo_urls.length > 0) {
-        return cached.photo_urls as string[];
+        return (cached.photo_urls as string[]).slice(0, photosPerPlace);
       }
     } catch {
       return [];
     }
     if (!googlePhotoNames.length) return [];
     // Fotoğraf indirme Google'a $0.007/adet ödetir — tavana yazılır, tavan doluysa indirilmez.
-    const photoCount = Math.min(3, googlePhotoNames.length);
+    const photoCount = Math.min(photosPerPlace, googlePhotoNames.length);
     const photoCheck = await checkAndChargeCost(admin, user.id, 0.007 * photoCount);
     if (!photoCheck.allowed) return [];
     const urls: string[] = [];
@@ -188,8 +180,8 @@ serve(async (req) => {
     const mapped = await Promise.all(
       rawPlaces.map(async (p: any) => {
         const placeId = p.id ?? crypto.randomUUID();
-        const googlePhotoNames = Array.isArray(p.photos) ? p.photos.slice(0, 3).map((photo: any) => photo.name) : [];
-        const photos = photosEnabled ? await getOrCachePhotos(placeId, googlePhotoNames) : [];
+        const googlePhotoNames = Array.isArray(p.photos) ? p.photos.slice(0, photosPerPlace).map((photo: any) => photo.name) : [];
+        const photos = await getOrCachePhotos(placeId, googlePhotoNames);
         return {
           id: placeId,
           name: p.displayName?.text ?? "Unnamed place",
