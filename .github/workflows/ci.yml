@@ -1,0 +1,33 @@
+# PLANMOY CI — yalnızca doğrulama: tip kontrolü, birim testler, web derlemesi. Secret KULLANMAZ, hiçbir yere yayın/deploy yapmaz.
+name: ci
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - name: Tip kontrolü + web derlemesi
+        run: npm run build
+      - name: Edge Function birim testleri
+        run: npm run test:functions
+      - name: Planmany kalıntısı yok (yalnızca Planmoy)
+        run: |
+          if grep -rIl "com\.planmany" android src supabase capacitor.config.ts codemagic.yaml 2>/dev/null | grep -q .; then
+            echo "HATA: com.planmany kalintisi bulundu"; grep -rIn "com\.planmany" android src supabase capacitor.config.ts codemagic.yaml | head; exit 1
+          fi
+  pg:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: PostgreSQL ikilileri
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq postgresql postgresql-contrib >/dev/null
+      - name: Migration testleri (geçici yerel PG; 0027–0030)
+        run: |
+          for t in 0027 0028 0029 0030; do echo "##### $t"; bash supabase/tests/pg/$t.test.sh || exit 1; done
