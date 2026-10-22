@@ -103,6 +103,9 @@ export function PricingScreen() {
     }
     if (!result.ok) {
       const messages: Record<string, string> = {
+        "store-billing-required": tt({ tr: "Bu uygulamada satın alma şu an kapalı.", en: "Purchasing is currently unavailable in this app." }),
+        "environment-mismatch": tt({ tr: "Ödeme sistemi şu an güvenli şekilde açılamıyor (ortam uyuşmazlığı). Hiçbir ücret alınmadı.", en: "Payments can't be opened safely right now (environment mismatch). You were not charged." }),
+        "environment-unknown": tt({ tr: "Ödeme sistemi şu an güvenli şekilde açılamıyor. Hiçbir ücret alınmadı; biraz sonra tekrar dene.", en: "Payments can't be opened safely right now. You were not charged; please try again later." }),
         "not-configured": tt({ tr: "Bu plan için ödeme yakında açılacak.", en: "Payment for this plan is coming soon." }),
         "anonymous-user": tt({ tr: "Satın almak için Google veya e-posta ile giriş yapmalısın (Demo hesabıyla olmaz).", en: "Sign in with Google or email to subscribe (not possible with a Demo account)." }),
         "same-plan": tt({ tr: "Bu plana zaten abonesin.", en: "You are already subscribed to this plan." }),

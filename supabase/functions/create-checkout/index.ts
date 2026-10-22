@@ -17,7 +17,7 @@
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
-import { parseUserAllowlist, userAllowedFor } from "../_shared/paddle-core.ts";
+import { isRetiredPrice, parseUserAllowlist, userAllowedFor } from "../_shared/paddle-core.ts";
 import { handleCheckout, PRICE_ENV, type CheckoutDeps, type ExistingSub, type Lock, type LockStore, type PaddleApi } from "./logic.ts";
 
 const corsHeaders = {
@@ -138,7 +138,8 @@ serve(async (req) => {
     environment,
     hasApiKey: apiKey.length > 0,
     userAllowed: (id) => userAllowedFor(environment, parseUserAllowlist(Deno.env.get("SANDBOX_TEST_USER_IDS")), id),
-    priceFor: (plan) => Deno.env.get(PRICE_ENV[plan]) || undefined,
+    // Emekli fiyat (ör. Personal $1.99) yeni satın almada asla kullanılmaz: tanımsız say (not-configured).
+    priceFor: (plan) => { const p = Deno.env.get(PRICE_ENV[plan]) || undefined; return isRetiredPrice(p) ? undefined : p; },
     async getSubscription(userId) {
       const { data, error } = await admin
         .from("subscriptions")
@@ -162,5 +163,6 @@ serve(async (req) => {
   };
 
   const result = await handleCheckout(deps, user.id, body.plan);
-  return json(result.body, result.status);
+  // Sunucu ortamı istemciye bildirilir: istemci token ortamı ile uyuşmazsa checkout AÇMAZ (fail-closed).
+  return json({ ...(result.body as Record<string, unknown>), environment }, result.status);
 });

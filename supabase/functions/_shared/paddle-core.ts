@@ -11,6 +11,16 @@ export const PRICE_ENV_BY_TIER: Record<PaidTier, string> = {
   studio: "PADDLE_PRICE_STUDIO",
 };
 
+// Emekli (satışa KAPALI) fiyatlar: yeni satın alma akışında ASLA kullanılmaz; mevcut aboneler değişmez.
+// Personal $1.99 (LIVE) — yerine $2.99 geçti. Gizli değildir (fiyat kimliği).
+export const RETIRED_PRICE_IDS: readonly string[] = ["pri_01m2kcv8rgk9zrzxcn9011tt3r"];
+export function isRetiredPrice(priceId: string | undefined | null): boolean {
+  return !!priceId && RETIRED_PRICE_IDS.includes(priceId);
+}
+// Eski (emekli) fiyatlı MEVCUT aboneleri tanımak için (yalnızca plan eşlemesi; checkout kullanmaz).
+// Virgülle ayrılmış pri_ listesi. Yalnızca Personal için: emekli fiyat Personal'dı.
+export const LEGACY_PERSONAL_ENV = "PADDLE_PRICE_PERSONAL_LEGACY";
+
 export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // ---------------------------------------------------------------------------
@@ -21,8 +31,19 @@ export function buildPriceTierMap(getEnv: (name: string) => string | undefined):
   for (const tier of Object.keys(PRICE_ENV_BY_TIER) as PaidTier[]) {
     const priceId = getEnv(PRICE_ENV_BY_TIER[tier]);
     if (!priceId) continue;
+    if (isRetiredPrice(priceId)) throw new Error(`${PRICE_ENV_BY_TIER[tier]} emekli bir fiyata işaret ediyor (yapılandırma hatası)`);
     if (map[priceId]) throw new Error(`Aynı fiyat kimliği iki plana atanmış (${map[priceId]} ve ${tier})`);
     map[priceId] = tier;
+  }
+  // Emekli Personal fiyatındaki mevcut aboneler her zaman 'personal' tanınır (env'e bağlı değil).
+  // (Hiç güncel fiyat yapılandırılmamışsa harita BOŞ kalır: "yapılandırma yok" korumaları çalışsın.)
+  if (Object.keys(map).length > 0) for (const id of RETIRED_PRICE_IDS) if (!map[id]) map[id] = "personal";
+  // Mevcut eski-fiyat aboneleri tanınsın (plan değişmez); yeni satışta kullanılmaz.
+  for (const raw of (getEnv(LEGACY_PERSONAL_ENV) ?? "").split(",")) {
+    const id = raw.trim();
+    if (!id) continue;
+    if (map[id] && map[id] !== "personal") throw new Error(`Eski fiyat kimliği başka bir plana atanmış (${map[id]})`);
+    map[id] = "personal";
   }
   return map;
 }

@@ -2,6 +2,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
+import { isRetiredPrice, RETIRED_PRICE_IDS, LEGACY_PERSONAL_ENV } from "../_shared/paddle-core.ts";
 import {
   buildPriceTierMap, claimResultFromInsertError, decide, parseUserAllowlist, userAllowedFor, handleEvent, mapStatus, tierFromData, userExistsFromAuthResult, verifySignature,
   type Deps, type ExistingRow, type PaidTier, type WriteRow,
@@ -44,7 +45,7 @@ const written = (d: ReturnType<typeof decide>) => {
 // ---------------- eşlemeler ----------------
 test("buildPriceTierMap: üç plan eşlenir, aynı fiyat iki plana verilirse hata", () => {
   const env: Record<string, string> = { PADDLE_PRICE_PERSONAL: "pri_a", PADDLE_PRICE_SOLO: "pri_b", PADDLE_PRICE_STUDIO: "pri_c" };
-  assert.deepEqual(buildPriceTierMap((n) => env[n]), { pri_a: "personal", pri_b: "solo", pri_c: "studio" });
+  assert.deepEqual(buildPriceTierMap((n) => env[n]), { pri_a: "personal", pri_b: "solo", pri_c: "studio", [RETIRED_PRICE_IDS[0]]: "personal" });
   assert.deepEqual(buildPriceTierMap(() => undefined), {});
   assert.throws(() => buildPriceTierMap((n) => (n === "PADDLE_PRICE_STUDIO" ? "pri_a" : n === "PADDLE_PRICE_PERSONAL" ? "pri_a" : undefined)));
 });
@@ -456,4 +457,31 @@ test("parseUserAllowlist/userAllowedFor: sandbox yalnız listedekileri, producti
   assert.equal(userAllowedFor("sandbox", parseUserAllowlist(""), A), false); // boş liste => kimse
   assert.equal(userAllowedFor("production", allow, B), true);
   assert.equal(userAllowedFor(null, allow, A), false);
+});
+
+// ---------------- emekli fiyat ($1.99 Personal) ----------------
+const OLD = RETIRED_PRICE_IDS[0];
+test("emekli fiyat: güncel Personal olarak yapılandırılırsa HATA (yeni satışta kullanılamaz)", () => {
+  const env: Record<string, string> = { PADDLE_PRICE_PERSONAL: OLD, PADDLE_PRICE_SOLO: "pri_b", PADDLE_PRICE_STUDIO: "pri_c" };
+  assert.throws(() => buildPriceTierMap((n) => env[n]), /emekli/);
+  assert.equal(isRetiredPrice(OLD), true);
+  assert.equal(isRetiredPrice("pri_01m5h6xrat23s761n7kaenf5m6"), false);
+  assert.equal(isRetiredPrice(undefined), false);
+});
+test("emekli fiyat: eski aboneler 'personal' tanınır; yeni fiyat ve diğer planlar etkilenmez; legacy env eklenir", () => {
+  const env: Record<string, string> = { PADDLE_PRICE_PERSONAL: "pri_new", PADDLE_PRICE_SOLO: "pri_b", PADDLE_PRICE_STUDIO: "pri_c", [LEGACY_PERSONAL_ENV]: "pri_old2, pri_old3" };
+  const m = buildPriceTierMap((n) => env[n]);
+  assert.equal(m[OLD], "personal");
+  assert.equal(m.pri_old2, "personal");
+  assert.equal(m.pri_old3, "personal");
+  assert.equal(m.pri_new, "personal");
+  assert.equal(m.pri_b, "solo");
+  assert.throws(() => buildPriceTierMap((n) => ({ ...env, [LEGACY_PERSONAL_ENV]: "pri_b" } as Record<string, string>)[n]), /başka bir plana/);
+});
+test("emekli fiyat: eski fiyatlı Personal abonenin yenileme/başarısız ödeme olayı planı DEĞİŞTİRMEZ (personal kalır)", () => {
+  const map = buildPriceTierMap((n) => ({ PADDLE_PRICE_PERSONAL: "pri_new", PADDLE_PRICE_SOLO: "pri_b", PADDLE_PRICE_STUDIO: "pri_c" } as Record<string, string>)[n]);
+  const data = subData({ items: [{ price: { id: OLD } }] });
+  const d = decide("subscription.updated", data, T2, USER, row(), map, NOW);
+  assert.equal((d as { row: WriteRow }).row.plan, "personal");
+  assert.equal((d as { row: WriteRow }).row.status, "active");
 });
