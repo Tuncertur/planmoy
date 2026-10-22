@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { ArrowRight, Building2, Check, Clock3, ShieldCheck, Sparkles, UserRound } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { tt } from "../lib/i18n";
 import { useSession } from "../lib/useSession";
-import { openPaddleCheckout } from "../lib/paddle";
+import { isNativeApp, openPaddleCheckout } from "../lib/paddle";
 
 // FireVibe'ın gerçek src/routes/pricing.tsx dosyasından taşınmıştır.
 //
@@ -66,7 +66,12 @@ const plans: Plan[] = [
   },
 ];
 
+// Mağaza uygulamasında fiyat/yükseltme ekranı gösterilmez (Apple 3.1.1 / Play ödeme politikası çözülene kadar).
 export function PricingScreen() {
+  return isNativeApp() ? <Navigate to="/" replace /> : <PricingScreenWeb />;
+}
+
+function PricingScreenWeb() {
   const { session } = useSession();
   const navigate = useNavigate();
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
