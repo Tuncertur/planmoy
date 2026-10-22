@@ -8,3 +8,10 @@ dist
 *.ipa
 *.apk
 ios
+
+# Android Studio
+android/.idea/
+android/local.properties
+android/app/release/
+*.jks
+*.keystore

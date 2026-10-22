@@ -35,7 +35,8 @@ workflows:
 
       - name: Add iOS platform
         script: |
-          npm install @capacitor/ios
+          # @capacitor/ios sürümü @capacitor/core ile AYNI olmalı (sürüm kayması derleme/çalışma hatası verir)
+          npm install @capacitor/ios@$(node -p "require('@capacitor/core/package.json').version")
           rm -rf ios
           npx cap add ios --packagemanager Cocoapods
           npx cap sync ios
@@ -57,6 +58,15 @@ workflows:
         script: |
           /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" ios/App/App/Info.plist || \
           /usr/libexec/PlistBuddy -c "Set :ITSAppUsesNonExemptEncryption false" ios/App/App/Info.plist
+
+      - name: Planmoy uygulama ikonu (Capacitor varsayilan ikonu YERINE)
+        script: |
+          cp resources/icon-1024.png "ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png"
+
+      - name: Add location permission text
+        script: |
+          /usr/libexec/PlistBuddy -c "Add :NSLocationWhenInUseUsageDescription string 'Planmoy, yakınındaki restoran, otel ve gezilecek yerleri göstermek için konumunu kullanır.'" ios/App/App/Info.plist ||
+          /usr/libexec/PlistBuddy -c "Set :NSLocationWhenInUseUsageDescription 'Planmoy, yakınındaki restoran, otel ve gezilecek yerleri göstermek için konumunu kullanır.'" ios/App/App/Info.plist
 
       - name: Add camera and photo library permissions
         script: |
@@ -82,3 +92,34 @@ workflows:
         auth: integration
         submit_to_testflight: true
         submit_to_app_store: false
+
+  android-release:
+    name: Planmoy Android AAB
+    max_build_duration: 45
+    instance_type: linux_x2
+    environment:
+      # Codemagic > Teams > Code signing identities > Android keystores: referans adi "planmoy_keystore"
+      android_signing:
+        - planmoy_keystore
+      vars:
+        PACKAGE_NAME: "com.planmoy.app"
+      node: 22
+      java: 17
+    scripts:
+      - name: Install npm dependencies
+        script: |
+          npm install
+      - name: Build web assets
+        script: |
+          # Herkese açık yapılandırma iOS iş akışındakiyle aynı (URL + anon anahtar); ödeme istemci token'ı Android'de GEREKMEZ (satın alma kapalı)
+          grep -E '^ +VITE_SUPABASE_(URL|ANON_KEY)=' codemagic.yaml | sed 's/^ *//' | sort -u > .env.local
+          npm run build
+      - name: Sync Capacitor Android
+        script: |
+          npx cap sync android
+      - name: Build AAB
+        script: |
+          cd android
+          ./gradlew bundleRelease -PversionCodeOverride=$((BUILD_NUMBER + 100))
+    artifacts:
+      - android/app/build/outputs/bundle/release/*.aab
