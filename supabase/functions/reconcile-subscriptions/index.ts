@@ -6,7 +6,7 @@
 // Diğer secrets: PADDLE_API_KEY, PADDLE_ENVIRONMENT, PADDLE_PRICE_PERSONAL/SOLO/STUDIO. Tablo: subscription_repairs (0028), subscriptions.pending_plan* (0029).
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
-import { buildPriceTierMap, PRICE_ENV_BY_TIER, type PaidTier } from "../_shared/paddle-core.ts";
+import { buildPriceTierMap, parseUserAllowlist, PRICE_ENV_BY_TIER, userAllowedFor, type PaidTier } from "../_shared/paddle-core.ts";
 import { reconcile, type DbRow, type Options, type ReconcileDeps } from "./logic.ts";
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -76,6 +76,7 @@ serve(async (req) => {
       return data?.length ?? 0;
     },
     priceIdFor: (plan) => Deno.env.get(PRICE_ENV_BY_TIER[plan]),
+    userAllowed: (id) => userAllowedFor(environment, parseUserAllowlist(Deno.env.get("SANDBOX_TEST_USER_IDS")), id),
     async getLive(subId) {
       const res = await call("GET", `/subscriptions/${enc(subId)}`);
       if (res.status === 404) return null;

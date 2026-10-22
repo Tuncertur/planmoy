@@ -18,6 +18,8 @@ export interface LiveSub {
 export interface ManageDeps {
   environment: "sandbox" | "production" | null;
   hasApiKey: boolean;
+  /** Sandbox izolasyonu: sandbox ortamında yalnızca izinli test kullanıcıları (production: herkes). */
+  userAllowed(userId: string): boolean;
   getRow(userId: string): Promise<SubRow | null>;
   clearPending(userId: string): Promise<void>;
   paddle: {
@@ -35,6 +37,7 @@ export async function handleManage(deps: ManageDeps, userId: string, actionInput
   const action = typeof actionInput === "string" && (ACTIONS as string[]).includes(actionInput) ? (actionInput as Action) : null;
   if (!action) return { status: 400, body: { ok: false, reason: "invalid-action" } };
   if (!deps.hasApiKey || !deps.environment) return refuse("not-configured"); // fail-closed
+  if (!deps.userAllowed(userId)) return refuse("not-allowed");
 
   try {
     const row = await deps.getRow(userId);

@@ -34,7 +34,7 @@ serve(async (req) => {
     environment,
     hasApiKey: !!apiKey,
     async getRow(userId) {
-      const { data, error } = await admin.from("subscriptions").select("paddle_subscription_id, paddle_customer_id").eq("user_id", userId).maybeSingle();
+      const { data, error } = await admin.from("subscriptions").select("paddle_subscription_id, paddle_customer_id, status").eq("user_id", userId).maybeSingle();
       if (error) throw new Error(error.message);
       return data;
     },

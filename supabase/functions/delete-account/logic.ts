@@ -7,7 +7,7 @@ export type Outcome = "deleted" | "cancel-failed" | "delete-failed" | "unverifia
 export interface DeleteDeps {
   environment: "sandbox" | "production" | null;
   hasApiKey: boolean;
-  getRow(userId: string): Promise<{ paddle_subscription_id: string | null; paddle_customer_id: string | null } | null>;
+  getRow(userId: string): Promise<{ paddle_subscription_id: string | null; paddle_customer_id: string | null; status?: string | null } | null>;
   paddle: {
     getStatus(subscriptionId: string): Promise<string | null>; // 404 -> null
     liveIdsOfCustomer(customerId: string): Promise<string[]>;
@@ -44,6 +44,12 @@ export async function handleDelete(deps: DeleteDeps, userId: string): Promise<De
       if (row.paddle_subscription_id) {
         statusBefore = await deps.paddle.getStatus(row.paddle_subscription_id);
         if (statusBefore && LIVE_STATUSES.includes(statusBefore)) subIds.add(row.paddle_subscription_id);
+        // Paddle bu kimliği TANIMIYOR (404) ama kayıt iptal olmadığını söylüyorsa: yanlış ortam/anahtar olabilir ve gerçek
+        // abonelik sürüyor olabilir -> hesabı SİLME (yalnızca kayıt açıkça "canceled" ise silinebilir).
+        if (statusBefore === null && row.status !== "canceled") {
+          await logSafe({ user_hash: hash, paddle_subscription_id: row.paddle_subscription_id, paddle_status_before: null, subscription_canceled: false, outcome: "unverifiable", note: "paddle kimligi tanimiyor (404), kayit iptal degil" });
+          return fail("unverifiable", 502);
+        }
       }
       if (row.paddle_customer_id) for (const id of await deps.paddle.liveIdsOfCustomer(row.paddle_customer_id)) subIds.add(id);
     } catch (err) {

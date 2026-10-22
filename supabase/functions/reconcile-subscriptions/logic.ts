@@ -94,6 +94,8 @@ export interface ReconcileDeps {
   /** CAS: (user, sub, plan, status, last_event_at) hâlâ aynıysa free/canceled yapar; etkilenen satır sayısı. */
   repairCanceled(row: DbRow): Promise<number>;
   priceIdFor(plan: PaidTier): string | undefined;
+  /** Sandbox izolasyonu: yazma (onarım/düşürme) yalnızca izinli kullanıcılar için. production ortamında hepsi true. */
+  userAllowed(userId: string): boolean;
   getLive(subId: string): Promise<{ status: string; scheduled_change: unknown; price_ids: string[]; period_end: string | null } | null>;
   changePlan(subId: string, priceId: string, mode: string): Promise<void>;
   /** CAS: pending_plan hâlâ `expected` ise temizler. */
@@ -126,6 +128,7 @@ export async function reconcile(deps: ReconcileDeps, opts: Options): Promise<Rep
   const candidates = rows.filter((r) => {
     const p = r.paddle_subscription_id ? paddleOf.get(r.paddle_subscription_id) : undefined;
     if (!p) return false;
+    if (!deps.userAllowed(r.user_id)) return false; // izin listesi dışındaki kullanıcıya YAZILMAZ
     return opts.mode === "repair"
       ? mapStatus(p.status).status === "canceled" && (r.status !== "canceled" || r.plan !== "free") && ownerOf(p) === r.user_id
       : downgradeDue(r, p, nowMs, deps.priceTier);

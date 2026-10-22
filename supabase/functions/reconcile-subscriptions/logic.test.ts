@@ -46,7 +46,7 @@ test("bekleyen düşürme: vade yaklaşınca 'due', geçersiz/iptalli ise 'stale
 
 // ---- reconcile ----
 function build(o: { paddle?: PaddleSub[]; rows?: DbRow[]; flags?: { repair: boolean; applyDowngrades: boolean }; readFails?: boolean; casCount?: number;
-  changeFails?: boolean; verifyOk?: boolean; periodEnd?: string | null; auditFails?: boolean } = {}) {
+  changeFails?: boolean; allowed?: boolean; verifyOk?: boolean; periodEnd?: string | null; auditFails?: boolean } = {}) {
   const calls: string[] = [];
   const deps: ReconcileDeps = {
     now: () => NOW, priceTier: { ...PT }, flags: o.flags ?? { repair: false, applyDowngrades: false },
@@ -54,6 +54,7 @@ function build(o: { paddle?: PaddleSub[]; rows?: DbRow[]; flags?: { repair: bool
     async listRows() { return o.rows ?? [row({ plan: "personal", status: "past_due" })]; },
     async repairCanceled() { calls.push("repair"); return o.casCount ?? 1; },
     priceIdFor: (p) => ({ personal: "pri_p", solo: "pri_s", studio: "pri_t" })[p],
+    userAllowed: () => o.allowed ?? true,
     async getLive() { calls.push("getLive"); const verified = calls.filter((c) => c.startsWith("change")).length > 0 && (o.verifyOk ?? true);
       return { status: "active", scheduled_change: null, price_ids: [verified ? "pri_p" : "pri_s"], period_end: o.periodEnd === undefined ? "2026-11-10T12:00:00Z" : o.periodEnd }; },
     async changePlan(_s, pr, mode) { if (o.changeFails) throw new Error("paddle 422"); calls.push(`change:${pr}:${mode}`); },
@@ -146,4 +147,15 @@ test("apply-downgrades: vade erken / Paddle'da planlı değişiklik / plan uyuş
   const mism = build({ flags, paddle: [psub({ items: [{ price: { id: "pri_t" } }] })], rows: [DUE] });
   await reconcile(mism.deps, { mode: "apply-downgrades" });
   assert.ok(!mism.calls.some((c) => c.startsWith("change")));
+});
+
+test("sandbox izolasyonu: izin listesi dışındaki kullanıcının satırına onarım/düşürme YAZILMAZ", async () => {
+  for (const mode of ["repair", "apply-downgrades"] as const) {
+    const b = build({ flags: { repair: true, applyDowngrades: true }, allowed: false,
+      rows: [mode === "repair" ? row({ plan: "personal", status: "past_due" }) : row({ pending_plan: "personal", pending_plan_at: "2026-11-10T12:00:00Z" })],
+      paddle: [mode === "repair" ? psub({ status: "canceled" }) : psub()] });
+    const r = await reconcile(b.deps, { mode });
+    assert.equal(r.wrote, false);
+    assert.deepEqual(b.calls, []);
+  }
 });
