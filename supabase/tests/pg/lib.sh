@@ -11,7 +11,7 @@ if [ "$(id -u)" = 0 ]; then RUN=(runuser -u postgres --); chown postgres:postgre
 PASS=0; FAIL=0
 
 pg_start() {
-  "${RUN[@]}" "$PGBIN/initdb" -D "$PGTMP/data" -A trust >/dev/null || { echo "initdb basarisiz"; exit 2; }
+  "${RUN[@]}" "$PGBIN/initdb" -D "$PGTMP/data" -U postgres -A trust >/dev/null || { echo "initdb basarisiz"; exit 2; }
   "${RUN[@]}" "$PGBIN/pg_ctl" -D "$PGTMP/data" -o "-p $PORT -k $PGTMP -c listen_addresses=''" -l "$PGTMP/log" -w start >/dev/null || { echo "pg_ctl basarisiz"; exit 2; }
   # Roller küme geneldir: bir kez oluştur (Supabase rolleri taslağı)
   P -d postgres -c "do \$\$ begin create role authenticated; create role anon; create role service_role; end \$\$;"
