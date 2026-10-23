@@ -64,3 +64,8 @@ Sürüm: 2026-10-14 v2
 - Canlıya geçişte Supabase secret'ları (ONAYLI, tek seferde): PADDLE_ENVIRONMENT=production, PADDLE_PRICE_PERSONAL/SOLO/STUDIO=yukarıdaki üçü, PADDLE_API_KEY (canlı), PADDLE_WEBHOOK_SECRET (canlı hedef). Sandbox için ayrı proje/izin listesi kararı açık.
 - İstemci: web yayını canlı client token (live_) ile; ortam token önekinden türetilir, sunucu ortamı ile uyuşmazsa checkout AÇILMAZ.
 - Mağaza uygulamalarında (iOS/Android) satın alma akışı kapalı (Apple IAP / Play Billing kararı çözülene kadar).
+
+## 0031 — webhook olay kaybı (claim-then-crash) kapatıldı (yerel; production'a UYGULANMADI)
+- `0031_webhook_event_lease.sql`: claim artık kira (5 dk) alır; olay iş bittikten sonra `completed_at` ile tamamlanır; çöken işleme kira dolunca devralınır. RPC: `claim_webhook_event`, `complete_webhook_event`, `release_webhook_event` (yalnız service_role).
+- **Sıra ZORUNLU:** önce migration 0031, sonra `paddle-webhook` deploy (yeni kod RPC'leri çağırır; migration yoksa tüm olaylar 500 döner).
+- Testler: pg 0031 (15) + birim (116 toplam, çökme/yeniden deneme dahil).

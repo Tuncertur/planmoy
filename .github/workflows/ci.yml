@@ -28,6 +28,6 @@ jobs:
       - uses: actions/checkout@v4
       - name: PostgreSQL ikilileri
         run: sudo apt-get update -qq && sudo apt-get install -y -qq postgresql postgresql-contrib >/dev/null
-      - name: Migration testleri (geçici yerel PG; 0027–0030)
+      - name: Migration testleri (geçici yerel PG; 0027–0031)
         run: |
-          for t in 0027 0028 0029 0030; do echo "##### $t"; bash supabase/tests/pg/$t.test.sh || exit 1; done
+          for t in 0027 0028 0029 0030 0031; do echo "##### $t"; bash supabase/tests/pg/$t.test.sh || exit 1; done

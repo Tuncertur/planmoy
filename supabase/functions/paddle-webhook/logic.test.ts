@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
 import { isRetiredPrice, RETIRED_PRICE_IDS, LEGACY_PERSONAL_ENV } from "../_shared/paddle-core.ts";
 import {
-  buildPriceTierMap, claimResultFromInsertError, decide, parseUserAllowlist, userAllowedFor, handleEvent, mapStatus, tierFromData, userExistsFromAuthResult, verifySignature,
+  buildPriceTierMap, claimResultFromInsertError, claimResultFromRpc, decide, parseUserAllowlist, userAllowedFor, handleEvent, mapStatus, tierFromData, userExistsFromAuthResult, verifySignature,
   type Deps, type ExistingRow, type PaidTier, type WriteRow,
 } from "./logic.ts";
 
@@ -188,11 +188,12 @@ test("abonelik dışı işlem (subscription_id yok) yoksayılır", () => {
 // ---------------- handleEvent (idempotency, hata ayrımı, uçtan uca) ----------------
 function fake(opts: {
   existing?: ExistingRow | null; userOk?: boolean | Error; claimError?: Error; writeError?: Error;
-  conflictOnce?: boolean; allowed?: boolean; releaseError?: Error; priceTier?: Record<string, PaidTier>; bySub?: string | null;
+  conflictOnce?: boolean; allowed?: boolean; releaseError?: Error; completeError?: Error; priceTier?: Record<string, PaidTier>; bySub?: string | null;
 } = {}) {
   let store: ExistingRow | null = opts.existing === undefined ? null : opts.existing;
-  const claimed = new Set<string>();
+  const claimed = new Map<string, "leased" | "done">(); // 0031: kira (leased) / tamamlandı (done)
   const f = {
+    completes: [] as string[], expireLease(id: string) { if (claimed.get(id) === "leased") claimed.delete(id); },
     writes: [] as WriteRow[], claims: [] as string[], releases: [] as string[], logs: { error: [] as unknown[][], warn: [] as unknown[][] },
     get store() { return store; },
     deps: null as unknown as Deps,
@@ -205,9 +206,15 @@ function fake(opts: {
     async claimEvent(id) {
       if (opts.claimError) throw opts.claimError;
       f.claims.push(id);
-      if (claimed.has(id)) return "duplicate";
-      claimed.add(id);
+      const st = claimed.get(id);
+      if (st === "done") return "duplicate";
+      if (st === "leased") return "in-progress";
+      claimed.set(id, "leased");
       return "claimed";
+    },
+    async completeEvent(id) {
+      if (opts.completeError) throw opts.completeError;
+      f.completes.push(id); claimed.set(id, "done");
     },
     async releaseEvent(id) {
       if (opts.releaseError) throw opts.releaseError;
@@ -484,4 +491,64 @@ test("emekli fiyat: eski fiyatlı Personal abonenin yenileme/başarısız ödeme
   const d = decide("subscription.updated", data, T2, USER, row(), map, NOW);
   assert.equal((d as { row: WriteRow }).row.plan, "personal");
   assert.equal((d as { row: WriteRow }).row.status, "active");
+});
+
+// ---- 0031: claim-then-crash olay kaybı kapatıldı ----
+test("0031 ÇÖKME: claim sonrası süreç ölürse (complete/release yok) olay kaybolmaz; kira dolunca yeniden işlenir", async () => {
+  const f = fake({ writeError: new Error("OOM"), releaseError: new Error("db down") }); // yazma çöker, kira bırakılamaz
+  const e = ev("evt_c", "subscription.created", T1, subData());
+  assert.equal((await handleEvent(f.deps, e)).status, 500);
+  assert.equal(f.completes.length, 0);
+  // kira dolmadan gelen yeniden deneme: başkası işliyor -> 503 (Paddle tekrar dener), yazma yok
+  const r2 = await handleEvent(f.deps, e);
+  assert.equal(r2.status, 503);
+  assert.equal(f.writes.length, 0);
+  // kira doldu (DB tarafı: claimed_at eski) ve sorun giderildi -> devralınır, olay İŞLENİR
+  f.expireLease("evt_c");
+  const ok = fake({ existing: null });
+  const r3 = await handleEvent(ok.deps, e);
+  assert.equal(r3.status, 200);
+  assert.equal(ok.writes.length, 1);
+  assert.deepEqual(ok.completes, ["evt_c"]);
+});
+
+test("0031: başarılı işleme completeEvent çağırır; ikinci teslimat duplicate (çift yazma yok)", async () => {
+  const f = fake();
+  const e = ev("evt_1", "subscription.created", T1, subData());
+  assert.equal((await handleEvent(f.deps, e)).status, 200);
+  assert.deepEqual(f.completes, ["evt_1"]);
+  const r2 = await handleEvent(f.deps, e);
+  assert.equal(r2.body.duplicate, true);
+  assert.equal(f.writes.length, 1);
+});
+
+test("0031: kalıcı 'skipped' sonuçlar da tamamlanır (sonsuz yeniden deneme yok)", async () => {
+  const f = fake({ userOk: false });
+  const r = await handleEvent(f.deps, ev("evt_2", "subscription.created", T1, subData()));
+  assert.equal(r.body.skipped, "user-not-found");
+  assert.deepEqual(f.completes, ["evt_2"]);
+});
+
+test("0031: completeEvent başarısızsa 500 (olay tamamlanmadan 200 verilmez), kira bırakılır", async () => {
+  const f = fake({ completeError: new Error("db down") });
+  const r = await handleEvent(f.deps, ev("evt_3", "subscription.created", T1, subData()));
+  assert.equal(r.status, 500);
+  assert.deepEqual(f.releases, ["evt_3"]);
+  assert.equal(f.writes.length, 1); // yazma yapıldı; yeniden denemede last_event_at koruması çift etkiyi engeller
+});
+
+test("0031: yazma hatası -> release -> yeniden denemede aynı store üzerinde işlenir", async () => {
+  const f = fake({ conflictOnce: true });
+  const e = ev("evt_4", "subscription.created", T1, subData());
+  assert.equal((await handleEvent(f.deps, e)).status, 500);
+  assert.deepEqual(f.releases, ["evt_4"]);
+  assert.equal((await handleEvent(f.deps, e)).status, 200);
+  assert.deepEqual(f.completes, ["evt_4"]);
+});
+
+test("0031: claimResultFromRpc yalnızca bilinen sonuçları kabul eder; hata/bilinmeyen FIRLATILIR", () => {
+  for (const v of ["claimed", "duplicate", "in-progress"] as const) assert.equal(claimResultFromRpc(v, null), v);
+  assert.throws(() => claimResultFromRpc(null, { code: "42883", message: "function does not exist" }), /claim_webhook_event hatası/);
+  assert.throws(() => claimResultFromRpc("garip", null), /beklenmeyen/);
+  assert.throws(() => claimResultFromRpc(undefined, null), /beklenmeyen/);
 });

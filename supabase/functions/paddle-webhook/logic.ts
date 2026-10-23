@@ -159,11 +159,16 @@ export function decide(
 // ---------------------------------------------------------------------------
 // Olay işleme (bağımlılıklar enjekte edilir)
 // ---------------------------------------------------------------------------
+export type ClaimResult = "claimed" | "duplicate" | "in-progress";
+
 export interface Deps {
   priceTier: Record<string, PaidTier>;
   now: () => string;
-  /** "claimed" | "duplicate"; unique ihlali dışındaki her hata FIRLATILIR. */
-  claimEvent(eventId: string, eventType: string): Promise<"claimed" | "duplicate">;
+  /** "claimed" (işle) | "duplicate" (tamamlanmış) | "in-progress" (başka işlem kiralamış, sonra dene); diğer hatalar FIRLATILIR. */
+  claimEvent(eventId: string, eventType: string): Promise<ClaimResult>;
+  /** İş BİTTİKTEN sonra çağrılır (0031): tamamlanmamış claim kira dolunca devralınır, olay kaybolmaz. */
+  completeEvent(eventId: string): Promise<void>;
+  /** Hata sonrası kirayı bırakır; yeniden deneme hemen devralabilir. */
   releaseEvent(eventId: string): Promise<void>;
   /** true/false; yalnızca açık "kullanıcı yok" yanıtı false döner, diğer hatalar FIRLATILIR. */
   userExists(userId: string): Promise<boolean>;
@@ -193,13 +198,21 @@ export async function handleEvent(deps: Deps, event: any): Promise<HandlerResult
   let claimed = false;
   try {
     if (eventId) {
-      if ((await deps.claimEvent(eventId, eventType)) === "duplicate") {
-        return { status: 200, body: { received: true, duplicate: true } };
+      const c = await deps.claimEvent(eventId, eventType);
+      if (c === "duplicate") return { status: 200, body: { received: true, duplicate: true } };
+      if (c === "in-progress") {
+        deps.log.warn("olay başka bir işlem tarafından işleniyor; Paddle yeniden deneyecek", { eventType });
+        return { status: 503, body: { error: "in-progress" } };
       }
       claimed = true;
     } else {
       deps.log.warn("event_id yok, tekilleştirme yapılamadı", { eventType });
     }
+
+    const finish = async (r: HandlerResult): Promise<HandlerResult> => {
+      if (claimed && eventId) await deps.completeEvent(eventId); // hata fırlatırsa catch: 500 + release -> yeniden deneme
+      return r;
+    };
 
     if (Object.keys(deps.priceTier).length === 0) throw new Error("PADDLE_PRICE_* secret'ları tanımlı değil (yapılandırma hatası)");
 
@@ -210,35 +223,35 @@ export async function handleEvent(deps: Deps, event: any): Promise<HandlerResult
     let userId: string | undefined = typeof data?.custom_data?.supabase_user_id === "string" ? data.custom_data.supabase_user_id : undefined;
     if (userId && !UUID_RE.test(userId)) {
       deps.log.error("custom_data.supabase_user_id geçerli bir UUID değil, olay yoksayıldı", { eventType });
-      return { status: 200, body: { received: true, skipped: "invalid-user-id" } };
+      return await finish({ status: 200, body: { received: true, skipped: "invalid-user-id" } });
     }
     if (!userId && subId) userId = (await deps.findUserBySubscription(subId)) ?? undefined;
     if (!userId) {
       deps.log.error("olay bir kullanıcıya bağlanamadı (custom_data ve abonelik kaydı yok)", { eventType, subId });
-      return { status: 200, body: { received: true, skipped: "no-user" } };
+      return await finish({ status: 200, body: { received: true, skipped: "no-user" } });
     }
 
     if (!(await deps.userExists(userId))) {
       deps.log.error("ORPHAN: olay silinmiş/olmayan bir kullanıcıya ait (Paddle'da abonelik hâlâ aktif olabilir)", { eventType, subId });
-      return { status: 200, body: { received: true, skipped: "user-not-found" } };
+      return await finish({ status: 200, body: { received: true, skipped: "user-not-found" } });
     }
 
     if (!deps.userAllowed(userId)) {
       deps.log.error("webhook atlandı: kullanıcı bu ortamda izinli değil (sandbox izin listesi / ortam belirsiz)", { eventType, subId });
-      return { status: 200, body: { received: true, skipped: "user-not-allowed" } };
+      return await finish({ status: 200, body: { received: true, skipped: "user-not-allowed" } });
     }
 
     const existing = await deps.getSubscription(userId);
     const decision = decide(eventType, data, occurredAt, userId, existing, deps.priceTier, deps.now());
     if (decision.action === "skip") {
       deps.log[decision.level](`webhook atlandı: ${decision.reason}`, { eventType, subId });
-      return { status: 200, body: { received: true, skipped: decision.reason } };
+      return await finish({ status: 200, body: { received: true, skipped: decision.reason } });
     }
     if (decision.note) deps.log.warn(decision.note, { eventType, subId });
 
     const result = await deps.writeSubscription(userId, existing, decision.row);
     if (result === "conflict") throw new Error("subscription-write-conflict"); // eşzamanlı yazma: 500 -> Paddle yeniden dener
-    return { status: 200, body: { received: true } };
+    return await finish({ status: 200, body: { received: true } });
   } catch (err) {
     deps.log.error("Webhook işleme hatası:", err instanceof Error ? err.message : err);
     if (claimed && eventId) {
@@ -262,6 +275,13 @@ export function claimResultFromInsertError(error: { code?: string; message?: str
   if (!error) return "claimed";
   if (error.code === UNIQUE_VIOLATION) return "duplicate";
   throw new Error(`processed_webhook_events insert hatası: ${error.code ?? ""} ${error.message ?? ""}`);
+}
+
+/** claim_webhook_event RPC sonucu: yalnızca bilinen üç değer; hata/bilinmeyen değer FIRLATILIR (olay yutulmaz). */
+export function claimResultFromRpc(data: unknown, error: { code?: string; message?: string } | null): ClaimResult {
+  if (error) throw new Error(`claim_webhook_event hatası: ${error.code ?? ""} ${error.message ?? ""}`);
+  if (data === "claimed" || data === "duplicate" || data === "in-progress") return data;
+  throw new Error(`claim_webhook_event beklenmeyen sonuç: ${String(data)}`);
 }
 
 /** auth.admin.getUserById sonucu: yalnızca açık 404/user_not_found "kullanıcı yok"; belirsiz hata fırlatılır. */
