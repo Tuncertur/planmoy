@@ -1,6 +1,6 @@
 workflows:
   ios-release:
-    name: Planmoy iOS Release
+    name: Planmoy iOS IPA (YALNIZ DERLEME - TestFlight/App Store'a GONDERMEZ)
     max_build_duration: 60
     instance_type: mac_mini_m2
     integrations:
@@ -18,7 +18,7 @@ workflows:
       node: 22
       xcode: latest
       cocoapods: default
-    scripts:
+    scripts: &ios_scripts
       - name: Install npm dependencies
         script: |
           npm install
@@ -28,8 +28,6 @@ workflows:
           cat > .env.local << 'ENVEOF'
           VITE_SUPABASE_URL=https://jveqmmmzwskgbvkcmgki.supabase.co
           VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2ZXFtbW16d3NrZ2J2a2NtZ2tpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg5NTYzNDgsImV4cCI6MjEwNDUzMjM0OH0.VmODv6M2HQdebP-ylAznZQjaFg9mSpmAVSUERiYN_2Y
-          VITE_PADDLE_CLIENT_TOKEN=live_3381ff0c0f887d38d87fc45458b
-          VITE_PADDLE_ENVIRONMENT=production
           ENVEOF
           npm run build
 
@@ -87,6 +85,31 @@ workflows:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
 
+    # Bu is akisi hicbir yere YUKLEMEZ. TestFlight icin ayri 'ios-testflight' is akisi (elle ve ayri onayla).
+
+  ios-testflight:
+    name: Planmoy iOS -> TestFlight (YALNIZ ONAYLA, elle calistir)
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: Planmoy
+    environment:
+      ios_signing:
+        certificates:
+          - planmoy
+        provisioning_profiles:
+          - com.planmoy.app
+      vars:
+        BUNDLE_ID: "com.planmoy.app"
+        XCODE_WORKSPACE: "ios/App/App.xcworkspace"
+        XCODE_SCHEME: "App"
+      node: 22
+      xcode: latest
+      cocoapods: default
+    scripts: *ios_scripts
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
     publishing:
       app_store_connect:
         auth: integration
@@ -117,9 +140,18 @@ workflows:
       - name: Sync Capacitor Android
         script: |
           npx cap sync android
+      - name: Imza ortami dogrula (imzasiz paket magazaya gonderilemez)
+        script: |
+          [ -n "$CM_KEYSTORE_PATH" ] && [ -f "$CM_KEYSTORE_PATH" ] && [ -n "$CM_KEY_ALIAS" ] || { echo "HATA: planmoy_keystore tanimli degil; imzali AAB uretilemez"; exit 1; }
       - name: Build AAB
         script: |
           cd android
           ./gradlew bundleRelease -PversionCodeOverride=$((BUILD_NUMBER + 100))
+      - name: AAB imzasini dogrula
+        script: |
+          AAB=$(ls android/app/build/outputs/bundle/release/*.aab | head -1)
+          jarsigner -verify "$AAB" | tee /tmp/jarsigner.txt
+          grep -q "jar verified" /tmp/jarsigner.txt || { echo "HATA: AAB imzali degil"; exit 1; }
+          ! unzip -p "$AAB" base/manifest/AndroidManifest.xml | strings | grep -q "com.planmany" || { echo "HATA: planmany kalintisi"; exit 1; }
     artifacts:
       - android/app/build/outputs/bundle/release/*.aab
