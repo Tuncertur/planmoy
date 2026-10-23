@@ -116,6 +116,45 @@ workflows:
         submit_to_testflight: true
         submit_to_app_store: false
 
+  ios-screenshots:
+    name: Planmoy iOS Simulator ekran goruntuleri (GERCEK Simulator; imza/yukleme YOK)
+    max_build_duration: 45
+    instance_type: mac_mini_m2
+    environment:
+      vars:
+        BUNDLE_ID: "com.planmoy.app"
+      node: 22
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Install npm dependencies
+        script: |
+          npm install
+      - name: Build web assets (VITE_SHOT_MODE=1 — yalniz bu is akisinda)
+        script: |
+          grep -E '^ +VITE_SUPABASE_(URL|ANON_KEY)=' codemagic.yaml | sed 's/^ *//' | sort -u > .env.local
+          echo "VITE_SHOT_MODE=1" >> .env.local
+          npm run build
+      - name: Add iOS platform
+        script: |
+          npm install @capacitor/ios@$(node -p "require('@capacitor/core/package.json').version")
+          rm -rf ios
+          npx cap add ios --packagemanager Cocoapods
+          npx cap sync ios
+          cd ios/App && pod install
+      - name: Planmoy ikonu ve konum izin metni
+        script: |
+          cp resources/icon-1024.png "ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png"
+          /usr/libexec/PlistBuddy -c "Add :NSLocationWhenInUseUsageDescription string 'Planmoy, yakınındaki restoran, otel ve gezilecek yerleri göstermek için konumunu kullanır.'" ios/App/App/Info.plist || true
+      - name: Simulator icin derle (imzasiz)
+        script: |
+          xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Debug -sdk iphonesimulator -derivedDataPath build/sim CODE_SIGNING_ALLOWED=NO build | tail -5
+      - name: Simulator ekran goruntuleri
+        script: |
+          bash scripts/ios-ekran-goruntusu.sh "$(ls -d build/sim/Build/Products/Debug-iphonesimulator/App.app)" ekran-goruntuleri
+    artifacts:
+      - ekran-goruntuleri/*
+
   android-release:
     name: Planmoy Android AAB
     max_build_duration: 45
@@ -152,6 +191,6 @@ workflows:
           AAB=$(ls android/app/build/outputs/bundle/release/*.aab | head -1)
           jarsigner -verify "$AAB" | tee /tmp/jarsigner.txt
           grep -q "jar verified" /tmp/jarsigner.txt || { echo "HATA: AAB imzali degil"; exit 1; }
-          ! unzip -p "$AAB" base/manifest/AndroidManifest.xml | strings | grep -q "com.planmany" || { echo "HATA: planmany kalintisi"; exit 1; }
+          ! unzip -p "$AAB" base/manifest/AndroidManifest.xml | strings | grep -q "com[.]planmany" || { echo "HATA: planmany kalintisi"; exit 1; }
     artifacts:
       - android/app/build/outputs/bundle/release/*.aab

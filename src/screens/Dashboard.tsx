@@ -1,3 +1,4 @@
+import { SHOT_MODE, SHOT_INTERVAL_MS, SHOT_VIEWS } from "../lib/shotMode";
 import { useEffect, useState, useRef } from "react";
 import { isNativeApp } from "../lib/paddle";
 import {
@@ -140,6 +141,12 @@ export function Dashboard({ userId, email }: { userId: string; email: string }) 
   const [mode, setMode] = useState<Mode>("personal");
   const [view, setView] = useState<ViewId>("flow");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  useEffect(() => {
+    if (!SHOT_MODE) return;
+    let i = 0;
+    const t = setInterval(() => { i += 1; setView(SHOT_VIEWS[i % SHOT_VIEWS.length] as ViewId); }, SHOT_INTERVAL_MS);
+    return () => clearInterval(t);
+  }, []);
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [viewHistory, setViewHistory] = useState<ViewId[]>(["flow"]);
   const [historyIndex, setHistoryIndex] = useState(0);

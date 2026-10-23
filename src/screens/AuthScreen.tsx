@@ -1,8 +1,9 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { ArrowRight, CalendarDays, Check, Eye, EyeOff, Mail, ShieldCheck, Sparkles, Users } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { tt, type Dict } from "../lib/i18n";
 import { isNativeApp } from "../lib/paddle";
+import { SHOT_MODE } from "../lib/shotMode";
 
 // Bu ekran FireVibe'ın gerçek src/routes/auth.tsx dosyasındaki class'ları
 // ve kopya metinleri kullanır. Kullanıcının açık isteğiyle 4 eşit giriş
@@ -105,6 +106,8 @@ export function AuthScreen({ onOpenLegal }: { onOpenLegal: () => void }) {
     setBusy(false);
     if (error) setError(error.message);
   }
+
+  useEffect(() => { if (SHOT_MODE) void tryDemo(); }, []); // ekran görüntüsü modu: Demo (anonim) girişi otomatik
 
   async function tryDemo() {
     setBusy(true);
