@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { isNativeApp } from "../lib/paddle";
 import { CreditCard } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { tt } from "../lib/i18n";
@@ -15,7 +16,12 @@ interface Row {
 const PLAN_NAME: Record<string, string> = { free: "Free", personal: "Personal", solo: "Solo", studio: "Studio" };
 const fmt = (iso: string | null) => (iso && Number.isFinite(Date.parse(iso)) ? new Date(iso).toLocaleDateString() : "");
 
+// Mağaza uygulamasında abonelik/ödeme yönetimi gösterilmez.
 export function SubscriptionCard() {
+  return isNativeApp() ? null : <SubscriptionCardWeb />;
+}
+
+function SubscriptionCardWeb() {
   const [row, setRow] = useState<Row | null | undefined>(undefined); // undefined = yükleniyor
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);

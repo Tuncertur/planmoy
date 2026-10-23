@@ -1,4 +1,6 @@
+import { SHOT_MODE, SHOT_INTERVAL_MS, SHOT_VIEWS } from "../lib/shotMode";
 import { useEffect, useState, useRef } from "react";
+import { isNativeApp } from "../lib/paddle";
 import {
   ArrowUpRight, CalendarDays, Check, ChevronRight, ChevronLeft, Menu, Compass, FileText,
   HeartPulse, LayoutDashboard, ListChecks, Plus, Scissors, Settings2,
@@ -80,7 +82,7 @@ const personalNavItems: { id: ViewId; icon: React.ReactNode; label: Dict; extern
   { id: "profile-share", icon: <UserRound size={17} />, label: { tr: "Profil Paylaş", en: "Share Profile" } },
   { id: "ext-flights" as ViewId, icon: <Plane size={17} />, label: { tr: "Uçaklar", en: "Flights" }, external: "https://www.google.com/travel/flights" },
   { id: "ext-concerts" as ViewId, icon: <Music size={17} />, label: { tr: "Konserler", en: "Concerts" }, external: "https://www.google.com/search?q=concerts+near+me" },
-  { id: "plan" as ViewId, icon: <Sparkles size={17} />, label: { tr: "Plan ve abonelik", en: "Plans & subscription" }, external: "/pricing" },
+  ...(isNativeApp() ? [] : [{ id: "plan" as ViewId, icon: <Sparkles size={17} />, label: { tr: "Plan ve abonelik", en: "Plans & subscription" }, external: "/pricing" }]),
   { id: "account", icon: <UserCog size={17} />, label: { tr: "Hesap", en: "Account" } },
   { id: PINNED_NAV_ID, icon: <Phone size={17} />, label: { tr: "Acil Arama (112)", en: "Emergency Call (112)" } },
 ];
@@ -139,6 +141,12 @@ export function Dashboard({ userId, email }: { userId: string; email: string }) 
   const [mode, setMode] = useState<Mode>("personal");
   const [view, setView] = useState<ViewId>("flow");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  useEffect(() => {
+    if (!SHOT_MODE) return;
+    let i = 0;
+    const t = setInterval(() => { i += 1; setView(SHOT_VIEWS[i % SHOT_VIEWS.length] as ViewId); }, SHOT_INTERVAL_MS);
+    return () => clearInterval(t);
+  }, []);
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [viewHistory, setViewHistory] = useState<ViewId[]>(["flow"]);
   const [historyIndex, setHistoryIndex] = useState(0);

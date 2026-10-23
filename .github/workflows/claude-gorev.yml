@@ -1,0 +1,30 @@
+# AJAN ÇALIŞMA AKIŞI: Issue'ya `claude-gorev` etiketi konunca (veya yorumda "@claude" yazılınca) Claude görevi alır,
+# ayrı bir dalda çalışır ve PR AÇAR. ASLA main'e push etmez, merge etmez (dal koruması + insan onayı).
+# SADECE depo sahibi tetikleyebilir (herkese açık depoda başkalarının Issue/yorumundan komut enjekte edilmesini engeller).
+# Gerekli: GitHub'da "Claude" GitHub App kurulumu + repo secret ANTHROPIC_API_KEY. Üretim/migration/deploy/ödeme/mağaza yetkisi YOK.
+# Eylem sürümü doğrulanmadı (NOT TESTED): ilk çalıştırmada anthropics/claude-code-action belgelerine göre kontrol et.
+name: claude-gorev
+on:
+  issues:
+    types: [labeled]
+  issue_comment:
+    types: [created]
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  id-token: write
+jobs:
+  gorev:
+    if: >
+      (github.event_name == 'issues' && github.event.label.name == 'claude-gorev' && github.event.sender.login == github.repository_owner) ||
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude') && github.event.comment.user.login == github.repository_owner)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_args: >-
+            --append-system-prompt "Yalnız Planmoy. PLANMANY/PLANBOS'a dokunma. main'e push etme, merge etme, migration/deploy/secret/ödeme/mağaza işlemi yapma. Değişiklikleri dal + PR ile bildir; testleri çalıştır."

@@ -1,0 +1,39 @@
+# BAĞIMSIZ DENETÇİ (ChatGPT/OpenAI API): her PR'da farkı okur, YALNIZCA PR'a yorum yazar.
+# Yetki: contents:read + pull-requests:write (yorum). Kod yazamaz, merge edemez, secret göremez (yalnız OPENAI_API_KEY'i çağrıda kullanır).
+# Gerekli: repo secret OPENAI_API_KEY; repo variable OPENAI_MODEL (ör. denetçi için seçtiğin model adı). Secret yoksa sessizce atlar.
+# Fork PR'larında secret yoktur → çalışmaz (güvenli).
+name: denetci
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+  pull-requests: write
+jobs:
+  denetle:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Denetim
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          [ -n "${OPENAI_API_KEY:-}" ] && [ -n "${OPENAI_MODEL:-}" ] || { echo "OPENAI_API_KEY/OPENAI_MODEL tanımlı değil; denetçi atlandı"; exit 0; }
+          git diff "$BASE...$HEAD" -- . ':!package-lock.json' | head -c 60000 > diff.txt
+          jq -n --rawfile d diff.txt --arg m "$OPENAI_MODEL" '{model:$m, messages:[
+            {role:"system", content:"Bağımsız kod denetçisisin. Yalnızca Planmoy projesini incele. Güvenlik (secret, yetki, ödeme akışı), veri kaybı, test eksikliği ve mağaza kuralı risklerini madde madde, PASS/FAIL/NOT TESTED etiketiyle Türkçe yaz. Kanıtsız iddia etme; emin değilsen NOT VERIFIED de. Değişiklik önerme, kod yazma."},
+            {role:"user", content:("PR farkı:\n"+$d)}]}' > req.json
+          curl -sS https://api.openai.com/v1/chat/completions -H "Authorization: Bearer $OPENAI_API_KEY" -H "Content-Type: application/json" -d @req.json -o res.json
+          jq -r '.choices[0].message.content // empty' res.json > rapor.md
+          [ -s rapor.md ] || { echo "denetçi yanıt vermedi (HTTP/anahtar/model hatası)"; jq -r '.error.message // "bilinmeyen"' res.json | head -c 200; exit 0; }
+          { echo "<!-- denetci-bot -->"; echo "### Bağımsız denetçi (otomatik, commit \`${HEAD:0:7}\`)"; echo; cat rapor.md; echo; echo "_Bu yorum bir yapay zekâ denetimidir; insan onayının yerine geçmez._"; } > yorum.md
+          ID=$(gh api "repos/$REPO/issues/$PR/comments" --paginate --jq '.[] | select(.body|startswith("<!-- denetci-bot -->")) | .id' | head -1)
+          if [ -n "$ID" ]; then gh api -X PATCH "repos/$REPO/issues/comments/$ID" -F body=@yorum.md >/dev/null; else gh api "repos/$REPO/issues/$PR/comments" -F body=@yorum.md >/dev/null; fi

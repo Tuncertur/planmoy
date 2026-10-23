@@ -21,10 +21,29 @@ declare global {
 }
 
 const CLIENT_TOKEN = import.meta.env.VITE_PADDLE_CLIENT_TOKEN as string | undefined;
-const ENVIRONMENT = (import.meta.env.VITE_PADDLE_ENVIRONMENT as string | undefined) ?? "production";
+// Ortam YALNIZ token önekinden türetilir (test_ = sandbox, live_ = production). Ayrı bir "varsayılan production"
+// yoktur: önek tanınmıyorsa ortam belirsizdir ve checkout açılmaz. VITE_PADDLE_ENVIRONMENT yalnız tutarlılık denetimidir.
+function envFromToken(token: string | undefined): "sandbox" | "production" | null {
+  if (token?.startsWith("test_")) return "sandbox";
+  if (token?.startsWith("live_")) return "production";
+  return null;
+}
+const ENVIRONMENT = envFromToken(CLIENT_TOKEN);
+const DECLARED_ENV = import.meta.env.VITE_PADDLE_ENVIRONMENT as string | undefined;
+const ENV_CONSISTENT = ENVIRONMENT !== null && (DECLARED_ENV === undefined || DECLARED_ENV === "" || DECLARED_ENV === ENVIRONMENT);
+
+// Mağaza uygulamasında (iOS/Android Capacitor) dijital abonelik satışı Paddle ile YAPILMAZ: Apple IAP / Google Play Billing
+// kuralları ayrıca çözülene kadar yerel uygulamada satın alma akışı kapalıdır (web'de açık).
+export function isNativeApp(): boolean {
+  try {
+    return Boolean((window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor?.isNativePlatform?.());
+  } catch {
+    return false;
+  }
+}
 
 export function isPaddleConfigured(): boolean {
-  return Boolean(CLIENT_TOKEN);
+  return Boolean(CLIENT_TOKEN) && ENV_CONSISTENT;
 }
 
 let loadPromise: Promise<void> | null = null;
@@ -59,9 +78,14 @@ export async function openPaddleCheckout(
   ok: boolean; reason?: string; changed?: boolean; direction?: "upgrade" | "downgrade";
   scheduled?: boolean; effectiveAt?: string; pendingCleared?: boolean;
 }> {
+  if (isNativeApp()) return { ok: false, reason: "store-billing-required" };
   if (!CLIENT_TOKEN) return { ok: false, reason: "not-configured" };
+  if (!ENV_CONSISTENT) return { ok: false, reason: "environment-mismatch" };
   const { data, error } = await supabase.functions.invoke("create-checkout", { body: { plan } });
   if (error || !data?.ok) return { ok: false, reason: data?.reason ?? "server-error" };
+  // Sunucu (Paddle API) ortamı ile tarayıcı (Paddle.js) ortamı AYNI olmalı; farklıysa ya da sunucu bildirmiyorsa
+  // (eski sürüm) hiçbir işlem yapılmaz — gerçek/sandbox karışımı ödeme asla başlamaz.
+  if (data.environment !== ENVIRONMENT) return { ok: false, reason: data.environment ? "environment-mismatch" : "environment-unknown" };
   if (data.changed) return { ok: true, changed: true, direction: data.direction };
   if (data.scheduled) return { ok: true, scheduled: true, direction: data.direction, effectiveAt: data.effectiveAt };
   if (data.pendingCleared) return { ok: true, pendingCleared: true };

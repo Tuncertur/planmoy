@@ -1,6 +1,6 @@
 workflows:
   ios-release:
-    name: Planmoy iOS Release
+    name: Planmoy iOS IPA (YALNIZ DERLEME - TestFlight/App Store'a GONDERMEZ)
     max_build_duration: 60
     instance_type: mac_mini_m2
     integrations:
@@ -18,7 +18,7 @@ workflows:
       node: 22
       xcode: latest
       cocoapods: default
-    scripts:
+    scripts: &ios_scripts
       - name: Install npm dependencies
         script: |
           npm install
@@ -28,14 +28,13 @@ workflows:
           cat > .env.local << 'ENVEOF'
           VITE_SUPABASE_URL=https://jveqmmmzwskgbvkcmgki.supabase.co
           VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2ZXFtbW16d3NrZ2J2a2NtZ2tpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg5NTYzNDgsImV4cCI6MjEwNDUzMjM0OH0.VmODv6M2HQdebP-ylAznZQjaFg9mSpmAVSUERiYN_2Y
-          VITE_PADDLE_CLIENT_TOKEN=live_3381ff0c0f887d38d87fc45458b
-          VITE_PADDLE_ENVIRONMENT=production
           ENVEOF
           npm run build
 
       - name: Add iOS platform
         script: |
-          npm install @capacitor/ios
+          # @capacitor/ios sürümü @capacitor/core ile AYNI olmalı (sürüm kayması derleme/çalışma hatası verir)
+          npm install @capacitor/ios@$(node -p "require('@capacitor/core/package.json').version")
           rm -rf ios
           npx cap add ios --packagemanager Cocoapods
           npx cap sync ios
@@ -58,6 +57,15 @@ workflows:
           /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" ios/App/App/Info.plist || \
           /usr/libexec/PlistBuddy -c "Set :ITSAppUsesNonExemptEncryption false" ios/App/App/Info.plist
 
+      - name: Planmoy uygulama ikonu (Capacitor varsayilan ikonu YERINE)
+        script: |
+          cp resources/icon-1024.png "ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png"
+
+      - name: Add location permission text
+        script: |
+          /usr/libexec/PlistBuddy -c "Add :NSLocationWhenInUseUsageDescription string 'Planmoy, yakınındaki restoran, otel ve gezilecek yerleri göstermek için konumunu kullanır.'" ios/App/App/Info.plist ||
+          /usr/libexec/PlistBuddy -c "Set :NSLocationWhenInUseUsageDescription 'Planmoy, yakınındaki restoran, otel ve gezilecek yerleri göstermek için konumunu kullanır.'" ios/App/App/Info.plist
+
       - name: Add camera and photo library permissions
         script: |
           /usr/libexec/PlistBuddy -c "Add :NSCameraUsageDescription string 'Planmoy, StyleSync için kıyafet fotoğrafı çekmene izin ister.'" ios/App/App/Info.plist || \
@@ -77,8 +85,112 @@ workflows:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
 
+    # Bu is akisi hicbir yere YUKLEMEZ. TestFlight icin ayri 'ios-testflight' is akisi (elle ve ayri onayla).
+
+  ios-testflight:
+    name: Planmoy iOS -> TestFlight (YALNIZ ONAYLA, elle calistir)
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: Planmoy
+    environment:
+      ios_signing:
+        certificates:
+          - planmoy
+        provisioning_profiles:
+          - com.planmoy.app
+      vars:
+        BUNDLE_ID: "com.planmoy.app"
+        XCODE_WORKSPACE: "ios/App/App.xcworkspace"
+        XCODE_SCHEME: "App"
+      node: 22
+      xcode: latest
+      cocoapods: default
+    scripts: *ios_scripts
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
     publishing:
       app_store_connect:
         auth: integration
         submit_to_testflight: true
         submit_to_app_store: false
+
+  ios-screenshots:
+    name: Planmoy iOS Simulator ekran goruntuleri (GERCEK Simulator; imza/yukleme YOK)
+    max_build_duration: 45
+    instance_type: mac_mini_m2
+    environment:
+      vars:
+        BUNDLE_ID: "com.planmoy.app"
+      node: 22
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Install npm dependencies
+        script: |
+          npm install
+      - name: Build web assets (VITE_SHOT_MODE=1 — yalniz bu is akisinda)
+        script: |
+          grep -E '^ +VITE_SUPABASE_(URL|ANON_KEY)=' codemagic.yaml | sed 's/^ *//' | sort -u > .env.local
+          echo "VITE_SHOT_MODE=1" >> .env.local
+          npm run build
+      - name: Add iOS platform
+        script: |
+          npm install @capacitor/ios@$(node -p "require('@capacitor/core/package.json').version")
+          rm -rf ios
+          npx cap add ios --packagemanager Cocoapods
+          npx cap sync ios
+          cd ios/App && pod install
+      - name: Planmoy ikonu ve konum izin metni
+        script: |
+          cp resources/icon-1024.png "ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png"
+          /usr/libexec/PlistBuddy -c "Add :NSLocationWhenInUseUsageDescription string 'Planmoy, yakınındaki restoran, otel ve gezilecek yerleri göstermek için konumunu kullanır.'" ios/App/App/Info.plist || true
+      - name: Simulator icin derle (imzasiz)
+        script: |
+          xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Debug -sdk iphonesimulator -derivedDataPath build/sim CODE_SIGNING_ALLOWED=NO build | tail -5
+      - name: Simulator ekran goruntuleri
+        script: |
+          bash scripts/ios-ekran-goruntusu.sh "$(ls -d build/sim/Build/Products/Debug-iphonesimulator/App.app)" ekran-goruntuleri
+    artifacts:
+      - ekran-goruntuleri/*
+
+  android-release:
+    name: Planmoy Android AAB
+    max_build_duration: 45
+    instance_type: linux_x2
+    environment:
+      # Codemagic > Teams > Code signing identities > Android keystores: referans adi "planmoy_keystore"
+      android_signing:
+        - planmoy_keystore
+      vars:
+        PACKAGE_NAME: "com.planmoy.app"
+      node: 22
+      java: 17
+    scripts:
+      - name: Install npm dependencies
+        script: |
+          npm install
+      - name: Build web assets
+        script: |
+          # Herkese açık yapılandırma iOS iş akışındakiyle aynı (URL + anon anahtar); ödeme istemci token'ı Android'de GEREKMEZ (satın alma kapalı)
+          grep -E '^ +VITE_SUPABASE_(URL|ANON_KEY)=' codemagic.yaml | sed 's/^ *//' | sort -u > .env.local
+          npm run build
+      - name: Sync Capacitor Android
+        script: |
+          npx cap sync android
+      - name: Imza ortami dogrula (imzasiz paket magazaya gonderilemez)
+        script: |
+          [ -n "$CM_KEYSTORE_PATH" ] && [ -f "$CM_KEYSTORE_PATH" ] && [ -n "$CM_KEY_ALIAS" ] || { echo "HATA: planmoy_keystore tanimli degil; imzali AAB uretilemez"; exit 1; }
+      - name: Build AAB
+        script: |
+          cd android
+          ./gradlew bundleRelease -PversionCodeOverride=$((BUILD_NUMBER + 100))
+      - name: AAB imzasini dogrula
+        script: |
+          AAB=$(ls android/app/build/outputs/bundle/release/*.aab | head -1)
+          jarsigner -verify "$AAB" | tee /tmp/jarsigner.txt
+          grep -q "jar verified" /tmp/jarsigner.txt || { echo "HATA: AAB imzali degil"; exit 1; }
+          ! unzip -p "$AAB" base/manifest/AndroidManifest.xml | strings | grep -q "com[.]planmany" || { echo "HATA: planmany kalintisi"; exit 1; }
+    artifacts:
+      - android/app/build/outputs/bundle/release/*.aab

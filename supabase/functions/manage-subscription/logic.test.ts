@@ -3,13 +3,14 @@ import assert from "node:assert/strict";
 import { handleManage, type ManageDeps, type LiveSub, type SubRow } from "./logic.ts";
 
 const row = (o: Partial<SubRow> = {}): SubRow => ({ plan: "solo", status: "active", paddle_subscription_id: "sub_A", paddle_customer_id: "ctm_A", ...o });
-function build(o: { row?: SubRow | null; lives?: (LiveSub | null)[]; fail?: string; env?: "sandbox" | "production" | null; key?: boolean } = {}) {
+function build(o: { allowed?: boolean; row?: SubRow | null; lives?: (LiveSub | null)[]; fail?: string; env?: "sandbox" | "production" | null; key?: boolean } = {}) {
   const calls: string[] = [];
   const lives = o.lives ?? [{ status: "active", scheduled_change: null }];
   let i = 0;
   const deps: ManageDeps = {
     environment: o.env === undefined ? "sandbox" : o.env,
     hasApiKey: o.key ?? true,
+    userAllowed: () => o.allowed ?? true,
     async getRow() { return o.row === undefined ? row() : o.row; },
     async clearPending() { calls.push("clearPending"); },
     paddle: {
@@ -81,4 +82,13 @@ test("resume: planlı iptali geri alır ve doğrular; iptal yoksa nothing-to-res
   assert.equal((await handleManage(build({ lives: [FREE] }).deps, "u", "resume")).body.reason, "nothing-to-resume");
   assert.equal((await handleManage(build({ lives: [CANCELLED, CANCELLED] }).deps, "u", "resume")).body.reason, "resume-unverified");
   assert.equal((await handleManage(build({ lives: [CANCELLED], fail: "resume" }).deps, "u", "resume")).body.reason, "provider-error");
+});
+
+test("sandbox izolasyonu: izinli olmayan kullanıcı abonelik yönetemez (not-allowed), Paddle'a istek gitmez", async () => {
+  for (const action of ["portal", "cancel", "resume"]) {
+    const b = build({ allowed: false });
+    const r = await handleManage(b.deps, "u", action);
+    assert.deepEqual([r.body.ok, r.body.reason], [false, "not-allowed"]);
+    assert.deepEqual(b.calls, []);
+  }
 });

@@ -1,7 +1,9 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { ArrowRight, CalendarDays, Check, Eye, EyeOff, Mail, ShieldCheck, Sparkles, Users } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { tt, type Dict } from "../lib/i18n";
+import { isNativeApp } from "../lib/paddle";
+import { SHOT_MODE } from "../lib/shotMode";
 
 // Bu ekran FireVibe'ın gerçek src/routes/auth.tsx dosyasındaki class'ları
 // ve kopya metinleri kullanır. Kullanıcının açık isteğiyle 4 eşit giriş
@@ -105,6 +107,8 @@ export function AuthScreen({ onOpenLegal }: { onOpenLegal: () => void }) {
     if (error) setError(error.message);
   }
 
+  useEffect(() => { if (SHOT_MODE) void tryDemo(); }, []); // ekran görüntüsü modu: Demo (anonim) girişi otomatik
+
   async function tryDemo() {
     setBusy(true);
     setError(null);
@@ -178,7 +182,8 @@ export function AuthScreen({ onOpenLegal }: { onOpenLegal: () => void }) {
 
           {screen === "choose" && (
             <div className="auth-choice-grid">
-              <ChooseTile icon={<span className="google-mark">G</span>} label={tt(copy.google)} onClick={signInWithGoogle} />
+              {/* iOS/Android uygulamasında Google OAuth gömülü WebView'da çalışmaz (disallowed_useragent) ve Apple 4.8 "Apple ile giriş" şartını doğurur; 1.0'da yalnız e-posta + demo. */}
+              {!isNativeApp() && <ChooseTile icon={<span className="google-mark">G</span>} label={tt(copy.google)} onClick={signInWithGoogle} />}
               <ChooseTile icon={<Mail size={17} />} label={tt(copy.emailBtn)} onClick={() => setScreen("email")} />
               <ChooseTile icon={<Sparkles size={17} />} label={tt(copy.demoBtn)} onClick={tryDemo} />
             </div>

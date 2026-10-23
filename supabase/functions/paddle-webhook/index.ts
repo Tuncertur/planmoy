@@ -14,7 +14,7 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import {
-  buildPriceTierMap, claimResultFromInsertError, parseUserAllowlist, userAllowedFor, handleEvent, UNIQUE_VIOLATION, userExistsFromAuthResult, verifySignature,
+  buildPriceTierMap, claimResultFromRpc, parseUserAllowlist, userAllowedFor, handleEvent, UNIQUE_VIOLATION, userExistsFromAuthResult, verifySignature,
   type Deps, type ExistingRow, type WriteRow,
 } from "./logic.ts";
 
@@ -29,13 +29,18 @@ function makeDeps(): Deps {
     log: { info: console.log, warn: console.warn, error: console.error },
 
     async claimEvent(eventId, eventType) {
-      const { error } = await supabaseAdmin.from("processed_webhook_events").insert({ event_id: eventId, event_type: eventType });
-      return claimResultFromInsertError(error); // yalnızca gerçek unique ihlali "duplicate"
+      const { data, error } = await supabaseAdmin.rpc("claim_webhook_event", { p_event_id: eventId, p_event_type: eventType });
+      return claimResultFromRpc(data, error);
+    },
+
+    async completeEvent(eventId) {
+      const { error } = await supabaseAdmin.rpc("complete_webhook_event", { p_event_id: eventId });
+      if (error) throw new Error(`olay tamamlanamadı: ${error.message}`);
     },
 
     async releaseEvent(eventId) {
-      const { error } = await supabaseAdmin.from("processed_webhook_events").delete().eq("event_id", eventId);
-      if (error) throw new Error(`işaret silinemedi: ${error.message}`);
+      const { error } = await supabaseAdmin.rpc("release_webhook_event", { p_event_id: eventId });
+      if (error) throw new Error(`kira bırakılamadı: ${error.message}`);
     },
 
     async userExists(userId) {

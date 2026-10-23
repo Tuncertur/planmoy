@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { SHOT_MODE } from "../lib/shotMode";
 import { tt } from "../lib/i18n";
 
 // Cihaz düzeyinde bir UI bayrağı — kişisel veri değil, PROJECT_RULES'daki
@@ -8,6 +9,7 @@ export function CookieConsent() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
+    if (SHOT_MODE) return;
     setVisible(!localStorage.getItem("planmoy-cookie-consent"));
   }, []);
 

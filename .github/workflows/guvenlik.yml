@@ -1,0 +1,35 @@
+# Otomatik güvenlik taraması: secret deseni + bağımlılık açığı. Secret kullanmaz, yalnız okur.
+name: guvenlik
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 5 * * 1"   # haftalık
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tarama:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Secret deseni taraması (tüm izlenen dosyalar)
+        run: |
+          # JWT/Paddle/özel anahtar/keystore. codemagic.yaml'daki Supabase ANON anahtarı (role=anon) bilerek herkese açıktır; service_role ASLA.
+          if git grep -nE "BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|pdl_(live|sdbx)_apikey_[A-Za-z0-9]{10,}|sk-[A-Za-z0-9]{20,}|service_role[\"' ]*[:=][\"' ]*eyJ" -- . ':!*.test.ts' ':!.github/workflows/guvenlik.yml'; then echo "::error::olası secret bulundu"; exit 1; fi
+          # JWT'ler: yalnızca role=anon olanlara izin
+          for j in $(git grep -ohE "eyJ[A-Za-z0-9_-]{15,}\.[A-Za-z0-9_-]{15,}\.[A-Za-z0-9_-]{10,}" -- . | sort -u); do
+            p=$(echo "$j" | cut -d. -f2 | tr '_-' '/+'); p="$p$(printf '=%.0s' 1 2 3 4)"
+            echo "$p" | base64 -d 2>/dev/null | grep -q '"role":"anon"' || { echo "::error::anon olmayan JWT bulundu"; exit 1; }
+          done
+          if git ls-files | grep -E "\.(jks|keystore|p8|p12|pem|mobileprovision)$|(^|/)\.env($|\.local)|google-services\.json|GoogleService-Info\.plist"; then echo "::error::yasak dosya türü izleniyor"; exit 1; fi
+          echo "secret taraması: temiz"
+      - name: Planmany/Planbos karışması
+        run: |
+          if git grep -nEi "com\.planmany|com\.planbos|planbos\.com" -- android src supabase capacitor.config.ts codemagic.yaml; then echo "::error::başka uygulamaya ait kalıntı"; exit 1; fi
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Bağımlılık açığı (yüksek+)
+        run: npm audit --omit=dev --audit-level=high

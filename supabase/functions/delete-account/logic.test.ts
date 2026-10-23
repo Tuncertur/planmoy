@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { handleDelete, type DeleteDeps, type Outcome } from "./logic.ts";
 
 function build(o: {
-  row?: { paddle_subscription_id: string | null; paddle_customer_id: string | null } | null | "throw";
+  row?: { paddle_subscription_id: string | null; paddle_customer_id: string | null; status?: string | null } | null | "throw";
   status?: Record<string, string | null | "throw">; // id -> durum; cancelNow sonrası "canceled" olur (afterCancel ile ezilebilir)
   customerLive?: string[]; cancelFails?: boolean; stillLiveAfterCancel?: boolean; deleteFails?: boolean; logFails?: boolean;
   env?: "sandbox" | "production" | null; key?: boolean;
@@ -66,9 +66,9 @@ test("Paddle okunamıyor / yapılandırma yok / DB okunamıyor: silinmez (unveri
   }
 });
 
-test("Paddle'da zaten canceled / 404: iptal çağrısı yok, hesap silinir", async () => {
+test("Paddle'da zaten canceled / 404 (kayıt de canceled): iptal çağrısı yok, hesap silinir", async () => {
   for (const s of ["canceled", null]) {
-    const b = build({ status: { sub_A: s } });
+    const b = build({ status: { sub_A: s }, row: { paddle_subscription_id: "sub_A", paddle_customer_id: "ctm_A", status: "canceled" } });
     assert.equal((await handleDelete(b.deps, "u")).body.ok, true);
     assert.deepEqual(b.calls, ["deleteUser"]);
   }
@@ -92,4 +92,15 @@ test("denetim logu yazılamasa da güvenlik akışı bozulmaz (silme yine doğru
   const b = build({ status: { sub_A: "active" }, logFails: true });
   assert.equal((await handleDelete(b.deps, "u")).body.ok, true);
   assert.deepEqual(b.calls, ["cancel:sub_A", "deleteUser"]);
+});
+
+test("yanlış ortam koruması: Paddle kimliği 404 ama kayıt iptal değil/bilinmiyor -> hesap SİLİNMEZ (unverifiable)", async () => {
+  for (const status of ["active", "past_due", "paused", undefined, null]) {
+    const b = build({ status: { sub_A: null }, row: { paddle_subscription_id: "sub_A", paddle_customer_id: null, status } });
+    const r = await handleDelete(b.deps, "u");
+    assert.equal(r.body.ok, false, String(status));
+    assert.equal(r.body.reason, "unverifiable");
+    assert.deepEqual(b.calls, []);
+    assert.equal(b.logs[0]?.outcome, "unverifiable");
+  }
 });

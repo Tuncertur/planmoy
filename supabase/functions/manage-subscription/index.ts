@@ -3,6 +3,7 @@
 // Secrets: PADDLE_API_KEY, PADDLE_ENVIRONMENT ("sandbox"|"production"). Eksik/belirsizse "not-configured" (fail-closed).
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import { parseUserAllowlist, userAllowedFor } from "../_shared/paddle-core.ts";
 import { handleManage, type ManageDeps } from "./logic.ts";
 
 const corsHeaders = {
@@ -37,6 +38,7 @@ serve(async (req) => {
   const deps: ManageDeps = {
     environment,
     hasApiKey: !!apiKey,
+    userAllowed: (id) => userAllowedFor(environment, parseUserAllowlist(Deno.env.get("SANDBOX_TEST_USER_IDS")), id),
     async getRow(userId) {
       const { data, error } = await admin.from("subscriptions").select("plan, status, paddle_subscription_id, paddle_customer_id").eq("user_id", userId).maybeSingle();
       if (error) throw new Error(`abonelik okunamadı: ${error.message}`);

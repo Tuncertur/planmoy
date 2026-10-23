@@ -1,0 +1,50 @@
+# Başarısız CI/güvenlik koşusu için Issue açar; AYNI sorun için tekrar Issue AÇMAZ (başlıkla tekilleştirir, yorum ekler).
+# NOT: workflow_run tetikleyicisi yalnızca VARSAYILAN dalda (main) tanımlıysa çalışır → PR birleştirilince etkinleşir.
+name: ci-hata-issue
+on:
+  workflow_run:
+    workflows: [ci, guvenlik]
+    types: [completed]
+permissions:
+  issues: write
+  contents: read
+jobs:
+  issue:
+    if: github.event.workflow_run.conclusion == 'failure'
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          WF: ${{ github.event.workflow_run.name }}
+          BR: ${{ github.event.workflow_run.head_branch }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+          URL: ${{ github.event.workflow_run.html_url }}
+          REPO: ${{ github.repository }}
+        run: |
+          TITLE="CI hatası: $WF @ $BR"
+          # başlık kullanıcı girdisi (dal adı) içerir: yalnız güvenli karakterler
+          TITLE=$(printf '%s' "$TITLE" | tr -cd 'A-Za-z0-9 _./@:-')
+          EXIST=$(gh api "repos/$REPO/issues?state=open&labels=ci-hata&per_page=100" --jq ".[] | select(.title==\"$TITLE\") | .number" | head -1)
+          BODY="Başarısız koşu: $URL
+          Commit: \`${SHA:0:7}\`
+          Otomatik oluşturuldu; aynı dal+iş akışı için yeni hata bu Issue'ya yorum olarak eklenir. Düzelince Issue kapatılır."
+          if [ -n "$EXIST" ]; then gh api "repos/$REPO/issues/$EXIST/comments" -f body="Tekrar başarısız: $URL (\`${SHA:0:7}\`)" >/dev/null; echo "mevcut Issue #$EXIST'e yorum"
+          else
+            gh api "repos/$REPO/labels" -f name=ci-hata -f color=d73a4a >/dev/null 2>&1 || true
+            gh api "repos/$REPO/issues" -f title="$TITLE" -f body="$BODY" -f "labels[]=ci-hata" --jq .html_url
+          fi
+  kapat:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          WF: ${{ github.event.workflow_run.name }}
+          BR: ${{ github.event.workflow_run.head_branch }}
+          REPO: ${{ github.repository }}
+        run: |
+          TITLE=$(printf '%s' "CI hatası: $WF @ $BR" | tr -cd 'A-Za-z0-9 _./@:-')
+          for n in $(gh api "repos/$REPO/issues?state=open&labels=ci-hata&per_page=100" --jq ".[] | select(.title==\"$TITLE\") | .number"); do
+            gh api "repos/$REPO/issues/$n/comments" -f body="Düzeldi: sonraki koşu başarılı." >/dev/null
+            gh api -X PATCH "repos/$REPO/issues/$n" -f state=closed >/dev/null
+          done

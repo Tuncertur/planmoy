@@ -1,3 +1,4 @@
+import { capMessage } from "../lib/capMessage";
 import { useEffect, useState } from "react";
 import { ExternalLink, Globe2, Info, MapPin, Phone, RefreshCw, Star } from "lucide-react";
 import { useLocationSource } from "../lib/useLocationSource";
@@ -107,7 +108,7 @@ export function TravelPlacesScreen({ userId, category, title }: { userId: string
       {status === "cap-reached" && (
         <div className="orbit-card flex items-start gap-3 p-4 text-sm">
           <Info size={18} className="mt-0.5 shrink-0 text-[var(--color-gold-400)]" />
-          <p>{capReason === "pool" ? tt({ tr: "Bu ay ücretsiz aramalar için ayrılan genel havuz doldu. Ücretli planlarda canlı arama devam eder; ay başında havuz yenilenir.", en: "This month's shared pool of free searches is used up. Paid plans keep live search; the pool resets at the start of the month." }) : tt({ tr: "Bu ayki ücretsiz arama hakkın doldu. Planını yükselterek daha fazla yeni bölge arayabilirsin — daha önce aranmış bölgeler yine görünür.", en: "You've used this month's free search allowance. Upgrade your plan to search more new areas — previously searched areas still show." })}</p>
+          <p>{capMessage(capReason)}</p>
         </div>
       )}
       {status === "error" && (
