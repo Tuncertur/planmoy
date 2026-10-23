@@ -152,6 +152,6 @@ workflows:
           AAB=$(ls android/app/build/outputs/bundle/release/*.aab | head -1)
           jarsigner -verify "$AAB" | tee /tmp/jarsigner.txt
           grep -q "jar verified" /tmp/jarsigner.txt || { echo "HATA: AAB imzali degil"; exit 1; }
-          ! unzip -p "$AAB" base/manifest/AndroidManifest.xml | strings | grep -q "com.planmany" || { echo "HATA: planmany kalintisi"; exit 1; }
+          ! unzip -p "$AAB" base/manifest/AndroidManifest.xml | strings | grep -q "com[.]planmany" || { echo "HATA: planmany kalintisi"; exit 1; }
     artifacts:
       - android/app/build/outputs/bundle/release/*.aab
