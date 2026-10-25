@@ -61,6 +61,15 @@ workflows:
         script: |
           cp resources/icon-1024.png "ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png"
 
+      - name: OAuth donus adresi (com.planmoy.app://auth-callback)
+        script: |
+          PL=ios/App/App/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes array" $PL 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0 dict" $PL
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLName string com.planmoy.app" $PL
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes array" $PL
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes:0 string com.planmoy.app" $PL
+
       - name: Add location permission text
         script: |
           /usr/libexec/PlistBuddy -c "Add :NSLocationWhenInUseUsageDescription string 'Planmoy, yakınındaki restoran, otel ve gezilecek yerleri göstermek için konumunu kullanır.'" ios/App/App/Info.plist ||
