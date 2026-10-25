@@ -13,7 +13,7 @@ workflows:
           - com.planmoy.app
       vars:
         BUNDLE_ID: "com.planmoy.app"
-        ENABLE_APPLE_SIGNIN: "0"
+        ENABLE_APPLE_SIGNIN: "1"
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
       node: 22
@@ -130,7 +130,7 @@ workflows:
           - com.planmoy.app
       vars:
         BUNDLE_ID: "com.planmoy.app"
-        ENABLE_APPLE_SIGNIN: "0"
+        ENABLE_APPLE_SIGNIN: "1"
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
       node: 22
