@@ -13,6 +13,7 @@ workflows:
           - com.planmoy.app
       vars:
         BUNDLE_ID: "com.planmoy.app"
+        ENABLE_APPLE_SIGNIN: "0"
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
       node: 22
@@ -42,6 +43,25 @@ workflows:
       - name: Install CocoaPods dependencies
         script: |
           cd ios/App && pod install
+
+      - name: Sign in with Apple yetkisi (yalniz ENABLE_APPLE_SIGNIN=1 iken)
+        script: |
+          # 1'e cevirmeden once: App ID'de "Sign In with Apple" acik + Codemagic'te provisioning profile yenilenmis olmali (yoksa imzalama hata verir)
+          if [ "${ENABLE_APPLE_SIGNIN:-0}" = "1" ]; then
+            cat > ios/App/App/App.entitlements <<'ENTEOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>com.apple.developer.applesignin</key><array><string>Default</string></array>
+          </dict></plist>
+          ENTEOF
+            sed -i '' '/PRODUCT_BUNDLE_IDENTIFIER = com.planmoy.app;/a\
+          CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
+          ' ios/App/App.xcodeproj/project.pbxproj
+            grep -c "CODE_SIGN_ENTITLEMENTS" ios/App/App.xcodeproj/project.pbxproj
+          else
+            echo "Apple ile giris yetkisi kapali (ENABLE_APPLE_SIGNIN=0)"
+          fi
 
       - name: Set up code signing
         script: |
@@ -110,6 +130,7 @@ workflows:
           - com.planmoy.app
       vars:
         BUNDLE_ID: "com.planmoy.app"
+        ENABLE_APPLE_SIGNIN: "0"
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
       node: 22
