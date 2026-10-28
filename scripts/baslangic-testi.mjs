@@ -33,10 +33,10 @@ const BRIDGES = {
   "eklenti-kayitsiz": `window.webkit={messageHandlers:{bridge:{postMessage(m){const d=typeof m==="string"?JSON.parse(m):m;
      setTimeout(()=>window.Capacitor&&window.Capacitor.fromNative&&window.Capacitor.fromNative({callbackId:d.callbackId,methodName:d.methodName,pluginId:d.pluginId,success:false,error:{message:"UNIMPLEMENTED",code:"UNIMPLEMENTED"}}),0);}}}};`,
 };
-// Oturum katmanı arızaları (WebView'da gerçekten görülen sınıf): kilit hiç çözülmez / depolama bozuk / depolama erişimi hata verir.
+// Oturum katmanı arızaları (WebView'da gerçekten görülen sınıf): depolama okuması hiç dönmez / depolama bozuk / depolama erişimi hata verir.
 const FAULTS = {
   "temiz": ``,
-  "kilit-takili": `Object.defineProperty(navigator,"locks",{value:{request:()=>new Promise(()=>{})},configurable:true});`,
+  "depolama-takili": `Storage.prototype.getItem=function(){return new Promise(()=>{})};`, // getSession() hiç dönmez (async depolama takılması)
   "bozuk-oturum": `localStorage.setItem("sb-127-auth-token","{bozuk-json");`,
   "depolama-hatali": `Object.defineProperty(window,"localStorage",{get(){throw new Error("SecurityError")},configurable:true});`,
 };
