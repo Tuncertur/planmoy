@@ -78,9 +78,10 @@ let started = false;
 export function initNativeAuthListener() {
   if (started || !isNativeApp()) return;
   started = true;
-  void App.addListener("appUrlOpen", async ({ url }) => {
+  // Eklenti native tarafta kayıtlı değilse promise reddedilir; bu açılışı etkilememeli (yakalanmamış hata bırakma).
+  App.addListener("appUrlOpen", async ({ url }) => {
     if (!url.startsWith(NATIVE_AUTH_REDIRECT)) return;
     try { await Browser.close(); } catch { /* Android'de gerekmeyebilir */ }
     await completeNativeOAuth(url);
-  });
+  }).catch((e) => console.warn("[planmoy] appUrlOpen dinleyicisi kurulamadi", e));
 }
