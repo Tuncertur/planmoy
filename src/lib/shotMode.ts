@@ -3,4 +3,4 @@
 // ekranları sırayla gösterip `xcrun simctl io screenshot` ile görüntü almak.
 export const SHOT_MODE = import.meta.env.VITE_SHOT_MODE === "1";
 export const SHOT_INTERVAL_MS = 20000;
-export const SHOT_VIEWS = ["flow", "tasks", "restaurants", "hotels", "places-to-visit", "discover", "calendar"] as const;
+export const SHOT_VIEWS = ["flow", "stylesync", "tasks", "restaurants", "hotels", "places-to-visit", "discover", "calendar"] as const;
