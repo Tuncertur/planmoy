@@ -14,7 +14,7 @@ export type NearbyPlace = {
 };
 
 export type DiscoverResult =
-  | { ok: true; radiusKm: number; places: NearbyPlace[]; capReached?: boolean; capReason?: "user" | "pool" }
+  | { ok: true; radiusKm: number; places: NearbyPlace[]; capReached?: boolean; capReason?: "user" | "pool" | "free" }
   | { ok: false; reason: "missing-key" | "provider-error" | "method-not-allowed"; places: [] };
 
 export async function getNearbyPlaces(params: {

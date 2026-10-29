@@ -3,6 +3,7 @@ import { ImagePlus, Plus, Shirt, Sparkles, Trash2, Dumbbell } from "lucide-react
 import { supabase } from "../lib/supabase";
 import { askAi } from "../lib/ai";
 import { tt } from "../lib/i18n";
+import { aiErrorMessage } from "../lib/aiMessage";
 
 // FireVibe'ın gerçek src/routes/stylesync.tsx dosyasından birebir
 // taşınmıştır: aynı 5 kategori, aynı 5 hava durumu seçeneği, aynı
@@ -78,7 +79,7 @@ export function StyleSyncScreen({ userId }: { userId: string }) {
     );
     setBusy(false);
     if (!result.ok) {
-      setAdvice(result.reason === "missing-key" ? tt({ tr: "AI sağlayıcısı (Gemini) henüz yapılandırılmadı.", en: "AI provider (Gemini) isn't configured yet." }) : tt({ tr: "Öneri alınamadı, tekrar dene.", en: "Couldn't get advice, try again." }));
+      setAdvice(aiErrorMessage(result.reason, tt({ tr: "Öneri alınamadı, tekrar dene.", en: "Couldn't get advice, try again." })));
       return;
     }
     setAdvice(result.suggestion);
@@ -93,7 +94,7 @@ export function StyleSyncScreen({ userId }: { userId: string }) {
     );
     setBusy(false);
     if (!result.ok) {
-      setAdvice(result.reason === "missing-key" ? tt({ tr: "AI sağlayıcısı (Gemini) henüz yapılandırılmadı.", en: "AI provider (Gemini) isn't configured yet." }) : tt({ tr: "Görsel deneme hazırlanamadı.", en: "Couldn't prepare a try-on plan." }));
+      setAdvice(aiErrorMessage(result.reason, tt({ tr: "Görsel deneme hazırlanamadı.", en: "Couldn't prepare a try-on plan." })));
       return;
     }
     setTryOnPlan(result.suggestion);

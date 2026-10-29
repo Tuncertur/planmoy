@@ -3,6 +3,7 @@ import { Check, ChevronRight, Flame, Search, Send, Sparkles, X } from "lucide-re
 import { askAi } from "../lib/ai";
 import { findBlockedTerm, moderationMessage } from "../lib/content-moderation";
 import { tt } from "../lib/i18n";
+import { aiErrorMessage } from "../lib/aiMessage";
 
 // FireVibe'ın gerçek src/components/personal-assistant.tsx dosyasından
 // birebir taşınmıştır: arama/filtreleme, moderasyon kontrolü, "akışa
@@ -53,7 +54,7 @@ export function AssistantFab({ isBusiness, go, open: openProp, onOpenChange }: {
       `Kişisel yapay zeka; arama: ${query || "genel"}`
     );
     setLoading(false);
-    setSuggestion(result.ok ? result.suggestion : tt({ tr: "AI sağlayıcısı (Gemini) henüz yapılandırılmadı.", en: "AI provider (Gemini) isn't configured yet." }));
+    setSuggestion(result.ok ? result.suggestion : aiErrorMessage(result.reason));
   }
 
   return (
