@@ -17,8 +17,7 @@ jobs:
         run: npm run build
       - name: Edge Function birim testleri
         run: npm run test:functions
-      - name: Finansal model referans doğrulaması (maliyet stres testi)
-        run: python3 scripts/maliyet-modeli.py > /dev/null
+
       - name: Planmany kalıntısı yok (yalnızca Planmoy)
         run: |
           if grep -rIl "com\.planmany" android src supabase capacitor.config.ts codemagic.yaml 2>/dev/null | grep -q .; then

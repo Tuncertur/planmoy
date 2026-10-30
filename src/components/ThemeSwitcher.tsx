@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Check, Palette } from "lucide-react";
+import { safeGet, safeSet } from "../lib/safeStorage";
 
 export type Theme = "violet" | "orbit" | "ocean" | "mono" | "sun" | "aurora";
 const themes: { id: Theme; label: string; note: string; swatches: string[] }[] = [
@@ -15,7 +16,7 @@ export function ThemeSwitcher() {
   const [theme, setTheme] = useState<Theme>("ocean");
 
   useEffect(() => {
-    const saved = window.localStorage.getItem("planmoy-theme-v2") as Theme | null;
+    const saved = safeGet("planmoy-theme-v2") as Theme | null;
     const next = themes.some((item) => item.id === saved) ? saved! : "ocean";
     setTheme(next);
     document.documentElement.dataset["theme"] = next;
@@ -24,7 +25,7 @@ export function ThemeSwitcher() {
   function choose(next: Theme) {
     setTheme(next);
     document.documentElement.dataset["theme"] = next;
-    window.localStorage.setItem("planmoy-theme-v2", next);
+    safeSet("planmoy-theme-v2", next);
   }
 
   const current = themes.find((item) => item.id === theme) ?? themes[0]!;

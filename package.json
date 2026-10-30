@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test:functions": "node --test 'supabase/functions/**/*.test.ts'"
+    "test:functions": "node --test 'supabase/functions/**/*.test.ts'",
+    "test:baslangic": "node scripts/baslangic-testi.mjs"
   },
   "dependencies": {
     "@capacitor-community/apple-sign-in": "^7.1.0",

@@ -10,6 +10,7 @@ import { resetTravelDataForUserChange } from "./useTravelData";
 // bunlar temizlenmezse, yeni kullanıcı kısa süreliğine bir önceki
 // kullanıcının konum/liste verisini görebilir. Bu yüzden her oturum
 // değişiminde (bir önceki kullanıcı farklıysa) önbellekler sıfırlanır.
+export const SESSION_LOAD_TIMEOUT_MS = 8000;
 let lastKnownUserId: string | null | undefined = undefined;
 
 function resetAllUserScopedCaches() {
@@ -22,11 +23,21 @@ export function useSession() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      lastKnownUserId = data.session?.user.id ?? null;
-      setSession(data.session);
+    // Açılış güvencesi: getSession() hata verir ya da hiç çözülmezse (WebView depolama/kilit sorunu) ekran sonsuza dek
+    // boş kalmasın — süre dolunca oturumsuz kabul edilip giriş ekranı gösterilir.
+    let settled = false;
+    const finish = (s: Session | null) => {
+      if (settled) return;
+      settled = true;
+      lastKnownUserId = s?.user.id ?? null;
+      setSession(s);
       setLoading(false);
-    });
+    };
+    const watchdog = window.setTimeout(() => finish(null), SESSION_LOAD_TIMEOUT_MS);
+    supabase.auth.getSession()
+      .then(({ data }) => finish(data.session))
+      .catch(() => finish(null))
+      .finally(() => window.clearTimeout(watchdog));
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
       const nextUserId = s?.user.id ?? null;
@@ -37,7 +48,7 @@ export function useSession() {
       setSession(s);
     });
 
-    return () => sub.subscription.unsubscribe();
+    return () => { window.clearTimeout(watchdog); sub.subscription.unsubscribe(); };
   }, []);
 
   return { session, loading };

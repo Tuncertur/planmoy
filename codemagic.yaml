@@ -185,6 +185,75 @@ workflows:
     artifacts:
       - ekran-goruntuleri/*
 
+  ios-acilis-testi:
+    name: Planmoy iOS ACILIS TESTI (Simulator, Release yapilandirma, 2 soguk baslangic; imza/yukleme YOK)
+    max_build_duration: 45
+    instance_type: mac_mini_m2
+    environment:
+      vars:
+        BUNDLE_ID: "com.planmoy.app"
+        ENABLE_APPLE_SIGNIN: "1"
+      node: 22
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Install npm dependencies
+        script: |
+          npm install
+      - name: Build web assets (SHOT_MODE kapali, gercek giris ekrani, sunucuya yazma yok)
+        script: |
+          grep -E '^ +VITE_SUPABASE_(URL|ANON_KEY)=' codemagic.yaml | sed 's/^ *//' | sort -u > .env.local
+          npm run build
+      - name: Add iOS platform (ios-release ile ayni adimlar)
+        script: |
+          npm install @capacitor/ios@$(node -p "require('@capacitor/core/package.json').version")
+          rm -rf ios
+          npx cap add ios --packagemanager Cocoapods
+          npx cap sync ios
+          cd ios/App && pod install
+      - name: Release ile ayni yapilandirma (entitlement, URL scheme, izin metinleri)
+        script: |
+          PL=ios/App/App/Info.plist
+          cat > ios/App/App/App.entitlements <<'ENTEOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>com.apple.developer.applesignin</key><array><string>Default</string></array>
+          </dict></plist>
+          ENTEOF
+          sed -i '' '/PRODUCT_BUNDLE_IDENTIFIER = com.planmoy.app;/a\
+          CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
+          ' ios/App/App.xcodeproj/project.pbxproj
+          N=$(grep -c "CODE_SIGN_ENTITLEMENTS" ios/App/App.xcodeproj/project.pbxproj); echo "CODE_SIGN_ENTITLEMENTS satir sayisi: $N"
+          [ "$N" -ge 1 ] || { echo "HATA: entitlement pbxproj'a eklenemedi (sed eslesmedi)"; exit 1; }
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes array" $PL 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0 dict" $PL
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLName string com.planmoy.app" $PL
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes array" $PL
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes:0 string com.planmoy.app" $PL
+          /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" $PL || true
+          /usr/libexec/PlistBuddy -c "Add :NSLocationWhenInUseUsageDescription string 'Planmoy, yakınındaki restoran, otel ve gezilecek yerleri göstermek için konumunu kullanır.'" $PL || true
+          /usr/libexec/PlistBuddy -c "Add :NSCameraUsageDescription string 'Planmoy, StyleSync için kıyafet fotoğrafı çekmene izin ister.'" $PL || true
+          /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryUsageDescription string 'Planmoy, StyleSync için galerinden fotoğraf seçmene izin ister.'" $PL || true
+          cp resources/icon-1024.png "ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png"
+          plutil -lint $PL ios/App/App/App.entitlements
+      - name: Simulator icin RELEASE derle (imzasiz)
+        script: |
+          xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Release -sdk iphonesimulator -derivedDataPath build/sim CODE_SIGNING_ALLOWED=NO build > build-log.txt 2>&1; echo "xcodebuild cikis: $?"; tail -15 build-log.txt
+          test -d build/sim/Build/Products/Release-iphonesimulator/App.app
+      - name: IPA/uygulama icerigi denetimi (web kaynaklari paketlenmis mi)
+        script: |
+          APP=build/sim/Build/Products/Release-iphonesimulator/App.app
+          ls "$APP/public" | head; test -f "$APP/public/index.html" && ls "$APP/public/assets" | head -5
+          test -f "$APP/capacitor.config.json" && cat "$APP/capacitor.config.json"
+          plutil -p "$APP/Info.plist" | grep -E "CFBundleIdentifier|CFBundleShortVersionString|MinimumOSVersion|CFBundleURL|ITSApps"
+      - name: Soguk baslangic testi (2 kez), cokme raporu ve giris ekrani goruntusu
+        script: |
+          bash scripts/ios-acilis-testi.sh "$(ls -d build/sim/Build/Products/Release-iphonesimulator/App.app)" acilis-kaniti
+    artifacts:
+      - acilis-kaniti/*
+      - build-log.txt
+
   android-release:
     name: Planmoy Android AAB
     max_build_duration: 45

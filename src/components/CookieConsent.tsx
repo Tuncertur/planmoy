@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { SHOT_MODE } from "../lib/shotMode";
 import { tt } from "../lib/i18n";
+import { safeGet, safeSet } from "../lib/safeStorage";
 
 // Cihaz düzeyinde bir UI bayrağı — kişisel veri değil, PROJECT_RULES'daki
 // "kalıcı veri localStorage'a yazılmaz" kuralının kapsamı dışında (tıpkı
@@ -10,7 +11,7 @@ export function CookieConsent() {
 
   useEffect(() => {
     if (SHOT_MODE) return;
-    setVisible(!localStorage.getItem("planmoy-cookie-consent"));
+    setVisible(!safeGet("planmoy-cookie-consent"));
   }, []);
 
   if (!visible) return null;
@@ -47,7 +48,7 @@ export function CookieConsent() {
       </span>
       <button
         onClick={() => {
-          localStorage.setItem("planmoy-cookie-consent", "1");
+          safeSet("planmoy-cookie-consent", "1");
           setVisible(false);
         }}
         style={{
