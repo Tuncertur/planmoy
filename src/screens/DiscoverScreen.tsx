@@ -53,7 +53,7 @@ export function DiscoverScreen({ userId }: { userId: string }) {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<"idle" | "locating" | "loading" | "missing-key" | "provider-error" | "cap-reached" | "ready">("idle");
   const [places, setPlaces] = useState<NearbyPlace[]>([]);
-  const [capReason, setCapReason] = useState<"user" | "pool" | undefined>(undefined);
+  const [capReason, setCapReason] = useState<"user" | "pool" | "free" | undefined>(undefined);
   const [radiusKm, setRadiusKm] = useState(isWeekendWindow() ? 100 : 50);
 
   async function runSearch(cat: (typeof categories)[number]) {

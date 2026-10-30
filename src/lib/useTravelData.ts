@@ -24,7 +24,7 @@ export type TravelPlace = {
 type Groups = { hotel: TravelPlace[]; restaurant: TravelPlace[]; places: TravelPlace[] };
 type CacheStatus = "idle" | "loading" | "missing-key" | "cap-reached" | "error" | "ready";
 
-let memoryCache: { groups: Groups; at: number; capReached?: boolean; capReason?: "user" | "pool" } | null = null;
+let memoryCache: { groups: Groups; at: number; capReached?: boolean; capReason?: "user" | "pool" | "free" } | null = null;
 // Son çekilen KONUM anahtarı — konum (adres/GPS) değişince liste yeniden çekilir.
 let lastLocationKey: string | null = null;
 

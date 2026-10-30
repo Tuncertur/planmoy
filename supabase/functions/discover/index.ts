@@ -8,7 +8,9 @@
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
-import { checkAndChargeCost, getPlan } from "../_shared/cost-cap.ts";
+import { getPlan } from "../_shared/cost-cap.ts";
+import { distanceInMeters, withUserDistance } from "../_shared/geo.ts";
+import { idemKeyFor, projectCapFromEnv, reservePaidApi, settlePaidApi } from "../_shared/paid-api.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -38,15 +40,6 @@ function radiusForToday(): number {
   const day = new Date().getDay();
   const isWeekend = day === 5 || day === 6 || day === 0;
   return isWeekend ? 100_000 : 50_000;
-}
-
-function distanceInMeters(lat1: number, lon1: number, lat2: number, lon2: number) {
-  const earthRadius = 6371000;
-  const toRad = (v: number) => (v * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-  return Math.round(earthRadius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
 }
 
 serve(async (req) => {
@@ -84,6 +77,9 @@ serve(async (req) => {
   // paylaşımlı arama/fotoğraf önbelleği + kullanıcı-başı tavan + ücretsiz havuz (cost-cap.ts).
   // Ücretsiz planda yer başına 1 fotoğraf, ücretli planda 3.
   const plan = await getPlan(admin, user.id);
+  // Maliyet kararı: FREE için ücretli Google çağrısı YOK ($0). Free yalnızca daha önce önbelleklenmiş sonuçları görür.
+  const paidAllowed = plan !== "free";
+  const projectCapUsd = projectCapFromEnv(Deno.env.get("PROJECT_MONTHLY_CAP_USD"));
   const photosPerPlace = plan === "free" ? 1 : 3;
   const hasCoords = typeof latitude === "number" && typeof longitude === "number";
   const roundedLoc = hasCoords ? `${latitude.toFixed(2)},${longitude.toFixed(2)}` : (address ?? "").trim().toLocaleLowerCase("tr");
@@ -98,10 +94,16 @@ serve(async (req) => {
       return [];
     }
     if (!googlePhotoNames.length) return [];
-    // Fotoğraf indirme Google'a $0.007/adet ödetir — tavana yazılır, tavan doluysa indirilmez.
+    // Fotoğraf indirme Google'a $0.007/adet ödetir — önce rezerve edilir, gerçekleşen adetle mutabık kalınır; tavan doluysa indirilmez.
+    if (!paidAllowed) return [];
     const photoCount = Math.min(photosPerPlace, googlePhotoNames.length);
-    const photoCheck = await checkAndChargeCost(admin, user.id, 0.007 * photoCount);
-    if (!photoCheck.allowed) return [];
+    const photoReserve = 0.007 * photoCount;
+    const photoRes = await reservePaidApi(admin, {
+      userId: user.id, surface: "discover-photos", amountUsd: photoReserve, plan, countsQuery: false,
+      idemKey: idemKeyFor("discover-photos", null, placeId, Date.now(), 60_000), projectCapUsd,
+    });
+    if (!photoRes.allowed) return [];
+    let fetchedPhotos = 0;
     const urls: string[] = [];
     for (let i = 0; i < photoCount; i++) {
       try {
@@ -109,6 +111,7 @@ serve(async (req) => {
           `https://places.googleapis.com/v1/${googlePhotoNames[i]}/media?maxWidthPx=600&key=${apiKey}`
         );
         if (!mediaRes.ok) continue;
+        fetchedPhotos++;
         const bytes = new Uint8Array(await mediaRes.arrayBuffer());
         const path = `${placeId}/${i}.jpg`;
         await admin.storage.from("place-photos").upload(path, bytes, { contentType: "image/jpeg", upsert: true });
@@ -118,6 +121,7 @@ serve(async (req) => {
         continue;
       }
     }
+    await settlePaidApi(admin, photoRes.ledgerId, 0.007 * fetchedPhotos, fetchedPhotos > 0, photoReserve);
     if (urls.length > 0) {
       try {
         await admin.from("place_photos_cache").upsert({ place_id: placeId, photo_urls: urls, cached_at: new Date().toISOString() });
@@ -141,23 +145,36 @@ serve(async (req) => {
     try {
       const { data: cachedSearch } = await admin.from("places_search_cache").select("results").eq("cache_key", cacheKey).maybeSingle();
       if (cachedSearch?.results && Array.isArray(cachedSearch.results) && cachedSearch.results.length > 0) {
-        return cachedSearch.results;
+        return withUserDistance(cachedSearch.results as any[], hasCoords ? latitude : null, hasCoords ? longitude : null);
       }
     } catch {
       // önbellek yoksa devam et
     }
 
-    const costCheck = await checkAndChargeCost(admin, user.id, 0.035);
-    if (!costCheck.allowed) {
+    if (!paidAllowed) {
       capReached = true;
-      capReason = costCheck.reason === "monthly-cost-cap-reached" ? "user" : "pool";
+      capReason = "free";
+      return [];
+    }
+    // Text Search (Enterprise alan maskesi) ≈ $0.035/istek: rezerve et → çağır → gerçekleşenle mutabık kal / hatada iade et.
+    const SEARCH_USD = 0.035;
+    const searchRes = await reservePaidApi(admin, {
+      userId: user.id, surface: "discover-search", amountUsd: SEARCH_USD, plan, countsQuery: false,
+      idemKey: idemKeyFor("discover-search", null, cacheKey, Date.now(), 60_000), projectCapUsd,
+    });
+    if (!searchRes.allowed) {
+      if (searchRes.reason === "duplicate-request") return []; // aynı arama zaten sürüyor: çift ücret yok, limit mesajı da yok
+      capReached = true;
+      capReason = searchRes.reason === "project-cap-reached" ? "pool" : "user";
       return [];
     }
 
     const categoryQuery = CATEGORY_QUERIES[cat] ?? CATEGORY_QUERIES.places;
     const textQuery = hasCoords ? categoryQuery : `${categoryQuery} ${address ?? ""}`.trim();
 
-    const response = await fetch("https://places.googleapis.com/v1/places:searchText", {
+    let response: Response;
+    try {
+      response = await fetch("https://places.googleapis.com/v1/places:searchText", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -172,9 +189,16 @@ serve(async (req) => {
         rankPreference: hasCoords ? "DISTANCE" : "RELEVANCE",
         ...(hasCoords ? { locationBias: { circle: { center: { latitude, longitude }, radius } } } : {}),
       }),
-    });
-
-    if (!response.ok) return [];
+      });
+    } catch {
+      await settlePaidApi(admin, searchRes.ledgerId, 0, false, SEARCH_USD); // ağ hatası: faturalanmadı → iade
+      return [];
+    }
+    if (!response.ok) {
+      await settlePaidApi(admin, searchRes.ledgerId, 0, false, SEARCH_USD); // sağlayıcı hatası: iade
+      return [];
+    }
+    await settlePaidApi(admin, searchRes.ledgerId, SEARCH_USD, true, SEARCH_USD);
     const payload = await response.json();
     const rawPlaces = payload.places ?? [];
     const mapped = await Promise.all(
@@ -190,6 +214,8 @@ serve(async (req) => {
           priceLevel: typeof p.priceLevel === "string" ? p.priceLevel : null,
           rating: typeof p.rating === "number" ? p.rating : null,
           userRatingCount: typeof p.userRatingCount === "number" ? p.userRatingCount : null,
+          lat: typeof p.location?.latitude === "number" ? p.location.latitude : null,
+          lng: typeof p.location?.longitude === "number" ? p.location.longitude : null,
           distanceMeters:
             hasCoords && p.location?.latitude !== undefined && p.location?.longitude !== undefined
               ? distanceInMeters(latitude, longitude, p.location.latitude, p.location.longitude)

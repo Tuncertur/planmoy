@@ -49,6 +49,7 @@ export function DistrictSearch({ userId }: { userId: string }) {
           }}
           onFocus={() => setOpen(true)}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
+          onKeyDown={(e) => { if (e.key === "Enter" && query.trim().length >= 3) { e.preventDefault(); void choose(query.trim()); } }}
           placeholder={tt({ tr: "Şehir/bölge yaz…", en: "Type a city…" })}
           style={{ flex: 1, minWidth: 0, background: "transparent", border: 0, outline: "none", color: "inherit", fontSize: 12, fontWeight: 600 }}
         />

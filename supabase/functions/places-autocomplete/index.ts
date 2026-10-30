@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
-import { checkAndChargeCost } from "../_shared/cost-cap.ts";
+import { getPlan } from "../_shared/cost-cap.ts";
+import { idemKeyFor, projectCapFromEnv, reservePaidApi, settlePaidApi } from "../_shared/paid-api.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -54,13 +55,21 @@ serve(async (req) => {
     return new Response(JSON.stringify({ ok: true, suggestions: [] }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 
-  // Aylık maliyet tavanı ($2.83 / 1000 istek). Tavan dolunca boş öneri döner.
-  const costCheck = await checkAndChargeCost(admin, user.id, 0.00283);
-  if (!costCheck.allowed) {
-    return new Response(JSON.stringify({ ok: true, suggestions: [], capReached: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  // Maliyet: $2.83 / 1000 istek. FREE için ücretli çağrı yok ($0); ücretli planlarda rezervasyon + mutabakat/iade.
+  const plan = await getPlan(admin, user.id);
+  const AUTOCOMPLETE_USD = 0.00283;
+  const reservation = await reservePaidApi(admin, {
+    userId: user.id, surface: "places-autocomplete", amountUsd: AUTOCOMPLETE_USD, plan, countsQuery: false,
+    idemKey: idemKeyFor("places-autocomplete", null, input.trim().toLowerCase(), Date.now(), 5_000),
+    projectCapUsd: projectCapFromEnv(Deno.env.get("PROJECT_MONTHLY_CAP_USD")),
+  });
+  if (!reservation.allowed) {
+    return new Response(JSON.stringify({ ok: true, suggestions: [], capReached: reservation.reason !== "duplicate-request" }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 
-  const response = await fetch("https://places.googleapis.com/v1/places:autocomplete", {
+  let response: Response;
+  try {
+    response = await fetch("https://places.googleapis.com/v1/places:autocomplete", {
     method: "POST",
     headers: { "Content-Type": "application/json", "X-Goog-Api-Key": apiKey },
     body: JSON.stringify({
@@ -69,6 +78,11 @@ serve(async (req) => {
       includedPrimaryTypes: ["locality", "administrative_area_level_1", "administrative_area_level_2", "sublocality"],
     }),
   });
+  } catch {
+    await settlePaidApi(admin, reservation.ledgerId, 0, false, AUTOCOMPLETE_USD);
+    return new Response(JSON.stringify({ ok: false, reason: "provider-error", suggestions: [] }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  }
+  await settlePaidApi(admin, reservation.ledgerId, response.ok ? AUTOCOMPLETE_USD : 0, response.ok, AUTOCOMPLETE_USD);
 
   if (!response.ok) {
     return new Response(JSON.stringify({ ok: false, reason: "provider-error", suggestions: [] }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });

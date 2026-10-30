@@ -6,6 +6,7 @@ import { useLocationSource } from "../lib/useLocationSource";
 import { useTravelData } from "../lib/useTravelData";
 import { usePlan } from "../lib/usePlan";
 import { tt } from "../lib/i18n";
+import { aiErrorMessage } from "../lib/aiMessage";
 
 // Kullanıcının isteğiyle: uygulama açıldığında (elle adres varsa o adrese,
 // yoksa GPS'e göre) 30-50 km içindeki en popüler otel/restoran/gezilecek
@@ -43,7 +44,7 @@ export function TodayHighlights({ userId }: { userId: string }) {
       "Sen Planmoy'un StyleSync asistanısın. Türkçe, tek cümle. Canlı hava durumu verin yok, bu yüzden mevsime göre genel ve dengeli bir öneri ver, kesin hava durumu iddiasında bulunma.",
       `Gardırop: ${wardrobeText}.`
     );
-    setOutfit(result.ok ? result.suggestion : tt({ tr: "AI sağlayıcısı (Gemini) henüz yapılandırılmadı.", en: "AI provider (Gemini) isn't configured yet." }));
+    setOutfit(result.ok ? result.suggestion : aiErrorMessage(result.reason));
     setOutfitStatus("ready");
   }
 
