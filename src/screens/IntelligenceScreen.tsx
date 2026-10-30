@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ArrowUpRight, CalendarDays, CheckCircle2, ListChecks, Sparkles, WandSparkles } from "lucide-react";
 import { askAi } from "../lib/ai";
 import { tt } from "../lib/i18n";
+import { aiErrorMessage } from "../lib/aiMessage";
 
 // FireVibe'ın gerçek src/routes/intelligence.tsx dosyasından taşınmıştır.
 const cards = [
@@ -22,7 +23,7 @@ export function IntelligenceScreen() {
       "Takvim, görevler ve kişisel bakım dengesi."
     );
     setLoading(false);
-    setSuggestion(result.ok ? result.suggestion : tt({ tr: "AI sağlayıcısı (Gemini) henüz yapılandırılmadı.", en: "AI provider (Gemini) isn't configured yet." }));
+    setSuggestion(result.ok ? result.suggestion : aiErrorMessage(result.reason));
   }
 
   return (

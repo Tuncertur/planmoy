@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabase";
 import { askAi } from "../lib/ai";
 import { tt } from "../lib/i18n";
 import { FitnessHobbySwitch } from "../components/FitnessHobbySwitch";
+import { aiErrorMessage } from "../lib/aiMessage";
 
 // FireVibe'ın gerçek src/routes/space.tsx dosyasından taşınmıştır —
 // "önce konum, sonra zaman, sonra ilgi alanı" öncelik sırası korunuyor.
@@ -71,7 +72,7 @@ export function SpaceScreen({ userId }: { userId: string }) {
     );
     setBusy(false);
     if (!result.ok) {
-      setMessage(result.reason === "missing-key" ? tt({ tr: "AI sağlayıcısı (Gemini) henüz yapılandırılmadı.", en: "AI provider (Gemini) isn't configured yet." }) : tt({ tr: "Öneri alınamadı.", en: "Couldn't get a suggestion." }));
+      setMessage(aiErrorMessage(result.reason, tt({ tr: "Öneri alınamadı.", en: "Couldn't get a suggestion." })));
       return;
     }
     setPlan(result.suggestion);
