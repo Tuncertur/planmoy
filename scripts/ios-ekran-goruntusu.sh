@@ -3,7 +3,7 @@
 # Chromium/web görüntüsü DEĞİLDİR. Kullanım: bash scripts/ios-ekran-goruntusu.sh <App.app yolu> <çıktı klasörü>
 set -u
 APP="$1"; OUT="$2"; BUNDLE="com.planmoy.app"; mkdir -p "$OUT"
-INTERVAL=20; VIEWS=7
+INTERVAL=20; VIEWS=8
 # 6.9" (1320x2868) ve 6.5" (1284x2778) cihaz adaylari; yoksa o boyut RAPORLANIR (uydurulmaz)
 declare -A WANT=( ["6.9"]="iPhone 1[67] Pro Max|iPhone 1[5] Plus|iPhone 1[67] Plus" ["6.5"]="iPhone 1[1] Pro Max|iPhone XS Max|iPhone 11 Pro Max" )
 for SIZE in 6.9 6.5; do
