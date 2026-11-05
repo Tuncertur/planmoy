@@ -2,6 +2,7 @@ import { useState } from "react";
 import { AlertTriangle, CheckCircle2, LogOut, ShieldCheck, Trash2 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { tt } from "../lib/i18n";
+import { AiUsageCard } from "../components/AiUsageCard";
 import { SubscriptionCard } from "../components/SubscriptionCard";
 
 // FireVibe'ın gerçek src/routes/account.tsx dosyasından taşınmıştır.
@@ -61,6 +62,8 @@ export function AccountScreen({ email }: { email: string }) {
             <LogOut size={15} /> {tt({ tr: "Çıkış yap", en: "Sign out" })}
           </button>
         </section>
+
+        <AiUsageCard detailed />
 
         <SubscriptionCard />
 

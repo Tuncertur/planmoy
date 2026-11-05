@@ -1,3 +1,4 @@
+import { AiUsageCard } from "../components/AiUsageCard";
 import { SHOT_MODE, SHOT_INTERVAL_MS, SHOT_VIEWS } from "../lib/shotMode";
 import { useEffect, useState, useRef } from "react";
 import { isNativeApp } from "../lib/paddle";
@@ -513,6 +514,8 @@ function PersonalView({
   return (
     <>
       <TodayHighlights userId={userId} />
+
+      <AiUsageCard />
 
       <section className="today-focus-banner">
         <div>

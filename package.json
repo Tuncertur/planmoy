@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
+    "test:client": "node --test 'tests/client/*.test.ts'",
     "test:functions": "node --test 'supabase/functions/**/*.test.ts'",
     "test:baslangic": "node scripts/baslangic-testi.mjs"
   },

@@ -12,7 +12,7 @@ export function aiErrorMessage(reason: string | undefined, fallback?: string): s
         : tt({ tr: "Yapay zekâ önerileri ücretli planlara dahildir. Takvim, görevler ve randevular ücretsiz devam eder.", en: "AI suggestions are included in paid plans. Calendar, tasks and appointments stay free." });
     case "query-limit":
     case "cost-cap":
-      return tt({ tr: "Bu ayki yapay zekâ hakkın doldu; ay başında yenilenir.", en: "You've used this month's AI allowance; it resets at the start of the month." });
+      return tt({ tr: "Bu dönemki yapay zekâ hakkın doldu; dönem yenilendiğinde tekrar kullanabilirsin. Diğer özellikler çalışır.", en: "You've used your AI allowance for this period; you can use it again when it renews. Everything else keeps working." });
     case "duplicate":
       return tt({ tr: "Bu istek zaten işleniyor.", en: "This request is already being processed." });
     case "rate-limited":

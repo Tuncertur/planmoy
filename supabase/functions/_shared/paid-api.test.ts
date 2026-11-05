@@ -82,6 +82,15 @@ test("Free planı SQL'e tavan 0 gönderir; ücretli plan kendi tavanını/limiti
   assert.equal(sent.p_query_limit, 500); assert.equal(sent.p_month, "2026-12"); assert.equal(sent.p_project_cap, 150);
 });
 
+test("dönem anahtarı SQL'e p_period olarak gider; verilmezse null (0032 davranışı)", async () => {
+  let sent: Record<string, unknown> = {};
+  const spy = { rpc: (_f: string, a: Record<string, unknown>) => { sent = a; return Promise.resolve({ data: { allowed: false, reason: "monthly-query-limit-reached" }, error: null }); } };
+  await reservePaidApi(spy, { ...base, plan: "solo", period: "b:2026-12-17" });
+  assert.equal(sent.p_period, "b:2026-12-17"); assert.equal(sent.p_month, monthKey(base.now));
+  await reservePaidApi(spy, { ...base, plan: "solo" });
+  assert.equal(sent.p_period, null);
+});
+
 test("kapanış: faturalıysa gerçek tutar, hata/zaman aşımında 0 ve billed=false; RPC hatasında false (çökmez)", async () => {
   let sent: Record<string, unknown> = {};
   const spy = { rpc: (_f: string, a: Record<string, unknown>) => { sent = a; return Promise.resolve({ data: true, error: null }); } };
