@@ -68,14 +68,14 @@ type Rpc = { rpc: (fn: string, args: Record<string, unknown>) => PromiseLike<{ d
 
 export async function reservePaidApi(
   admin: Rpc,
-  a: { userId: string; surface: string; amountUsd: number; plan: string; countsQuery: boolean; idemKey?: string | null; projectCapUsd: number; now?: Date },
+  a: { userId: string; surface: string; amountUsd: number; plan: string; countsQuery: boolean; idemKey?: string | null; projectCapUsd: number; now?: Date; period?: string | null },
 ): Promise<Reservation> {
   const pol = policyFor(a.plan);
   try {
     const { data, error } = await admin.rpc("reserve_paid_api", {
       p_user_id: a.userId, p_month: monthKey(a.now), p_surface: a.surface, p_amount: a.amountUsd,
       p_user_cap: pol.userCapUsd, p_counts_query: a.countsQuery, p_query_limit: pol.textQueries,
-      p_project_cap: a.projectCapUsd, p_idem_key: a.idemKey ?? null,
+      p_project_cap: a.projectCapUsd, p_idem_key: a.idemKey ?? null, p_period: a.period ?? null,
     });
     const r = data as { allowed?: unknown; reason?: unknown; ledger_id?: unknown } | null;
     if (error || !r || typeof r !== "object") return { allowed: false, reason: "cost-check-failed" };

@@ -8,7 +8,7 @@
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
-import { getPlan } from "../_shared/cost-cap.ts";
+import { getEntitlement } from "../_shared/cost-cap.ts";
 import { distanceInMeters, withUserDistance } from "../_shared/geo.ts";
 import { idemKeyFor, projectCapFromEnv, reservePaidApi, settlePaidApi } from "../_shared/paid-api.ts";
 
@@ -76,7 +76,7 @@ serve(async (req) => {
   // Ücretsiz plan da canlı sonuç ve fotoğraf görür (kullanıcı kararı); maliyet kontrolü:
   // paylaşımlı arama/fotoğraf önbelleği + kullanıcı-başı tavan + ücretsiz havuz (cost-cap.ts).
   // Ücretsiz planda yer başına 1 fotoğraf, ücretli planda 3.
-  const plan = await getPlan(admin, user.id);
+  const { plan, period } = await getEntitlement(admin, user.id);
   // Maliyet kararı: FREE için ücretli Google çağrısı YOK ($0). Free yalnızca daha önce önbelleklenmiş sonuçları görür.
   const paidAllowed = plan !== "free";
   const projectCapUsd = projectCapFromEnv(Deno.env.get("PROJECT_MONTHLY_CAP_USD"));
@@ -98,7 +98,7 @@ serve(async (req) => {
     if (!paidAllowed) return [];
     const photoCount = Math.min(photosPerPlace, googlePhotoNames.length);
     const photoReserve = 0.007 * photoCount;
-    const photoRes = await reservePaidApi(admin, {
+    const photoRes = await reservePaidApi(admin, { period,
       userId: user.id, surface: "discover-photos", amountUsd: photoReserve, plan, countsQuery: false,
       idemKey: idemKeyFor("discover-photos", null, placeId, Date.now(), 60_000), projectCapUsd,
     });
@@ -158,7 +158,7 @@ serve(async (req) => {
     }
     // Text Search (Enterprise alan maskesi) ≈ $0.035/istek: rezerve et → çağır → gerçekleşenle mutabık kal / hatada iade et.
     const SEARCH_USD = 0.035;
-    const searchRes = await reservePaidApi(admin, {
+    const searchRes = await reservePaidApi(admin, { period,
       userId: user.id, surface: "discover-search", amountUsd: SEARCH_USD, plan, countsQuery: false,
       idemKey: idemKeyFor("discover-search", null, cacheKey, Date.now(), 60_000), projectCapUsd,
     });

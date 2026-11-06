@@ -1,4 +1,5 @@
 import { effectivePlan } from "./entitlement.ts";
+import { usagePeriodFor, type UsagePeriod } from "./usage-period.ts";
 // Planmoy — Paylaşımlı maliyet tavanı kontrolü.
 //
 // İKİ katmanlı koruma (kullanıcının "ödediğinden fazlasını harcatma" kuralı):
@@ -18,20 +19,21 @@ export const FREE_POOL_CAP_USD = 50;
 
 export type CostResult = { allowed: boolean; reason?: "monthly-cost-cap-reached" | "free-pool-cap-reached" | "pool-check-failed" };
 
-export async function getPlan(admin: any, userId: string): Promise<string> {
-  let { data: sub, error } = await admin
-    .from("subscriptions")
-    .select("plan, status, past_due_since, cancel_at, scheduled_action")
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (error) {
-    // 0029 sütunları veritabanında henüz yoksa temel sütunlarla oku (ücretli kullanıcı yanlışlıkla "free" sayılmasın).
-    const basic = await admin.from("subscriptions").select("plan, status").eq("user_id", userId).maybeSingle();
-    sub = basic.data;
-    error = basic.error;
+export async function getEntitlement(admin: any, userId: string, nowMs: number = Date.now()): Promise<{ plan: string; period: string; periodInfo: UsagePeriod }> {
+  // Sütun seti kademeli düşer: eski şemada (0029 yok) ücretli kullanıcı yanlışlıkla "free" sayılmasın.
+  const tries = ["plan, status, past_due_since, cancel_at, scheduled_action, current_period_end", "plan, status, past_due_since, cancel_at, scheduled_action", "plan, status"];
+  let sub: any = null, failed = true;
+  for (const cols of tries) {
+    const r = await admin.from("subscriptions").select(cols).eq("user_id", userId).maybeSingle();
+    if (!r.error) { sub = r.data; failed = false; break; }
   }
-  if (error) return "free"; // güvenli taraf: okunamazsa ücretli hak verme
-  return effectivePlan(sub, Date.now());
+  const plan = failed ? "free" : effectivePlan(sub, nowMs); // güvenli taraf: okunamazsa ücretli hak verme
+  const periodInfo = usagePeriodFor(sub, plan !== "free", nowMs);
+  return { plan, period: periodInfo.key, periodInfo };
+}
+
+export async function getPlan(admin: any, userId: string): Promise<string> {
+  return (await getEntitlement(admin, userId)).plan;
 }
 
 export async function checkAndChargeCost(admin: any, userId: string, estimatedCostUsd: number): Promise<CostResult> {

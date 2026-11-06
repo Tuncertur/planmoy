@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
-import { getPlan } from "../_shared/cost-cap.ts";
+import { getEntitlement } from "../_shared/cost-cap.ts";
 import { idemKeyFor, projectCapFromEnv, reservePaidApi, settlePaidApi } from "../_shared/paid-api.ts";
 
 const corsHeaders = {
@@ -56,9 +56,9 @@ serve(async (req) => {
   }
 
   // Maliyet: $2.83 / 1000 istek. FREE için ücretli çağrı yok ($0); ücretli planlarda rezervasyon + mutabakat/iade.
-  const plan = await getPlan(admin, user.id);
+  const { plan, period } = await getEntitlement(admin, user.id);
   const AUTOCOMPLETE_USD = 0.00283;
-  const reservation = await reservePaidApi(admin, {
+  const reservation = await reservePaidApi(admin, { period,
     userId: user.id, surface: "places-autocomplete", amountUsd: AUTOCOMPLETE_USD, plan, countsQuery: false,
     idemKey: idemKeyFor("places-autocomplete", null, input.trim().toLowerCase(), Date.now(), 5_000),
     projectCapUsd: projectCapFromEnv(Deno.env.get("PROJECT_MONTHLY_CAP_USD")),
