@@ -2,10 +2,9 @@ import { useEffect, useState } from "react";
 import { SUPPORTED_LANGS, getActiveLang, setActiveLang, subscribeLang, type Lang } from "../lib/i18n";
 
 // Sağ üstte, tema butonunun yanında duran dil değiştirici. Etkin dil +
-// bayrağı gösterir, tıklanınca diğer diller açılır. NOT: yalnızca TR ve
-// EN sözlükleri her yerde tam dolduruldu — diğer 6 dil seçilebilir ama
-// eksik metinler otomatik olarak İngilizce'ye düşer (tt()'in fallback
-// zinciri sayesinde, asla bozuk/boş görünmez).
+// bayrağı gösterir, tıklanınca diğer diller açılır. 8 dilin metinleri:
+// tr/en kaynakta, diğer 6 dil src/i18n/<dil>.ts içinde (İngilizce metne göre aranır).
+// Çevirisi olmayan metin İngilizce'ye düşer (tt() fallback zinciri).
 
 const LANG_META: Record<Lang, { flag: string; label: string }> = {
   tr: { flag: "🇹🇷", label: "Türkçe" },

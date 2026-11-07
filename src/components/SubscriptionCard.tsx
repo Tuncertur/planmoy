@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { isNativeApp } from "../lib/paddle";
 import { CreditCard } from "lucide-react";
 import { supabase } from "../lib/supabase";
-import { tt } from "../lib/i18n";
+import { tt, ttf } from "../lib/i18n";
 import { effectivePlan, graceEndsAt } from "../../supabase/functions/_shared/entitlement";
 
 // Hesap ekranındaki abonelik kartı: aktif plan, durum, yenileme/iptal tarihi, plan değiştirme, dönem sonunda iptal,
@@ -69,7 +69,7 @@ function SubscriptionCardWeb() {
         {paid && !cancelling && row!.current_period_end && <p>{tt({ tr: "Sonraki yenileme", en: "Next renewal" })}: {fmt(row!.current_period_end)}</p>}
         {paid && cancelling && <p>{tt({ tr: "İptal edilecek", en: "Ends on" })}: {fmt(row!.cancel_at)}</p>}
         {row?.pending_plan && <p>{tt({ tr: "Planlanan düşürme", en: "Scheduled downgrade" })}: {PLAN_NAME[row.pending_plan]} · {fmt(row.pending_plan_at)}</p>}
-        {grace && eff !== "free" && <p style={{ color: "#b45309" }}>{tt({ tr: `Ödeme alınamadı. ${fmt(grace)} tarihine kadar erişimin sürer; ödeme yöntemini güncelle.`, en: `Payment failed. Your access continues until ${fmt(grace)}; please update your payment method.` })}</p>}
+        {grace && eff !== "free" && <p style={{ color: "#b45309" }}>{ttf({ tr: "Ödeme alınamadı. {d} tarihine kadar erişimin sürer; ödeme yöntemini güncelle.", en: "Payment failed. Your access continues until {d}; please update your payment method." }, { d: fmt(grace) })}</p>}
         {row?.status === "past_due" && eff === "free" && <p style={{ color: "#b91c1c" }}>{tt({ tr: "Ödeme sorunu nedeniyle ücretli erişim durdu. Ödeme yöntemini güncelle.", en: "Paid access stopped due to a payment problem. Update your payment method." })}</p>}
         {msg && <p role="status" style={{ color: msg.ok ? "#15803d" : "#b91c1c" }}>{msg.text}</p>}
       </div>
