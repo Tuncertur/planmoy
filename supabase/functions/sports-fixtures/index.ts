@@ -19,9 +19,12 @@ serve(async (req) => {
     return new Response(JSON.stringify({ ok: false, reason: "method-not-allowed" }), { status: 405 });
   }
 
-  const { sport, date } = await req.json();
-  const sportName = SPORT_MAP[sport] ?? "Soccer";
-  const day = date ?? new Date().toISOString().slice(0, 10);
+  let body: { sport?: unknown; date?: unknown } = {};
+  try { body = await req.json(); } catch { /* geçersiz JSON */ }
+  const sportName = (typeof body?.sport === "string" && SPORT_MAP[body.sport]) || "Soccer";
+  const day = typeof body?.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.date)
+    ? body.date
+    : new Date().toISOString().slice(0, 10);
 
   const response = await fetch(
     `https://www.thesportsdb.com/api/v1/json/3/eventsday.php?d=${day}&s=${encodeURIComponent(sportName)}`

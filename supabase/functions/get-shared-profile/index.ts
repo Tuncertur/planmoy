@@ -12,8 +12,10 @@ serve(async (req) => {
   if (req.method !== "POST") {
     return new Response(JSON.stringify({ ok: false, reason: "method-not-allowed" }), { status: 405 });
   }
-  const { token } = await req.json();
-  if (!token) {
+  let body: { token?: unknown } = {};
+  try { body = await req.json(); } catch { /* geçersiz JSON */ }
+  const token = typeof body?.token === "string" ? body.token : "";
+  if (!/^[a-f0-9]{32}$/.test(token)) {
     return new Response(JSON.stringify({ ok: false, reason: "no-token" }), { status: 400 });
   }
 
