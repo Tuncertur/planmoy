@@ -6,6 +6,7 @@ import { usePlan } from "../lib/usePlan";
 import { PlacePhotos } from "../components/PlacePhotos";
 import { useTravelData, type TravelPlace } from "../lib/useTravelData";
 import { supabase } from "../lib/supabase";
+import { safeHttpUrl } from "../lib/safeUrl";
 import { getActiveLang, tt, ttf } from "../lib/i18n";
 
 const PRICE_RANK: Record<string, number> = {
@@ -141,13 +142,13 @@ export function TravelPlacesScreen({ userId, category, title }: { userId: string
               {place.priceLevel && PRICE_LABEL[place.priceLevel] && <span>{PRICE_LABEL[place.priceLevel]}</span>}
             </div>
             <div className="mt-2 flex flex-wrap gap-3">
-              {place.mapsUrl && (
-                <a href={place.mapsUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs text-[var(--color-cyan-300)] hover:underline">
+              {safeHttpUrl(place.mapsUrl) && (
+                <a href={safeHttpUrl(place.mapsUrl)!} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs text-[var(--color-cyan-300)] hover:underline">
                   {tt({ tr: "Google Maps'te aç", en: "Open in Maps" })} <ExternalLink size={11} />
                 </a>
               )}
-              {place.websiteUrl && (
-                <a href={place.websiteUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs text-[var(--color-cyan-300)] hover:underline">
+              {safeHttpUrl(place.websiteUrl) && (
+                <a href={safeHttpUrl(place.websiteUrl)!} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs text-[var(--color-cyan-300)] hover:underline">
                   {tt({ tr: "Web sitesi", en: "Website" })} <Globe2 size={11} />
                 </a>
               )}

@@ -640,6 +640,7 @@ const t: Record<string, string> = {
  "New suggestion": "اقتراح جديد",
  "Planmoy suggestion": "اقتراح من Planmoy",
  "Apply suggestion": "تطبيق الاقتراح",
- "Suggestions are based on your existing calendar and workspace. The AI never takes action on its own — you always approve.": "تستند الاقتراحات إلى تقويمك ومساحة عملك الحاليين. لا يتخذ الذكاء الاصطناعي أي إجراء من تلقاء نفسه — فأنت توافق دائمًا."
+ "Suggestions are based on your existing calendar and workspace. The AI never takes action on its own — you always approve.": "تستند الاقتراحات إلى تقويمك ومساحة عملك الحاليين. لا يتخذ الذكاء الاصطناعي أي إجراء من تلقاء نفسه — فأنت توافق دائمًا.",
+ "Invalid portal address.": "عنوان البوابة غير صالح."
 };
 export default t;

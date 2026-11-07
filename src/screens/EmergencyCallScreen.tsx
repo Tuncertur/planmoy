@@ -1,3 +1,4 @@
+import { safeTel } from "../lib/safeUrl";
 import { useEffect, useState } from "react";
 import { Phone, Plus, Trash2 } from "lucide-react";
 import { supabase } from "../lib/supabase";
@@ -50,7 +51,7 @@ export function EmergencyCallScreen({ userId }: { userId: string }) {
       </a>
 
       {contacts.map((c) => (
-        <a key={c.id} href={`tel:${c.phone}`} className="orbit-card p-4" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", textDecoration: "none" }}>
+        <a key={c.id} href={safeTel(c.phone) ?? undefined} className="orbit-card p-4" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", textDecoration: "none" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <span style={{ width: 44, height: 44, borderRadius: 11, background: "#5eead4", color: "#0f3d38", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <Phone size={18} />

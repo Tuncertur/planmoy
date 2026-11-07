@@ -640,6 +640,7 @@ const t: Record<string, string> = {
  "New suggestion": "新建议",
  "Planmoy suggestion": "Planmoy 建议",
  "Apply suggestion": "应用建议",
- "Suggestions are based on your existing calendar and workspace. The AI never takes action on its own — you always approve.": "建议基于你现有的日历和工作空间。AI 绝不会自行行动——始终由你确认。"
+ "Suggestions are based on your existing calendar and workspace. The AI never takes action on its own — you always approve.": "建议基于你现有的日历和工作空间。AI 绝不会自行行动——始终由你确认。",
+ "Invalid portal address.": "门户地址无效。"
 };
 export default t;

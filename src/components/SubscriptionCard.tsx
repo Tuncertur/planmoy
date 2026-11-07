@@ -1,3 +1,4 @@
+import { safeHttpUrl } from "../lib/safeUrl";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { isNativeApp } from "../lib/paddle";
@@ -44,7 +45,7 @@ function SubscriptionCardWeb() {
       setMsg({ ok: false, text: tt({ tr: "İşlem tamamlanamadı; aboneliğinde bir değişiklik YAPILMADI. Lütfen tekrar dene.", en: "The action could not be completed; your subscription was NOT changed. Please try again." }) });
       return;
     }
-    if (action === "portal") { window.location.assign(data.url); return; }
+    if (action === "portal") { const u = safeHttpUrl(data.url); if (u && new URL(u).protocol === "https:") { window.location.assign(u); return; } setMsg({ ok: false, text: tt({ tr: "Portal adresi geçersiz.", en: "Invalid portal address." }) }); return; }
     setMsg({ ok: true, text: action === "cancel"
       ? tt({ tr: "İptal dönem sonunda gerçekleşecek; o zamana kadar planını kullanırsın.", en: "Cancellation will take effect at the end of the period; you keep your plan until then." })
       : tt({ tr: "Planlanan iptal geri alındı.", en: "The scheduled cancellation was reverted." }) });
