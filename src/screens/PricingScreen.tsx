@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ArrowRight, Building2, Check, Clock3, ShieldCheck, Sparkles, UserRound } from "lucide-react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
-import { tt } from "../lib/i18n";
+import { tt, ttf } from "../lib/i18n";
 import { useSession } from "../lib/useSession";
 import { isNativeApp, openPaddleCheckout } from "../lib/paddle";
 
@@ -96,10 +96,10 @@ function PricingScreenWeb() {
     }
     if (result.ok && result.scheduled) {
       const d = result.effectiveAt ? new Date(result.effectiveAt).toLocaleDateString() : "";
-      setCheckoutNotice(tt({
-        tr: `Plan düşürme ${d} tarihinde (dönem sonu) uygulanacak; o zamana kadar mevcut planını kullanırsın.`,
-        en: `Your plan will be downgraded on ${d} (end of period); you keep your current plan until then.`,
-      }));
+      setCheckoutNotice(ttf({
+        tr: "Plan düşürme {d} tarihinde (dönem sonu) uygulanacak; o zamana kadar mevcut planını kullanırsın.",
+        en: "Your plan will be downgraded on {d} (end of period); you keep your current plan until then.",
+      }, { d }));
       return;
     }
     if (result.ok && result.pendingCleared) {
