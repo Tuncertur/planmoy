@@ -1,3 +1,4 @@
+import { safeHttpUrl } from "../lib/safeUrl";
 import { capMessage } from "../lib/capMessage";
 import { useEffect, useState } from "react";
 import { Crosshair, Info, MapPin, Search, Star, ExternalLink } from "lucide-react";
@@ -189,9 +190,9 @@ export function DiscoverScreen({ userId }: { userId: string }) {
                 </span>
               )}
             </div>
-            {place.mapsUrl && (
+            {safeHttpUrl(place.mapsUrl) && (
               <a
-                href={place.mapsUrl}
+                href={safeHttpUrl(place.mapsUrl)!}
                 target="_blank"
                 rel="noreferrer"
                 className="mt-2 inline-flex items-center gap-1 text-xs text-[var(--color-cyan-300)] hover:underline"

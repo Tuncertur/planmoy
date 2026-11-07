@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { AlertTriangle, CheckCircle2, LogOut, ShieldCheck, Trash2 } from "lucide-react";
 import { supabase } from "../lib/supabase";
-import { tt } from "../lib/i18n";
+import { tt, ttf } from "../lib/i18n";
 import { AiUsageCard } from "../components/AiUsageCard";
 import { SubscriptionCard } from "../components/SubscriptionCard";
 
@@ -78,7 +78,7 @@ export function AccountScreen({ email }: { email: string }) {
               })}
             </p>
             <label>
-              {tt({ tr: `Onay için ${deleteWord} yaz`, en: `Type ${deleteWord} to confirm` })}
+              {ttf({ tr: "Onay için {w} yaz", en: "Type {w} to confirm" }, { w: deleteWord })}
               <input value={confirm} onChange={(e) => setConfirm(e.target.value)} aria-label="confirm-delete" />
             </label>
             {error && (

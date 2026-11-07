@@ -21,7 +21,7 @@ jobs:
           if git grep -nE "BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|pdl_(live|sdbx)_apikey_[A-Za-z0-9]{10,}|sk-[A-Za-z0-9]{20,}|service_role[\"' ]*[:=][\"' ]*eyJ" -- . ':!*.test.ts' ':!.github/workflows/guvenlik.yml'; then echo "::error::olası secret bulundu"; exit 1; fi
           # JWT'ler: yalnızca role=anon olanlara izin
           for j in $(git grep -ohE "eyJ[A-Za-z0-9_-]{15,}\.[A-Za-z0-9_-]{15,}\.[A-Za-z0-9_-]{10,}" -- . | sort -u); do
-            p=$(echo "$j" | cut -d. -f2 | tr '_-' '/+'); p="$p$(printf '=%.0s' 1 2 3 4)"
+            p=$(echo "$j" | cut -d. -f2 | tr '_-' '/+'); p="$p$(printf '%*s' $(( (4 - ${#p} % 4) % 4 )) '' | tr ' ' '=')"
             echo "$p" | base64 -d 2>/dev/null | grep -q '"role":"anon"' || { echo "::error::anon olmayan JWT bulundu"; exit 1; }
           done
           if git ls-files | grep -E "\.(jks|keystore|p8|p12|pem|mobileprovision)$|(^|/)\.env($|\.local)|google-services\.json|GoogleService-Info\.plist"; then echo "::error::yasak dosya türü izleniyor"; exit 1; fi

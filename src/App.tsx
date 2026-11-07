@@ -48,6 +48,9 @@ function App() {
         <Route path="/book/:slug" element={<PublicBookingScreen />} />
         <Route path="/profile/:token" element={<ProfileViewScreen />} />
         <Route path="/legal" element={<LegalScreen onBack={() => window.history.back()} />} />
+        <Route path="/privacy" element={<LegalScreen onBack={() => window.history.back()} />} />
+        <Route path="/terms" element={<LegalScreen onBack={() => window.history.back()} />} />
+        <Route path="/refund" element={<LegalScreen onBack={() => window.history.back()} />} />
         <Route path="/pricing" element={<PricingScreen />} />
         <Route path="/businesses/:slug" element={<BusinessProfileScreen />} />
         <Route path="/*" element={<MainApp />} />

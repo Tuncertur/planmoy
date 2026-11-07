@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { ArrowUpRight, Check, Search } from "lucide-react";
 import { taxonomy, type TaxonomyGroup } from "../lib/taxonomy";
-import { tt } from "../lib/i18n";
+import { tt, ttf } from "../lib/i18n";
 
 // FireVibe'ın gerçek src/routes/categories.tsx + src/lib/taxonomy.ts
 // dosyalarından birebir taşınmıştır. Orijinal tasarım belgesinde
@@ -101,7 +101,7 @@ export function CategoriesScreen() {
         </div>
         {!filtered.length && (
           <div className="category-empty">
-            {tt({ tr: `Bu alanda "${query}" ile eşleşen kategori yok.`, en: `No category matches "${query}" in this area.` })}
+            {ttf({ tr: "Bu alanda \"{q}\" ile eşleşen kategori yok.", en: "No category matches \"{q}\" in this area." }, { q: query })}
           </div>
         )}
       </section>
