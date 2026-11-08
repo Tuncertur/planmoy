@@ -17,7 +17,7 @@ export function LegalScreen({ onBack }: { onBack: () => void }) {
       </header>
       <div className="legal-wrap">
         <h1>{tt({ tr: "Gizlilik Politikası ve KVKK Aydınlatma Metni", en: "Privacy Policy" })}</h1>
-        <p className="legal-updated">{tt({ tr: "Son güncelleme: 10 Eylül 2026", en: "Last updated: September 10, 2026" })}</p>
+        <p className="legal-updated">{tt({ tr: "Son güncelleme: 8 Kasım 2026", en: "Last updated: November 8, 2026" })}</p>
 
         <section className="legal-section">
           <ShieldCheck size={20} />
@@ -58,6 +58,10 @@ export function LegalScreen({ onBack }: { onBack: () => void }) {
               <li>{tt({ tr: "Konum verisi: yalnızca Keşfet özelliğini kullanırken, açık izninle, cihazından alınan anlık konum", en: "Location data: only when using Discover, with your explicit permission, real-time device location" })}</li>
               <li>{tt({ tr: "İşlem güvenliği verisi: oturum açma zaman damgaları, IP tabanlı hız sınırlama kayıtları", en: "Security data: sign-in timestamps, IP-based rate-limit records" })}</li>
               <li>{tt({ tr: "Fotoğraflar: StyleSync'e yüklediğin gardırop fotoğrafları (isteğe bağlı)", en: "Photos: wardrobe photos you upload to StyleSync (optional)" })}</li>
+              <li>{tt({ tr: "İlaç hatırlatıcıları (isteğe bağlı): kendi girdiğin ilaç adı, doz ve saatler ile aldığına dair işaretlemeler", en: "Medication reminders (optional): the medication names, doses and times you enter, and whether you mark them as taken" })}</li>
+              <li>{tt({ tr: "Giriş verisi: Google veya Apple ile giriş yaparsan bu sağlayıcının bizimle paylaştığı hesap kimliği ve e-posta adresi", en: "Sign-in data: if you sign in with Google or Apple, the account identifier and email address that provider shares with us" })}</li>
+              <li>{tt({ tr: "Kullanım sayaçları: planının kullanım döneminde kullandığın AI sorgu sayısı", en: "Usage counters: the number of AI requests you have used in your plan's usage period" })}</li>
+              <li>{tt({ tr: "Ödemeler: web'de ödemeyi Paddle alır; kart bilgilerini biz görmeyiz ve saklamayız. Bizde yalnızca plan ve abonelik durumun tutulur.", en: "Payments: on the web, payments are taken by Paddle; we do not see or store your card details. We keep only your plan and subscription status." })}</li>
               <li>
                 <strong>{tt({ tr: "Profil Paylaş (tamamen isteğe bağlı, açık rızana dayanır): ", en: "Share Profile (fully optional, based on your explicit consent): " })}</strong>
                 {tt({
@@ -109,6 +113,10 @@ export function LegalScreen({ onBack }: { onBack: () => void }) {
               <li><strong>Supabase</strong> ({tt({ tr: "veritabanı ve kimlik doğrulama altyapısı, yurt dışı sunucu", en: "database & auth infrastructure, hosted abroad" })})</li>
               <li><strong>Google (Gemini API)</strong> ({tt({ tr: "yalnızca sen bir AI önerisi istediğinde, o anki metin gönderilir", en: "only when you request an AI suggestion, that text is sent" })})</li>
               <li><strong>Google Maps Places API</strong> ({tt({ tr: "yalnızca Keşfet'te konumunu paylaştığında", en: "only when you share your location in Discover" })})</li>
+              <li><strong>Paddle</strong> ({tt({ tr: "web'de ödeme, fatura ve vergi (satıcı kuruluş)", en: "web payments, invoicing and taxes (Merchant of Record)" })})</li>
+              <li><strong>Google, Apple</strong> ({tt({ tr: "yalnızca onlarla giriş yapmayı seçtiğinde", en: "only when you choose to sign in with them" })})</li>
+              <li><strong>Netlify</strong> ({tt({ tr: "web sitesi barındırma", en: "website hosting" })})</li>
+              <li><strong>Google Maps</strong> ({tt({ tr: "işletme sayfasında harita gösterildiğinde", en: "when a map is shown on a business page" })})</li>
             </ul>
             <p style={{ marginTop: 8 }}>
               {tt({
@@ -164,8 +172,8 @@ export function LegalScreen({ onBack }: { onBack: () => void }) {
             <h2>{tt({ tr: "8. Başvuru Yöntemi", en: "8. How to Exercise Your Rights" })}</h2>
             <p>
               {tt({
-                tr: "Yukarıdaki haklarını kullanmak için destek@planmoy.com adresine, kimliğini doğrulayacak bilgilerle birlikte yazılı olarak başvurabilirsin. Talepler en geç 30 gün içinde sonuçlandırılır. Hesap içinden doğrudan silme talebinde de bulunabilirsin (Hesap Ayarları > Hesabı Sil).",
-                en: "To exercise the rights above, write to destek@planmoy.com with information to verify your identity. Requests are resolved within 30 days at the latest. You can also request deletion directly from Account Settings.",
+                tr: "Yukarıdaki haklarını kullanmak için destek@planmoy.com adresine, kimliğini doğrulayacak bilgilerle birlikte yazılı olarak başvurabilirsin. Talepler en geç 30 gün içinde sonuçlandırılır. Uygulama içinden doğrudan silebilirsin: Hesap > Hesabı ve verileri sil.",
+                en: "To exercise the rights above, write to destek@planmoy.com with information to verify your identity. Requests are resolved within 30 days at the latest. You can also delete directly in the app: Account > Delete account and data.",
               })}
             </p>
           </div>

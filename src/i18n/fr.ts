@@ -644,6 +644,16 @@ const t: Record<string, string> = {
  "Invalid portal address.": "Adresse du portail invalide.",
  "You've used your AI allowance for this period; you can use it again when it renews. Everything else keeps working.": "Vous avez utilisé votre quota d'IA pour cette période ; il sera de nouveau disponible au renouvellement. Tout le reste continue de fonctionner.",
  "This month's shared pool of free searches is used up; it resets when your usage period renews. Previously searched areas still show.": "Le quota partagé de recherches gratuites de ce mois est épuisé ; il sera réinitialisé au renouvellement de votre période d'utilisation. Les zones déjà recherchées restent affichées.",
- "You've used this month's search allowance; it resets when your usage period renews. Previously searched areas still show.": "Vous avez utilisé votre quota de recherches de ce mois ; il sera réinitialisé au renouvellement de votre période d'utilisation. Les zones déjà recherchées restent affichées."
+ "You've used this month's search allowance; it resets when your usage period renews. Previously searched areas still show.": "Vous avez utilisé votre quota de recherches de ce mois ; il sera réinitialisé au renouvellement de votre période d'utilisation. Les zones déjà recherchées restent affichées.",
+ "Last updated: November 8, 2026": "Dernière mise à jour : 8 novembre 2026",
+ "Medication reminders (optional): the medication names, doses and times you enter, and whether you mark them as taken": "Rappels de médicaments (facultatif) : les noms, doses et heures de médicaments que vous saisissez, et si vous les marquez comme pris",
+ "Sign-in data: if you sign in with Google or Apple, the account identifier and email address that provider shares with us": "Données de connexion : si vous vous connectez avec Google ou Apple, l'identifiant de compte et l'adresse e-mail que ce fournisseur nous transmet",
+ "Usage counters: the number of AI requests you have used in your plan's usage period": "Compteurs d'utilisation : le nombre de requêtes d'IA utilisées pendant la période d'utilisation de votre forfait",
+ "Payments: on the web, payments are taken by Paddle; we do not see or store your card details. We keep only your plan and subscription status.": "Paiements : sur le web, les paiements sont encaissés par Paddle ; nous ne voyons ni ne stockons vos données de carte. Nous conservons uniquement votre forfait et l'état de votre abonnement.",
+ "web payments, invoicing and taxes (Merchant of Record)": "paiements web, facturation et taxes (Merchant of Record)",
+ "only when you choose to sign in with them": "uniquement si vous choisissez de vous connecter avec eux",
+ "website hosting": "hébergement du site web",
+ "when a map is shown on a business page": "lorsqu'une carte est affichée sur une page d'entreprise",
+ "To exercise the rights above, write to destek@planmoy.com with information to verify your identity. Requests are resolved within 30 days at the latest. You can also delete directly in the app: Account > Delete account and data.": "Pour exercer les droits ci-dessus, écrivez à destek@planmoy.com avec des informations permettant de vérifier votre identité. Les demandes sont traitées sous 30 jours au plus tard. Vous pouvez aussi supprimer directement dans l'application : Compte > Supprimer le compte et les données."
 };
 export default t;

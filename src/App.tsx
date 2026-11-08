@@ -7,6 +7,7 @@ import { AuthScreen } from "./screens/AuthScreen";
 import { Dashboard } from "./screens/Dashboard";
 import { ConfigMissingScreen } from "./screens/ConfigMissingScreen";
 import { LegalScreen } from "./screens/LegalScreen";
+import { TermsScreen, RefundScreen } from "./screens/LegalDocs";
 import { CookieConsent } from "./components/CookieConsent";
 import { ThemeSwitcher } from "./components/ThemeSwitcher";
 import { LanguageSwitcher } from "./components/LanguageSwitcher";
@@ -49,8 +50,8 @@ function App() {
         <Route path="/profile/:token" element={<ProfileViewScreen />} />
         <Route path="/legal" element={<LegalScreen onBack={() => window.history.back()} />} />
         <Route path="/privacy" element={<LegalScreen onBack={() => window.history.back()} />} />
-        <Route path="/terms" element={<LegalScreen onBack={() => window.history.back()} />} />
-        <Route path="/refund" element={<LegalScreen onBack={() => window.history.back()} />} />
+        <Route path="/terms" element={<TermsScreen />} />
+        <Route path="/refund" element={<RefundScreen />} />
         <Route path="/pricing" element={<PricingScreen />} />
         <Route path="/businesses/:slug" element={<BusinessProfileScreen />} />
         <Route path="/*" element={<MainApp />} />
