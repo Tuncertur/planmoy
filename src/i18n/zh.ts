@@ -641,6 +641,16 @@ const t: Record<string, string> = {
  "Planmoy suggestion": "Planmoy 建议",
  "Apply suggestion": "应用建议",
  "Suggestions are based on your existing calendar and workspace. The AI never takes action on its own — you always approve.": "建议基于你现有的日历和工作空间。AI 绝不会自行行动——始终由你确认。",
- "Invalid portal address.": "门户地址无效。"
+ "Invalid portal address.": "门户地址无效。",
+ "Last updated: November 8, 2026": "最后更新：2026 年 11 月 8 日",
+ "Medication reminders (optional): the medication names, doses and times you enter, and whether you mark them as taken": "用药提醒（可选）：你输入的药品名称、剂量和时间，以及你是否标记为已服用",
+ "Sign-in data: if you sign in with Google or Apple, the account identifier and email address that provider shares with us": "登录数据：如果你使用 Google 或 Apple 登录，该提供方与我们共享的账号标识和电子邮件地址",
+ "Usage counters: the number of AI requests you have used in your plan's usage period": "使用计数：你在套餐使用周期内已使用的 AI 请求次数",
+ "Payments: on the web, payments are taken by Paddle; we do not see or store your card details. We keep only your plan and subscription status.": "付款：网页端的付款由 Paddle 收取；我们不会看到或保存你的银行卡信息，只保留你的套餐和订阅状态。",
+ "web payments, invoicing and taxes (Merchant of Record)": "网页支付、开票和税务（Merchant of Record）",
+ "only when you choose to sign in with them": "仅当你选择使用它们登录时",
+ "website hosting": "网站托管",
+ "when a map is shown on a business page": "当企业页面显示地图时",
+ "To exercise the rights above, write to destek@planmoy.com with information to verify your identity. Requests are resolved within 30 days at the latest. You can also delete directly in the app: Account > Delete account and data.": "如需行使上述权利，请发送邮件至 destek@planmoy.com，并附上用于核实身份的信息。请求最迟在 30 天内处理。你也可以直接在应用内删除：账户 > 删除账户和数据。"
 };
 export default t;

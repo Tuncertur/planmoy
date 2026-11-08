@@ -641,6 +641,16 @@ const t: Record<string, string> = {
  "Planmoy suggestion": "Совет Planmoy",
  "Apply suggestion": "Применить совет",
  "Suggestions are based on your existing calendar and workspace. The AI never takes action on its own — you always approve.": "Советы основаны на вашем текущем календаре и рабочем пространстве. ИИ никогда не действует сам — решение всегда за вами.",
- "Invalid portal address.": "Недопустимый адрес портала."
+ "Invalid portal address.": "Недопустимый адрес портала.",
+ "Last updated: November 8, 2026": "Последнее обновление: 8 ноября 2026 г.",
+ "Medication reminders (optional): the medication names, doses and times you enter, and whether you mark them as taken": "Напоминания о лекарствах (по желанию): названия, дозы и время приёма, которые вы вводите, и ваши отметки о приёме",
+ "Sign-in data: if you sign in with Google or Apple, the account identifier and email address that provider shares with us": "Данные для входа: при входе через Google или Apple — идентификатор аккаунта и адрес электронной почты, которые передаёт этот провайдер",
+ "Usage counters: the number of AI requests you have used in your plan's usage period": "Счётчики использования: число запросов к ИИ, использованных в период использования вашего тарифа",
+ "Payments: on the web, payments are taken by Paddle; we do not see or store your card details. We keep only your plan and subscription status.": "Платежи: в веб-версии платежи принимает Paddle; мы не видим и не храним данные вашей карты. Мы храним только ваш тариф и статус подписки.",
+ "web payments, invoicing and taxes (Merchant of Record)": "веб-платежи, выставление счетов и налоги (Merchant of Record)",
+ "only when you choose to sign in with them": "только если вы выбрали вход через них",
+ "website hosting": "хостинг сайта",
+ "when a map is shown on a business page": "когда на странице бизнеса показывается карта",
+ "To exercise the rights above, write to destek@planmoy.com with information to verify your identity. Requests are resolved within 30 days at the latest. You can also delete directly in the app: Account > Delete account and data.": "Чтобы воспользоваться перечисленными правами, напишите на destek@planmoy.com и приложите сведения для подтверждения личности. Запросы рассматриваются не позднее 30 дней. Вы также можете удалить данные прямо в приложении: Аккаунт > Удалить аккаунт и данные."
 };
 export default t;
