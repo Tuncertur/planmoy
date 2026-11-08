@@ -654,6 +654,7 @@ const t: Record<string, string> = {
  "only when you choose to sign in with them": "فقط عندما تختار تسجيل الدخول بهما",
  "website hosting": "استضافة موقع الويب",
  "when a map is shown on a business page": "عند عرض خريطة في صفحة نشاط تجاري",
- "To exercise the rights above, write to destek@planmoy.com with information to verify your identity. Requests are resolved within 30 days at the latest. You can also delete directly in the app: Account > Delete account and data.": "لممارسة الحقوق أعلاه، اكتب إلى destek@planmoy.com مع معلومات للتحقق من هويتك. تُحسم الطلبات خلال 30 يومًا كحد أقصى. يمكنك أيضًا الحذف مباشرة داخل التطبيق: الحساب > حذف الحساب والبيانات."
+ "To exercise the rights above, write to destek@planmoy.com with information to verify your identity. Requests are resolved within 30 days at the latest. You can also delete directly in the app: Account > Delete account and data.": "لممارسة الحقوق أعلاه، اكتب إلى destek@planmoy.com مع معلومات للتحقق من هويتك. تُحسم الطلبات خلال 30 يومًا كحد أقصى. يمكنك أيضًا الحذف مباشرة داخل التطبيق: الحساب > حذف الحساب والبيانات.",
+ "Medication time": "حان وقت الدواء"
 };
 export default t;

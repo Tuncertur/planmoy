@@ -654,6 +654,7 @@ const t: Record<string, string> = {
  "only when you choose to sign in with them": "仅当你选择使用它们登录时",
  "website hosting": "网站托管",
  "when a map is shown on a business page": "当企业页面显示地图时",
- "To exercise the rights above, write to destek@planmoy.com with information to verify your identity. Requests are resolved within 30 days at the latest. You can also delete directly in the app: Account > Delete account and data.": "如需行使上述权利，请发送邮件至 destek@planmoy.com，并附上用于核实身份的信息。请求最迟在 30 天内处理。你也可以直接在应用内删除：账户 > 删除账户和数据。"
+ "To exercise the rights above, write to destek@planmoy.com with information to verify your identity. Requests are resolved within 30 days at the latest. You can also delete directly in the app: Account > Delete account and data.": "如需行使上述权利，请发送邮件至 destek@planmoy.com，并附上用于核实身份的信息。请求最迟在 30 天内处理。你也可以直接在应用内删除：账户 > 删除账户和数据。",
+ "Medication time": "该吃药了"
 };
 export default t;
