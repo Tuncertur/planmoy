@@ -13,7 +13,7 @@ function walk(d: string, out: string[] = []): string[] {
   return out;
 }
 const lit = String.raw`(?:"((?:[^"\\]|\\.)*)"|` + "`((?:[^`\\\\]|\\\\.)*)`|'((?:[^'\\\\]|\\\\.)*)')";
-const pat = new RegExp(String.raw`\btr:\s*` + lit + String.raw`\s*,\s*en:\s*` + lit, "gs");
+const pat = new RegExp(String.raw`\btr:\s*` + lit + String.raw`\s*,\s*en:\s*` + lit + String.raw`(?!\s*,\s*de:)`, "gs"); // satır içi de: varsa çeviri metnin içinde
 
 function sourceKeys(): string[] {
   const keys = new Set<string>();

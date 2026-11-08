@@ -14,7 +14,7 @@
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
-import { getPlan } from "../_shared/cost-cap.ts";
+import { getEntitlement } from "../_shared/cost-cap.ts";
 import { geminiActualUsd, geminiReserveUsd, idemKeyFor, projectCapFromEnv, publicReason, ratesFromEnv, reservePaidApi, settlePaidApi } from "../_shared/paid-api.ts";
 
 const corsHeaders = {
@@ -50,7 +50,7 @@ serve(async (req) => {
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
   // FREE: ücretli API yok. Saatlik sayaç/anahtar/gövde işlemlerinden ÖNCE reddedilir (hiçbir kaynak harcanmaz).
-  const plan = await getPlan(admin, user.id);
+  const { plan, period } = await getEntitlement(admin, user.id);
   if (plan === "free") return json({ ok: false, reason: "free-plan", suggestion: null });
 
   const body = await req.json().catch(() => ({}));
@@ -73,7 +73,7 @@ serve(async (req) => {
   const rates = ratesFromEnv(Deno.env.get("GEMINI_INPUT_USD_PER_M"), Deno.env.get("GEMINI_OUTPUT_USD_PER_M"));
   const reserved = geminiReserveUsd(system.length, prompt.length, MAX_OUTPUT_TOKENS, rates);
 
-  const reservation = await reservePaidApi(admin, {
+  const reservation = await reservePaidApi(admin, { period,
     userId: user.id,
     surface: "ai-suggest",
     amountUsd: reserved,

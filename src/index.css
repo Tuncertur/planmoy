@@ -143,3 +143,27 @@ html, body, #root { min-height: 100%; }
   outline-offset: 2px;
 }
 .auth-consent-text { line-height: 1.5; }
+
+/* AI Kullanım Hakkım kartı (sayaç): mevcut tasarım belirteçleriyle; renk kademesi kalan azaldıkça değişir. */
+.ai-usage { margin:12px 0; padding:14px 16px; border:1px solid var(--border); border-radius:14px; background:var(--card); }
+.ai-usage.account-card { margin-top:14px; padding:20px; }
+.ai-usage-head { display:flex; align-items:center; gap:7px; margin-bottom:8px; color:var(--accent); }
+.ai-usage-head h3 { margin:0; font-size:13px; font-weight:800; color:var(--foreground); }
+.ai-usage-row { display:flex; justify-content:space-between; align-items:baseline; gap:10px; font-size:12px; }
+.ai-usage-row strong { font-size:14px; }
+.ai-usage-row span, .ai-usage-note { color:var(--muted-foreground); font-size:11px; }
+.ai-usage-note { margin:6px 0 0; line-height:1.5; }
+.ai-usage-strong { margin:0; font-size:12px; font-weight:700; }
+.ai-usage-bar { height:7px; margin-top:8px; border-radius:99px; background:var(--muted); overflow:hidden; }
+.ai-usage-bar i { display:block; height:100%; border-radius:99px; background:#3f9b6e; transition:width .35s ease, background-color .35s ease; }
+.ai-usage-bar.ai-mid i { background:#d9a233; }
+.ai-usage-bar.ai-low i { background:#e1792f; }
+.ai-usage-bar.ai-full i { background:#c8453a; }
+.ai-usage-msg { margin:8px 0 0; padding:8px 10px; border-radius:9px; font-size:11px; line-height:1.5; background:#fff5e8; color:#8a4b12; }
+.ai-usage-msg.ai-full { background:#fdecea; color:#8f2f26; }
+.ai-usage-detail { display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:8px; margin:12px 0 0; }
+.ai-usage-detail div { padding:8px 10px; border:1px solid var(--border); border-radius:10px; }
+.ai-usage-detail dt { font-size:10px; color:var(--muted-foreground); }
+.ai-usage-detail dd { margin:2px 0 0; font-size:14px; font-weight:800; }
+.ai-usage-retry { margin-top:8px; padding:6px 12px; border:1px solid var(--border); border-radius:8px; background:transparent; font:inherit; font-size:11px; cursor:pointer; }
+@media (prefers-reduced-motion:reduce) { .ai-usage-bar i { transition:none; } }
