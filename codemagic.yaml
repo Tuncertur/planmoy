@@ -285,6 +285,7 @@ workflows:
       - name: Build AAB
         script: |
           cd android
+          chmod +x gradlew   # depoda calistirma izni yok -> "status code 126"
           ./gradlew bundleRelease -PversionCodeOverride=$((BUILD_NUMBER + 100))
       - name: AAB imzasini dogrula
         script: |
