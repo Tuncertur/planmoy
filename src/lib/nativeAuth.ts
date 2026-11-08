@@ -7,6 +7,7 @@ import { SignInWithApple } from "@capacitor-community/apple-sign-in";
 import { Browser } from "@capacitor/browser";
 import { supabase } from "./supabase";
 import { isNativeApp } from "./paddle";
+import { markOAuthPending, consumeOAuthPending } from "./oauthPending";
 
 export const NATIVE_AUTH_REDIRECT = "com.planmoy.app://auth-callback";
 export type OAuthProvider = "google";
@@ -49,6 +50,7 @@ export async function startNativeOAuth(provider: OAuthProvider): Promise<{ error
     options: { redirectTo: NATIVE_AUTH_REDIRECT, skipBrowserRedirect: true },
   });
   if (error || !data?.url) return { error: error?.message ?? "Giriş adresi alınamadı" };
+  markOAuthPending(localStorage, Date.now()); // yalnızca bu cihazda başlatılan giriş dönüşü kabul edilir
   await Browser.open({ url: data.url });
   return {};
 }
@@ -56,6 +58,8 @@ export async function startNativeOAuth(provider: OAuthProvider): Promise<{ error
 /** Geri dönüş adresinden oturum kurar. Yalnızca beklenen adres kabul edilir; belirteçler loglanmaz. */
 export async function completeNativeOAuth(url: string): Promise<{ ok: boolean; error?: string }> {
   if (!url.startsWith(NATIVE_AUTH_REDIRECT)) return { ok: false, error: "beklenmeyen adres" };
+  // Bu cihazda başlatılmamış (ya da süresi dolmuş) bir girişin dönüşü REDDEDİLİR; oturum kurulmadan önce işaret tüketilir.
+  if (!consumeOAuthPending(localStorage, Date.now())) return { ok: false, error: "başlatılmamış giriş" };
   const u = new URL(url);
   const hash = new URLSearchParams(u.hash.replace(/^#/, ""));
   const providerError = u.searchParams.get("error_description") ?? hash.get("error_description");
