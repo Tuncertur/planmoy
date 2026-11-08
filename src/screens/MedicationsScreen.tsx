@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Check, Clock, Pill, Plus, SkipForward, Trash2 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { tt } from "../lib/i18n";
+import { syncMedReminders } from "../lib/medRemindersNative";
 
 type Medication = { id: string; name: string; dosage: string | null; times: string[]; active: boolean };
 
@@ -16,6 +17,10 @@ export function MedicationsScreen({ userId }: { userId: string }) {
   async function load() {
     const { data } = await supabase.from("medications").select("id, name, dosage, times, active").eq("user_id", userId).eq("active", true).order("created_at");
     setMeds(data ?? []);
+    void syncMedReminders(data ?? [], {
+      title: tt({ tr: "İlaç zamanı", en: "Medication time" }),
+      body: (n, d) => (d ? `${n} (${d})` : n),
+    });
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     const { data: logs } = await supabase.from("medication_logs").select("medication_id, scheduled_for, status").eq("user_id", userId).gte("scheduled_for", todayStart.toISOString());

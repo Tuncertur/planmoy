@@ -13,6 +13,7 @@ export interface DeleteDeps {
     liveIdsOfCustomer(customerId: string): Promise<string[]>;
     cancelNow(subscriptionId: string): Promise<void>;
   };
+  removeUserFiles(userId: string): Promise<void>; // depolamadaki kullanıcı dosyaları (gardırop fotoğrafları); hata -> fırlat
   deleteUser(userId: string): Promise<void>; // hata -> fırlat
   hash(userId: string): Promise<string>;
   writeLog(e: { user_hash: string; paddle_subscription_id: string | null; paddle_status_before: string | null; subscription_canceled: boolean; outcome: Outcome; note?: string }): Promise<void>;
@@ -74,6 +75,7 @@ export async function handleDelete(deps: DeleteDeps, userId: string): Promise<De
   }
 
   try {
+    await deps.removeUserFiles(userId); // önce dosyalar: hesap silinince sahipsiz fotoğraf kalmasın; hata olursa hesap durur, tekrar denenebilir
     await deps.deleteUser(userId);
   } catch (err) {
     deps.log.error("kullanıcı silinemedi:", err instanceof Error ? err.message : err);

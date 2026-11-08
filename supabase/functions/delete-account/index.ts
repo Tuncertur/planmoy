@@ -57,6 +57,18 @@ serve(async (req) => {
         if (!res.ok) throw new Error(`Paddle iptal reddedildi: ${res.status} ${await res.text().catch(() => "")}`);
       },
     },
+    async removeUserFiles(userId) {
+      // wardrobe/<userId>/... altındaki tüm dosyalar (sayfa sayfa; üst sınır döngüyü korur)
+      for (let page = 0; page < 200; page++) {
+        const { data, error } = await admin.storage.from("wardrobe").list(userId, { limit: 100 });
+        if (error) throw new Error(error.message);
+        const names = (data ?? []).filter((f) => f.name).map((f) => `${userId}/${f.name}`);
+        if (names.length === 0) return;
+        const { error: rmErr } = await admin.storage.from("wardrobe").remove(names);
+        if (rmErr) throw new Error(rmErr.message);
+      }
+      throw new Error("wardrobe klasörü boşaltılamadı (sayfa sınırı)");
+    },
     async deleteUser(userId) {
       const { error } = await admin.auth.admin.deleteUser(userId);
       if (error) throw new Error(error.message);
