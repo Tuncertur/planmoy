@@ -5,7 +5,7 @@ import { handleDelete, type DeleteDeps, type Outcome } from "./logic.ts";
 function build(o: {
   row?: { paddle_subscription_id: string | null; paddle_customer_id: string | null; status?: string | null } | null | "throw";
   status?: Record<string, string | null | "throw">; // id -> durum; cancelNow sonrası "canceled" olur (afterCancel ile ezilebilir)
-  customerLive?: string[]; cancelFails?: boolean; stillLiveAfterCancel?: boolean; deleteFails?: boolean; logFails?: boolean;
+  customerLive?: string[]; cancelFails?: boolean; stillLiveAfterCancel?: boolean; deleteFails?: boolean; filesFail?: boolean; logFails?: boolean;
   env?: "sandbox" | "production" | null; key?: boolean;
 } = {}) {
   const calls: string[] = []; const logs: { outcome: Outcome; subscription_canceled: boolean }[] = [];
@@ -18,6 +18,7 @@ function build(o: {
       async liveIdsOfCustomer() { return o.customerLive ?? []; },
       async cancelNow(id) { if (o.cancelFails) throw new Error("paddle 500"); calls.push(`cancel:${id}`); if (!o.stillLiveAfterCancel) status[id] = "canceled"; },
     },
+    async removeUserFiles() { if (o.filesFail) throw new Error("storage"); calls.push("removeFiles"); },
     async deleteUser() { if (o.deleteFails) throw new Error("auth"); calls.push("deleteUser"); },
     async hash() { return "h"; },
     async writeLog(e) { if (o.logFails) throw new Error("log"); logs.push({ outcome: e.outcome, subscription_canceled: e.subscription_canceled }); },
@@ -30,14 +31,14 @@ test("abonelik satırı yok: doğrudan silinir, Paddle'a gidilmez", async () => 
   const b = build({ row: null });
   const r = await handleDelete(b.deps, "u");
   assert.deepEqual(r.body, { ok: true, subscriptionCanceled: false });
-  assert.deepEqual(b.calls, ["deleteUser"]);
+  assert.deepEqual(b.calls, ["removeFiles", "deleteUser"]);
 });
 
 test("canlı abonelik: ÖNCE anında iptal (doğrulanır), SONRA silme; log 'deleted'", async () => {
   const b = build({ status: { sub_A: "active" } });
   const r = await handleDelete(b.deps, "u");
   assert.deepEqual(r.body, { ok: true, subscriptionCanceled: true });
-  assert.deepEqual(b.calls, ["cancel:sub_A", "deleteUser"]);
+  assert.deepEqual(b.calls, ["cancel:sub_A", "removeFiles", "deleteUser"]);
   assert.deepEqual(b.logs, [{ outcome: "deleted", subscription_canceled: true }]);
 });
 
@@ -70,7 +71,7 @@ test("Paddle'da zaten canceled / 404 (kayıt de canceled): iptal çağrısı yok
   for (const s of ["canceled", null]) {
     const b = build({ status: { sub_A: s }, row: { paddle_subscription_id: "sub_A", paddle_customer_id: "ctm_A", status: "canceled" } });
     assert.equal((await handleDelete(b.deps, "u")).body.ok, true);
-    assert.deepEqual(b.calls, ["deleteUser"]);
+    assert.deepEqual(b.calls, ["removeFiles", "deleteUser"]);
   }
 });
 
@@ -78,7 +79,7 @@ test("müşterinin DB'de olmayan başka canlı aboneliği de iptal edilir (çift
   const b = build({ status: { sub_A: "canceled", sub_B: "active" }, customerLive: ["sub_B"] });
   const r = await handleDelete(b.deps, "u");
   assert.equal(r.body.ok, true);
-  assert.deepEqual(b.calls, ["cancel:sub_B", "deleteUser"]);
+  assert.deepEqual(b.calls, ["cancel:sub_B", "removeFiles", "deleteUser"]);
 });
 
 test("iptal başarılı ama kullanıcı silinemedi: ok:false, subscriptionCanceled:true, tekrar denenebilir", async () => {
@@ -91,7 +92,7 @@ test("iptal başarılı ama kullanıcı silinemedi: ok:false, subscriptionCancel
 test("denetim logu yazılamasa da güvenlik akışı bozulmaz (silme yine doğru sırada)", async () => {
   const b = build({ status: { sub_A: "active" }, logFails: true });
   assert.equal((await handleDelete(b.deps, "u")).body.ok, true);
-  assert.deepEqual(b.calls, ["cancel:sub_A", "deleteUser"]);
+  assert.deepEqual(b.calls, ["cancel:sub_A", "removeFiles", "deleteUser"]);
 });
 
 test("yanlış ortam koruması: Paddle kimliği 404 ama kayıt iptal değil/bilinmiyor -> hesap SİLİNMEZ (unverifiable)", async () => {
@@ -103,4 +104,13 @@ test("yanlış ortam koruması: Paddle kimliği 404 ama kayıt iptal değil/bili
     assert.deepEqual(b.calls, []);
     assert.equal(b.logs[0]?.outcome, "unverifiable");
   }
+});
+
+test("dosya silme (fotoğraflar) BAŞARISIZ: hesap silinmez, tekrar denenebilir", async () => {
+  const b = build({ row: null, filesFail: true });
+  const r = await handleDelete(b.deps, "u");
+  assert.equal(r.body.ok, false);
+  assert.equal(r.body.reason, "delete-failed");
+  assert.ok(!b.calls.includes("deleteUser"));
+  assert.equal(b.logs[0].outcome, "delete-failed");
 });
