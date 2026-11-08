@@ -641,6 +641,16 @@ const t: Record<string, string> = {
  "Planmoy suggestion": "Planmoy-Vorschlag",
  "Apply suggestion": "Vorschlag übernehmen",
  "Suggestions are based on your existing calendar and workspace. The AI never takes action on its own — you always approve.": "Vorschläge basieren auf deinem bestehenden Kalender und Arbeitsbereich. Die KI handelt nie von selbst – du bestätigst immer.",
- "Invalid portal address.": "Ungültige Portal-Adresse."
+ "Invalid portal address.": "Ungültige Portal-Adresse.",
+ "Last updated: November 8, 2026": "Zuletzt aktualisiert: 8. November 2026",
+ "Medication reminders (optional): the medication names, doses and times you enter, and whether you mark them as taken": "Medikamentenerinnerungen (optional): die von dir eingegebenen Medikamentennamen, Dosen und Zeiten sowie ob du sie als eingenommen markierst",
+ "Sign-in data: if you sign in with Google or Apple, the account identifier and email address that provider shares with us": "Anmeldedaten: Wenn du dich mit Google oder Apple anmeldest, die Konto-Kennung und E-Mail-Adresse, die dieser Anbieter mit uns teilt",
+ "Usage counters: the number of AI requests you have used in your plan's usage period": "Nutzungszähler: die Anzahl der KI-Anfragen, die du im Nutzungszeitraum deines Plans verbraucht hast",
+ "Payments: on the web, payments are taken by Paddle; we do not see or store your card details. We keep only your plan and subscription status.": "Zahlungen: Im Web nimmt Paddle die Zahlungen entgegen; wir sehen oder speichern deine Kartendaten nicht. Wir speichern nur deinen Plan und Abostatus.",
+ "web payments, invoicing and taxes (Merchant of Record)": "Webzahlungen, Rechnungsstellung und Steuern (Merchant of Record)",
+ "only when you choose to sign in with them": "nur wenn du dich für die Anmeldung damit entscheidest",
+ "website hosting": "Website-Hosting",
+ "when a map is shown on a business page": "wenn auf einer Unternehmensseite eine Karte angezeigt wird",
+ "To exercise the rights above, write to destek@planmoy.com with information to verify your identity. Requests are resolved within 30 days at the latest. You can also delete directly in the app: Account > Delete account and data.": "Um die oben genannten Rechte auszuüben, schreibe an destek@planmoy.com und füge Angaben zur Identitätsprüfung bei. Anfragen werden spätestens innerhalb von 30 Tagen bearbeitet. Du kannst auch direkt in der App löschen: Konto > Konto und Daten löschen."
 };
 export default t;

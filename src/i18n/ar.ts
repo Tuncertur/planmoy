@@ -641,6 +641,16 @@ const t: Record<string, string> = {
  "Planmoy suggestion": "اقتراح من Planmoy",
  "Apply suggestion": "تطبيق الاقتراح",
  "Suggestions are based on your existing calendar and workspace. The AI never takes action on its own — you always approve.": "تستند الاقتراحات إلى تقويمك ومساحة عملك الحاليين. لا يتخذ الذكاء الاصطناعي أي إجراء من تلقاء نفسه — فأنت توافق دائمًا.",
- "Invalid portal address.": "عنوان البوابة غير صالح."
+ "Invalid portal address.": "عنوان البوابة غير صالح.",
+ "Last updated: November 8, 2026": "آخر تحديث: 8 نوفمبر 2026",
+ "Medication reminders (optional): the medication names, doses and times you enter, and whether you mark them as taken": "تذكيرات الأدوية (اختياري): أسماء الأدوية والجرعات والأوقات التي تدخلها، وما إذا كنت تضع علامة على تناولها",
+ "Sign-in data: if you sign in with Google or Apple, the account identifier and email address that provider shares with us": "بيانات تسجيل الدخول: إذا سجّلت الدخول عبر Google أو Apple، فمعرّف الحساب والبريد الإلكتروني اللذان يشاركهما هذا المزوّد معنا",
+ "Usage counters: the number of AI requests you have used in your plan's usage period": "عدّادات الاستخدام: عدد طلبات الذكاء الاصطناعي التي استخدمتها في فترة استخدام خطتك",
+ "Payments: on the web, payments are taken by Paddle; we do not see or store your card details. We keep only your plan and subscription status.": "المدفوعات: على الويب تتولى Paddle استلام المدفوعات؛ نحن لا نرى بيانات بطاقتك ولا نخزّنها. نحتفظ فقط بخطتك وحالة اشتراكك.",
+ "web payments, invoicing and taxes (Merchant of Record)": "مدفوعات الويب والفوترة والضرائب (التاجر المسجّل Merchant of Record)",
+ "only when you choose to sign in with them": "فقط عندما تختار تسجيل الدخول بهما",
+ "website hosting": "استضافة موقع الويب",
+ "when a map is shown on a business page": "عند عرض خريطة في صفحة نشاط تجاري",
+ "To exercise the rights above, write to destek@planmoy.com with information to verify your identity. Requests are resolved within 30 days at the latest. You can also delete directly in the app: Account > Delete account and data.": "لممارسة الحقوق أعلاه، اكتب إلى destek@planmoy.com مع معلومات للتحقق من هويتك. تُحسم الطلبات خلال 30 يومًا كحد أقصى. يمكنك أيضًا الحذف مباشرة داخل التطبيق: الحساب > حذف الحساب والبيانات."
 };
 export default t;
