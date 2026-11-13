@@ -23,7 +23,7 @@ export function LanguageSwitcher() {
   useEffect(() => subscribeLang(() => setLang(getActiveLang())), []);
 
   return (
-    <details className="theme-switcher" style={{ right: 116 }}>
+    <details className="theme-switcher lang-switcher">
       <summary className="theme-trigger">
         <span style={{ fontSize: 14 }}>{LANG_META[lang].flag}</span>
         <span>{LANG_META[lang].label}</span>

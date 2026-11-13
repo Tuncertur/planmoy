@@ -655,6 +655,12 @@ const t: Record<string, string> = {
  "website hosting": "хостинг сайта",
  "when a map is shown on a business page": "когда на странице бизнеса показывается карта",
  "To exercise the rights above, write to destek@planmoy.com with information to verify your identity. Requests are resolved within 30 days at the latest. You can also delete directly in the app: Account > Delete account and data.": "Чтобы воспользоваться перечисленными правами, напишите на destek@planmoy.com и приложите сведения для подтверждения личности. Запросы рассматриваются не позднее 30 дней. Вы также можете удалить данные прямо в приложении: Аккаунт > Удалить аккаунт и данные.",
- "Medication time": "Время приёма лекарства"
+ "Medication time": "Время приёма лекарства",
+ "To continue, tick the box above: accepting the Terms and Privacy Policy is required.": "Чтобы продолжить, отметьте флажок выше: необходимо принять Условия использования и Политику конфиденциальности.",
+ "I have read and accept the Terms of Use, Privacy and Refund Policies.": "Я прочитал(а) и принимаю Условия использования, Политику конфиденциальности и Политику возврата.",
+ "See and read each one": "Посмотреть и прочитать каждый",
+ "Terms of Use": "Условия использования",
+ "Refund Policy (optional)": "Политика возврата (необязательно)",
+ "Read": "Читать"
 };
 export default t;

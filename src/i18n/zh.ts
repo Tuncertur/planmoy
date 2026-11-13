@@ -655,6 +655,12 @@ const t: Record<string, string> = {
  "website hosting": "网站托管",
  "when a map is shown on a business page": "当企业页面显示地图时",
  "To exercise the rights above, write to destek@planmoy.com with information to verify your identity. Requests are resolved within 30 days at the latest. You can also delete directly in the app: Account > Delete account and data.": "如需行使上述权利，请发送邮件至 destek@planmoy.com，并附上用于核实身份的信息。请求最迟在 30 天内处理。你也可以直接在应用内删除：账户 > 删除账户和数据。",
- "Medication time": "该吃药了"
+ "Medication time": "该吃药了",
+ "To continue, tick the box above: accepting the Terms and Privacy Policy is required.": "要继续，请勾选上方的复选框：必须接受使用条款和隐私政策。",
+ "I have read and accept the Terms of Use, Privacy and Refund Policies.": "我已阅读并接受使用条款、隐私政策和退款政策。",
+ "See and read each one": "逐项查看并阅读",
+ "Terms of Use": "使用条款",
+ "Refund Policy (optional)": "退款政策（可选）",
+ "Read": "阅读"
 };
 export default t;

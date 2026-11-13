@@ -1,9 +1,11 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { ArrowRight, CalendarDays, Check, Eye, EyeOff, Mail, ShieldCheck, Sparkles, Users } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ArrowRight, CalendarDays, Check, ChevronDown, Eye, EyeOff, Mail, ShieldCheck, Sparkles, Users } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { tt, type Dict } from "../lib/i18n";
 import { isNativeApp } from "../lib/paddle";
 import { SHOT_MODE } from "../lib/shotMode";
+import { loadConsent, saveConsent, consentOk, consentAll, type Consent } from "../lib/consent";
 import { startNativeOAuth, signInWithAppleNative, appleSignInAvailable, type OAuthProvider } from "../lib/nativeAuth";
 
 // Bu ekran FireVibe'ın gerçek src/routes/auth.tsx dosyasındaki class'ları
@@ -70,13 +72,15 @@ function ChooseTile({
   );
 }
 
-export function AuthScreen({ onOpenLegal }: { onOpenLegal: () => void }) {
+export function AuthScreen(_props: { onOpenLegal?: () => void }) {
   const [screen, setScreen] = useState<Screen>("choose");
   const [mode, setMode] = useState<"signin" | "signup">("signup");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [consent, setConsent] = useState(false);
+  const [consent, setConsent] = useState<Consent>(loadConsent);
+  const [consentOpen, setConsentOpen] = useState(false);
+  const [consentShake, setConsentShake] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resetSent, setResetSent] = useState(false);
@@ -93,12 +97,24 @@ export function AuthScreen({ onOpenLegal }: { onOpenLegal: () => void }) {
     else setResetSent(true);
   }
 
+  function updateConsent(next: Consent) {
+    setConsent(next);
+    saveConsent(next);
+    if (consentOk(next)) setError(null);
+  }
+
+  // Giriş yöntemi ne olursa olsun (Google, Apple, e-posta, Demo) önce Koşullar + Gizlilik onayı gerekir.
+  function guard(): boolean {
+    if (consentOk(consent)) return true;
+    setError(tt({ tr: "Devam etmek için yukarıdaki kutuyu işaretle: Koşullar ve Gizlilik kabulü gerekli.", en: "To continue, tick the box above: accepting the Terms and Privacy Policy is required." }));
+    setConsentShake(true);
+    window.setTimeout(() => setConsentShake(false), 500);
+    return false;
+  }
+
   async function submit(e: FormEvent) {
     e.preventDefault();
-    if (mode === "signup" && !consent) {
-      setError(tt({ tr: "Devam etmek için Kullanım Koşulları ve Gizlilik Politikasını kabul etmelisin.", en: "You must accept the Terms and Privacy Policy to continue." }));
-      return;
-    }
+    if (!guard()) return;
     setBusy(true);
     setError(null);
     const { error } =
@@ -195,10 +211,15 @@ export function AuthScreen({ onOpenLegal }: { onOpenLegal: () => void }) {
 
           {screen === "choose" && (
             <div className="auth-choice-grid">
-              <ChooseTile icon={<span className="google-mark">G</span>} label={tt(copy.google)} onClick={() => signInWithProvider("google")} />
-              {appleSignInAvailable() && <ChooseTile icon={<svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.37 12.64c-.02-2.27 1.86-3.36 1.94-3.41-1.06-1.55-2.7-1.76-3.28-1.79-1.4-.14-2.72.82-3.43.82-.71 0-1.8-.8-2.96-.78-1.52.02-2.93.89-3.71 2.25-1.58 2.74-.4 6.8 1.14 9.03.75 1.09 1.65 2.31 2.82 2.27 1.13-.05 1.56-.73 2.93-.73 1.37 0 1.75.73 2.95.71 1.22-.02 1.99-1.1 2.73-2.2.86-1.26 1.22-2.48 1.24-2.54-.03-.01-2.37-.91-2.4-3.62zM14.12 5.97c.62-.75 1.04-1.8.93-2.84-.9.04-1.99.6-2.64 1.35-.58.67-1.09 1.74-.95 2.76 1 .08 2.03-.51 2.66-1.27z"/></svg>} label={tt(copy.apple)} onClick={signInWithApple} /> }
+              <ChooseTile icon={<span className="google-mark">G</span>} label={tt(copy.google)} onClick={() => { if (guard()) void signInWithProvider("google"); }} />
+              {appleSignInAvailable() && <ChooseTile icon={<svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.37 12.64c-.02-2.27 1.86-3.36 1.94-3.41-1.06-1.55-2.7-1.76-3.28-1.79-1.4-.14-2.72.82-3.43.82-.71 0-1.8-.8-2.96-.78-1.52.02-2.93.89-3.71 2.25-1.58 2.74-.4 6.8 1.14 9.03.75 1.09 1.65 2.31 2.82 2.27 1.13-.05 1.56-.73 2.93-.73 1.37 0 1.75.73 2.95.71 1.22-.02 1.99-1.1 2.73-2.2.86-1.26 1.22-2.48 1.24-2.54-.03-.01-2.37-.91-2.4-3.62zM14.12 5.97c.62-.75 1.04-1.8.93-2.84-.9.04-1.99.6-2.64 1.35-.58.67-1.09 1.74-.95 2.76 1 .08 2.03-.51 2.66-1.27z"/></svg>} label={tt(copy.apple)} onClick={() => { if (guard()) void signInWithApple(); }} /> }
               <ChooseTile icon={<Mail size={17} />} label={tt(copy.emailBtn)} onClick={() => setScreen("email")} />
-              <ChooseTile icon={<Sparkles size={17} />} label={tt(copy.demoBtn)} onClick={tryDemo} />
+              <ChooseTile icon={<Sparkles size={17} />} label={tt(copy.demoBtn)} onClick={() => { if (guard()) void tryDemo(); }} />
+            </div>
+          )}
+          {screen === "choose" && error && (
+            <div className="form-error" role="alert">
+              <p>{error}</p>
             </div>
           )}
 
@@ -244,17 +265,6 @@ export function AuthScreen({ onOpenLegal }: { onOpenLegal: () => void }) {
                   >
                     {tt(copy.forgot)}
                   </button>
-                )}
-                {mode === "signup" && (
-                  <label className="auth-consent">
-                    <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
-                    <span className="auth-consent-box">
-                      <Check size={11} />
-                    </span>
-                    <span className="auth-consent-text">
-                      {tt({ tr: "Kullanım Koşulları ve Gizlilik Politikasını okudum, kabul ediyorum.", en: "I have read and accept the Terms of Use and Privacy Policy." })}
-                    </span>
-                  </label>
                 )}
                 {error && (
                   <div className="form-error" role="alert">
@@ -313,9 +323,43 @@ export function AuthScreen({ onOpenLegal }: { onOpenLegal: () => void }) {
             </>
           )}
 
-          <p className="auth-legal">
-            {tt(copy.legal)} <a href="/privacy" onClick={(e) => { e.preventDefault(); onOpenLegal(); }} style={{ cursor: "pointer" }}>{tt(copy.privacy)}</a>
-          </p>
+          {screen !== "reset" && (
+            <div className={"legal-accept" + (consentShake ? " shake" : "")} data-ok={consentOk(consent)}>
+              <label className="legal-master">
+                <input
+                  type="checkbox"
+                  checked={consentAll(consent)}
+                  onChange={(e) => updateConsent({ terms: e.target.checked, privacy: e.target.checked, refund: e.target.checked })}
+                />
+                <span className="legal-box"><Check size={13} /></span>
+                <span className="legal-master-text">
+                  {tt({ tr: "Kullanım Koşulları, Gizlilik ve İade Politikasını okudum, hepsini kabul ediyorum.", en: "I have read and accept the Terms of Use, Privacy and Refund Policies." })}
+                </span>
+              </label>
+              <button type="button" className="legal-more" aria-expanded={consentOpen} onClick={() => setConsentOpen((v) => !v)}>
+                {tt({ tr: "Tek tek gör / oku", en: "See and read each one" })}
+                <ChevronDown size={14} style={{ transform: consentOpen ? "rotate(180deg)" : "none" }} />
+              </button>
+              {consentOpen && (
+                <div className="legal-rows">
+                  {([
+                    ["terms", { tr: "Kullanım Koşulları", en: "Terms of Use" }, "/terms", true],
+                    ["privacy", { tr: "Gizlilik Politikası", en: "Privacy Policy" }, "/privacy", true],
+                    ["refund", { tr: "İade Politikası (isteğe bağlı)", en: "Refund Policy (optional)" }, "/refund", false],
+                  ] as const).map(([key, label, href]) => (
+                    <div className="legal-row" key={key}>
+                      <label>
+                        <input type="checkbox" checked={consent[key]} onChange={(e) => updateConsent({ ...consent, [key]: e.target.checked })} />
+                        <span className="legal-box"><Check size={11} /></span>
+                        <span>{tt(label)}</span>
+                      </label>
+                      <Link to={href}>{tt({ tr: "Oku", en: "Read" })}</Link>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           <p className="auth-security">
             <ShieldCheck size={14} /> {tt(copy.privacy)}
           </p>

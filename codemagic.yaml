@@ -80,6 +80,9 @@ workflows:
       - name: Planmoy uygulama ikonu (Capacitor varsayilan ikonu YERINE)
         script: |
           cp resources/icon-1024.png "ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png"
+          for f in splash-2732x2732.png splash-2732x2732-1.png splash-2732x2732-2.png; do
+            [ -d ios/App/App/Assets.xcassets/Splash.imageset ] && cp resources/splash-2732.png "ios/App/App/Assets.xcassets/Splash.imageset/$f" || true
+          done
 
       - name: OAuth donus adresi (com.planmoy.app://auth-callback)
         script: |
@@ -175,6 +178,9 @@ workflows:
       - name: Planmoy ikonu ve konum izin metni
         script: |
           cp resources/icon-1024.png "ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png"
+          for f in splash-2732x2732.png splash-2732x2732-1.png splash-2732x2732-2.png; do
+            [ -d ios/App/App/Assets.xcassets/Splash.imageset ] && cp resources/splash-2732.png "ios/App/App/Assets.xcassets/Splash.imageset/$f" || true
+          done
           /usr/libexec/PlistBuddy -c "Add :NSLocationWhenInUseUsageDescription string 'Planmoy, yakınındaki restoran, otel ve gezilecek yerleri göstermek için konumunu kullanır.'" ios/App/App/Info.plist || true
       - name: Simulator icin derle (imzasiz)
         script: |
@@ -236,6 +242,9 @@ workflows:
           /usr/libexec/PlistBuddy -c "Add :NSCameraUsageDescription string 'Planmoy, StyleSync için kıyafet fotoğrafı çekmene izin ister.'" $PL || true
           /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryUsageDescription string 'Planmoy, StyleSync için galerinden fotoğraf seçmene izin ister.'" $PL || true
           cp resources/icon-1024.png "ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png"
+          for f in splash-2732x2732.png splash-2732x2732-1.png splash-2732x2732-2.png; do
+            [ -d ios/App/App/Assets.xcassets/Splash.imageset ] && cp resources/splash-2732.png "ios/App/App/Assets.xcassets/Splash.imageset/$f" || true
+          done
           plutil -lint $PL ios/App/App/App.entitlements
       - name: Simulator icin RELEASE derle (imzasiz)
         script: |

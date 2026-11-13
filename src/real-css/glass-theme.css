@@ -1,0 +1,142 @@
+/* ===== Glass tema: şeffaf, buzlu cam yüzeyler (glassmorphism) =====
+   Varsayılan tema. Diğer temalara dokunmaz; yalnız html[data-theme="glass"] altında çalışır.
+   Sabit butonlar (tema/dil) tüm temalarda güvenli alanı (çentik/Dynamic Island) hesaba katar. */
+
+/* --- Tüm temalar: sabit tema/dil butonları güvenli alanın altında --- */
+.theme-switcher { top: calc(max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px)) + 12px); right: calc(max(env(safe-area-inset-right, 0px), var(--safe-area-inset-right, 0px)) + 14px); }
+.theme-switcher.lang-switcher { right: calc(max(env(safe-area-inset-right, 0px), var(--safe-area-inset-right, 0px)) + 116px); }
+@media (max-width: 680px) {
+  .theme-switcher.lang-switcher { right: calc(max(env(safe-area-inset-right, 0px), var(--safe-area-inset-right, 0px)) + 58px); }
+  .lang-switcher .theme-trigger span:first-child { display: inline !important; }
+  .lang-switcher .theme-trigger span:nth-child(2) { display: none !important; }
+  .lang-switcher .theme-trigger { width: 36px; padding: 0; justify-content: center; }
+}
+/* Giriş sayfası sabit butonların altından başlasın */
+.auth-page { padding-top: calc(max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px)) + 56px); }
+
+/* --- Giriş onayı (Hepsini kabul et) tüm temalarda --- */
+.legal-accept { margin-top: 16px; padding: 12px 14px; border-radius: 16px; border: 1px solid rgba(255,255,255,.22); background: rgba(255,255,255,.07); }
+.legal-accept[data-ok="true"] { border-color: rgba(120,230,190,.55); }
+.legal-accept.shake { animation: legal-shake .45s; border-color: #ffb4a8; }
+@keyframes legal-shake { 20%,60% { transform: translateX(-5px); } 40%,80% { transform: translateX(5px); } }
+.legal-accept label { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 13.5px; line-height: 1.4; }
+.legal-accept input[type="checkbox"] { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.legal-box { flex: none; width: 22px; height: 22px; border-radius: 7px; border: 1.5px solid rgba(255,255,255,.55); display: grid; place-items: center; color: transparent; background: rgba(255,255,255,.08); transition: all .15s; margin-top: 1px; }
+.legal-accept input:checked + .legal-box { background: linear-gradient(135deg,#6ac7ec,#8b7cff); border-color: transparent; color: #fff; }
+.legal-accept input:focus-visible + .legal-box { outline: 2px solid #8fe3ff; outline-offset: 2px; }
+.legal-master-text { font-weight: 650; }
+.space-auth .legal-accept .legal-more, .legal-more { display: inline-flex; align-items: center; gap: 4px; margin: 8px 0 0 32px; padding: 4px 0; background: none !important; border: 0 !important; box-shadow: none !important; color: #8ddcff !important; font-size: 12.5px; cursor: pointer; }
+.legal-rows { margin-top: 6px; display: grid; gap: 4px; }
+.legal-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 0 6px 2px; border-top: 1px solid rgba(255,255,255,.12); }
+.legal-row label { font-size: 13px; align-items: center; }
+.legal-row a { flex: none; padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,.12); color: #8ddcff; font-size: 12.5px; font-weight: 700; text-decoration: none; }
+
+/* --- Glass tema --- */
+html[data-theme="glass"] {
+  --space-ink: #0b1633; --space-panel: rgba(255,255,255,.10); --space-panel-2: rgba(255,255,255,.15);
+  --space-line: rgba(255,255,255,.24); --space-text: #f5f8ff; --space-muted: #d3e0f6;
+  --space-cyan: #8fe3ff; --space-violet: #b5a8ff; --space-gold: #ffd98a;
+  color-scheme: dark;
+}
+html[data-theme="glass"] body,
+html[data-theme="glass"] .app-shell, html[data-theme="glass"] .business-app,
+html[data-theme="glass"] .calendar-space, html[data-theme="glass"] .space-auth, html[data-theme="glass"] .space-gate,
+html[data-theme="glass"] .auth-page, html[data-theme="glass"] .legal-page {
+  background-color: #0b1633 !important;
+  background-image:
+    radial-gradient(60vmax 60vmax at 12% 8%, rgba(70,190,255,.55), transparent 60%),
+    radial-gradient(55vmax 55vmax at 92% 18%, rgba(155,130,255,.50), transparent 62%),
+    radial-gradient(60vmax 60vmax at 55% 100%, rgba(80,225,190,.38), transparent 62%),
+    linear-gradient(160deg, #0c2147 0%, #16205a 55%, #231a57 100%) !important;
+  background-attachment: fixed !important;
+  color: var(--space-text) !important;
+}
+html[data-theme="glass"] .app-shell::before, html[data-theme="glass"] .business-app::before { opacity: 0 !important; }
+
+/* Cam yüzeyler */
+html[data-theme="glass"] .panel, html[data-theme="glass"] .stat-card, html[data-theme="glass"] .business-stat,
+html[data-theme="glass"] .business-panel, html[data-theme="glass"] .mode-switch button, html[data-theme="glass"] .recommendation-band,
+html[data-theme="glass"] .business-tools a, html[data-theme="glass"] .personal-stat, html[data-theme="glass"] .tool-card,
+html[data-theme="glass"] .customer-row, html[data-theme="glass"] .quick-grid a, html[data-theme="glass"] .quick-grid button,
+html[data-theme="glass"] .settings-tabs button, html[data-theme="glass"] .overview-blue .recommendation-button,
+html[data-theme="glass"] .recommendation-button, html[data-theme="glass"] .auth-card, html[data-theme="glass"] .space-auth section,
+html[data-theme="glass"] .legal-wrap, html[data-theme="glass"] .workspace, html[data-theme="glass"] .business-context,
+html[data-theme="glass"] .account-card, html[data-theme="glass"] .theme-menu, html[data-theme="glass"] .auth-provider-grid button {
+  background: linear-gradient(145deg, rgba(255,255,255,.17), rgba(255,255,255,.06)) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(170%); backdrop-filter: blur(22px) saturate(170%);
+  border: 1px solid rgba(255,255,255,.26) !important;
+  border-radius: 20px;
+  box-shadow: 0 12px 40px rgba(5,10,40,.38), inset 0 1px 0 rgba(255,255,255,.42), inset 0 -1px 0 rgba(255,255,255,.06) !important;
+  color: var(--space-text) !important;
+}
+html[data-theme="glass"] .sidebar, html[data-theme="glass"] .business-sidebar {
+  background: linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.05)) !important;
+  -webkit-backdrop-filter: blur(26px) saturate(170%); backdrop-filter: blur(26px) saturate(170%);
+  border-right: 1px solid rgba(255,255,255,.22) !important; box-shadow: 8px 0 40px rgba(5,10,40,.3) !important;
+}
+html[data-theme="glass"] .mobile-bottom-nav {
+  background: rgba(255,255,255,.14) !important; border-top: 1px solid rgba(255,255,255,.28) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(170%); backdrop-filter: blur(24px) saturate(170%);
+}
+html[data-theme="glass"] .mobile-bottom-nav button { color: #cfe0f8 !important; }
+html[data-theme="glass"] .mobile-bottom-nav button.active { color: #fff !important; }
+html[data-theme="glass"] .topbar, html[data-theme="glass"] .business-topbar { border-color: rgba(255,255,255,.18) !important; }
+
+/* Yazılar */
+html[data-theme="glass"] h1, html[data-theme="glass"] h2, html[data-theme="glass"] h3, html[data-theme="glass"] h4,
+html[data-theme="glass"] .auth-card h1, html[data-theme="glass"] .auth-intro h2, html[data-theme="glass"] .auth-brand,
+html[data-theme="glass"] .panel h2, html[data-theme="glass"] .topbar h1, html[data-theme="glass"] .stat-card strong,
+html[data-theme="glass"] .nav-item.active, html[data-theme="glass"] .legal-wrap h1, html[data-theme="glass"] .legal-wrap h2 { color: #fff !important; }
+html[data-theme="glass"] p, html[data-theme="glass"] small, html[data-theme="glass"] label,
+html[data-theme="glass"] .auth-lead, html[data-theme="glass"] .legal-wrap li, html[data-theme="glass"] .legal-wrap p { color: var(--space-muted) !important; }
+html[data-theme="glass"] .eyebrow, html[data-theme="glass"] .blue-label { color: var(--space-cyan) !important; }
+html[data-theme="glass"] .auth-brand span { color: #4aa8ff !important; }
+html[data-theme="glass"] .auth-brand i { background: #6ac7ec !important; }
+html[data-theme="glass"] a { color: #8ddcff; }
+
+/* Girdiler */
+html[data-theme="glass"] input, html[data-theme="glass"] textarea, html[data-theme="glass"] select,
+html[data-theme="glass"] .search-field, html[data-theme="glass"] .business-search {
+  background: rgba(255,255,255,.10) !important; border: 1px solid rgba(255,255,255,.28) !important; color: #fff !important;
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border-radius: 14px;
+}
+html[data-theme="glass"] input::placeholder, html[data-theme="glass"] textarea::placeholder { color: rgba(225,235,252,.65) !important; }
+html[data-theme="glass"] input[type="checkbox"] { -webkit-backdrop-filter: none; backdrop-filter: none; }
+
+/* Düğmeler: buzlu cam, birincil düğme parlak cam */
+html[data-theme="glass"] .secondary-button, html[data-theme="glass"] .filter-button, html[data-theme="glass"] .theme-trigger {
+  background: rgba(255,255,255,.14) !important; border: 1px solid rgba(255,255,255,.30) !important; color: #fff !important;
+  -webkit-backdrop-filter: blur(16px) saturate(160%); backdrop-filter: blur(16px) saturate(160%);
+  box-shadow: 0 6px 22px rgba(5,10,40,.28), inset 0 1px 0 rgba(255,255,255,.4) !important;
+}
+html[data-theme="glass"] .primary-button, html[data-theme="glass"] .business-primary, html[data-theme="glass"] .auth-submit,
+html[data-theme="glass"] .space-auth section button.auth-submit {
+  background: linear-gradient(135deg, rgba(106,199,236,.85), rgba(139,124,255,.85)) !important;
+  border: 1px solid rgba(255,255,255,.45) !important; color: #fff !important; border-radius: 16px;
+  box-shadow: 0 10px 28px rgba(90,90,230,.45), inset 0 1px 0 rgba(255,255,255,.55) !important;
+}
+/* Giriş yöntemi seçenekleri */
+html[data-theme="glass"] .auth-choice-grid button, html[data-theme="glass"] .auth-provider-grid button {
+  background: linear-gradient(145deg, rgba(255,255,255,.22), rgba(255,255,255,.08)) !important; color: #fff !important;
+  border: 1px solid rgba(255,255,255,.34) !important; border-radius: 18px;
+  box-shadow: 0 8px 26px rgba(5,10,40,.32), inset 0 1px 0 rgba(255,255,255,.5) !important;
+}
+html[data-theme="glass"] .auth-choice-grid button * { color: #fff !important; }
+html[data-theme="glass"] .auth-choice-grid .google-mark { color: #4aa8ff !important; }
+
+/* Menüler (tema/dil) ve etiketler */
+html[data-theme="glass"] .theme-menu { background: rgba(18,30,70,.72) !important; }
+html[data-theme="glass"] .theme-menu b, html[data-theme="glass"] .theme-menu small { color: #fff !important; }
+html[data-theme="glass"] .tag, html[data-theme="glass"] .status, html[data-theme="glass"] .stock-status {
+  background: rgba(255,255,255,.16) !important; color: #e6f6ff !important; border: 1px solid rgba(255,255,255,.2);
+}
+html[data-theme="glass"] .nav-item { color: #d6e4fa !important; }
+html[data-theme="glass"] .nav-item.active, html[data-theme="glass"] .nav-item:hover {
+  background: rgba(255,255,255,.16) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.4) !important;
+}
+html[data-theme="glass"] .legal-row a, html[data-theme="glass"] .legal-more { color: #8ddcff !important; }
+
+html[data-theme="glass"] .auth-intro b, html[data-theme="glass"] .auth-intro li, html[data-theme="glass"] .auth-intro span { color: #eaf3ff; }
+html[data-theme="glass"] .auth-intro .auth-brand span { color: #4aa8ff !important; }
+html[data-theme="glass"] .form-error { background: rgba(255,90,80,.20) !important; border: 1px solid rgba(255,170,160,.55) !important; border-radius: 14px; }
+html[data-theme="glass"] .form-error p { color: #ffe3de !important; }
