@@ -50,6 +50,7 @@
 @import "./real-css/content-moderation.css";
 @import "./real-css/appointment-detail.css";
 @import "./real-css/task-pinning.css";
+@import "./real-css/glass-theme.css";
 
 html, body, #root { min-height: 100%; }
 
