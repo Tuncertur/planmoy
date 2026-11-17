@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Check, Palette } from "lucide-react";
 import { safeGet, safeSet } from "../lib/safeStorage";
+import { useDismissDetails } from "../lib/useDismissDetails";
 
 export type Theme = "glass" | "violet" | "orbit" | "ocean" | "mono" | "sun" | "aurora";
 const themes: { id: Theme; label: string; note: string; swatches: string[] }[] = [
@@ -15,6 +16,7 @@ const themes: { id: Theme; label: string; note: string; swatches: string[] }[] =
 
 export function ThemeSwitcher() {
   const [theme, setTheme] = useState<Theme>("glass");
+  const menuRef = useDismissDetails();
 
   useEffect(() => {
     const saved = safeGet("planmoy-theme-v2") as Theme | null;
@@ -27,12 +29,13 @@ export function ThemeSwitcher() {
     setTheme(next);
     document.documentElement.dataset["theme"] = next;
     safeSet("planmoy-theme-v2", next);
+    if (menuRef.current) menuRef.current.open = false;
   }
 
   const current = themes.find((item) => item.id === theme) ?? themes[0]!;
 
   return (
-    <details className="theme-switcher">
+    <details className="theme-switcher" ref={menuRef}>
       <summary className="theme-trigger">
         <Palette size={16} />
         <span>Tema</span>
