@@ -122,7 +122,9 @@ html[data-theme="glass"] .auth-choice-grid button, html[data-theme="glass"] .aut
   box-shadow: 0 8px 26px rgba(5,10,40,.32), inset 0 1px 0 rgba(255,255,255,.5) !important;
 }
 html[data-theme="glass"] .auth-choice-grid button * { color: #fff !important; }
-html[data-theme="glass"] .auth-choice-grid .google-mark { color: #4aa8ff !important; }
+html[data-theme="glass"] .auth-choice-grid .auth-choice-icon { background: #fff !important; box-shadow: 0 2px 8px rgba(8,16,48,.35); }
+html[data-theme="glass"] .auth-choice-grid .auth-choice-icon, html[data-theme="glass"] .auth-choice-grid .auth-choice-icon * { color: #16205a !important; }
+html[data-theme="glass"] .auth-choice-grid .google-mark { color: #1769c2 !important; }
 
 /* Menüler (tema/dil) ve etiketler */
 html[data-theme="glass"] .theme-menu { background: rgba(18,30,70,.72) !important; }
@@ -140,3 +142,6 @@ html[data-theme="glass"] .auth-intro b, html[data-theme="glass"] .auth-intro li,
 html[data-theme="glass"] .auth-intro .auth-brand span { color: #4aa8ff !important; }
 html[data-theme="glass"] .form-error { background: rgba(255,90,80,.20) !important; border: 1px solid rgba(255,170,160,.55) !important; border-radius: 14px; }
 html[data-theme="glass"] .form-error p { color: #ffe3de !important; }
+
+/* Giriş ekranı özellik ikonları: açık zeminde koyu lacivert ikon (beyaz-üstü-beyaz görünmezliği giderildi) */
+html[data-theme="glass"] .auth-feature-icon > svg:first-child { color: #16205a !important; stroke-width: 2.2; }

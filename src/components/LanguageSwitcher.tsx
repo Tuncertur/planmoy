@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useDismissDetails } from "../lib/useDismissDetails";
 import { SUPPORTED_LANGS, getActiveLang, setActiveLang, subscribeLang, type Lang } from "../lib/i18n";
 
 // Sağ üstte, tema butonunun yanında duran dil değiştirici. Etkin dil +
@@ -19,11 +20,12 @@ const LANG_META: Record<Lang, { flag: string; label: string }> = {
 
 export function LanguageSwitcher() {
   const [lang, setLang] = useState<Lang>(getActiveLang());
+  const menuRef = useDismissDetails();
 
   useEffect(() => subscribeLang(() => setLang(getActiveLang())), []);
 
   return (
-    <details className="theme-switcher lang-switcher">
+    <details className="theme-switcher lang-switcher" ref={menuRef}>
       <summary className="theme-trigger">
         <span style={{ fontSize: 14 }}>{LANG_META[lang].flag}</span>
         <span>{LANG_META[lang].label}</span>
@@ -37,7 +39,7 @@ export function LanguageSwitcher() {
         </div>
         <div className="theme-options">
           {SUPPORTED_LANGS.map((l) => (
-            <button key={l} className={lang === l ? "selected" : ""} onClick={() => setActiveLang(l)}>
+            <button key={l} className={lang === l ? "selected" : ""} onClick={() => { setActiveLang(l); if (menuRef.current) menuRef.current.open = false; }}>
               <span style={{ fontSize: 18, width: 28, textAlign: "center" }}>{LANG_META[l].flag}</span>
               <span className="theme-copy">
                 <b>{LANG_META[l].label}</b>
