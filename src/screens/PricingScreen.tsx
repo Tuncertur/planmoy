@@ -19,12 +19,12 @@ const plans: Plan[] = [
   {
     name: "Free start",
     price: "$0",
-    description: tt({ tr: "Hesap açınca 20 AI sorgusu dahil · ödeme yok", en: "20 AI queries included when you create an account · no payment" }),
+    description: tt({ tr: "Temel planlama ücretsiz · ödeme yok", en: "Core planning is free · no payment" }),
     icon: <Clock3 size={20} />,
     features: [
       { tr: "Temel takvim ve randevu akışı", en: "Core calendar and booking flow" },
       { tr: "Kişisel veya işletme alanı", en: "Personal or business space" },
-      { tr: "20 AI sorgusu · ilk kurulum", en: "20 AI queries · first setup" },
+      { tr: "AI özellikleri ücretli planlarda", en: "AI features on paid plans" },
     ],
   },
   {
@@ -36,7 +36,7 @@ const plans: Plan[] = [
     features: [
       { tr: "Sınırsız kişisel randevu ve görev", en: "Unlimited personal appointments and tasks" },
       { tr: "Akıllı hatırlatıcılar ve hızlı destek", en: "Smart reminders and fast assistance" },
-      { tr: "1.000 AI sorgusu / ay", en: "1,000 AI queries / month" },
+      { tr: "200 AI sorgusu / ay", en: "200 AI queries / month" },
     ],
   },
   {
@@ -49,7 +49,7 @@ const plans: Plan[] = [
     features: [
       { tr: "Tek kişi işletmesi için online rezervasyon", en: "Online booking for one-person businesses" },
       { tr: "Müşteri notları ve otomatik hatırlatmalar", en: "Client notes and automated reminders" },
-      { tr: "2.000 AI sorgusu / ay", en: "2,000 AI queries / month" },
+      { tr: "500 AI sorgusu / ay", en: "500 AI queries / month" },
     ],
   },
   {
@@ -59,9 +59,9 @@ const plans: Plan[] = [
     description: tt({ tr: "Büyüyen ekipler için hızlı çalışma alanı.", en: "A fast workspace for growing teams." }),
     icon: <Building2 size={20} />,
     features: [
-      { tr: "Ekip takvimi ve rol bazlı çalışma", en: "Team calendar and role-based workspace" },
+      { tr: "Solo planındaki tüm özellikler", en: "Everything in Solo" },
       { tr: "Hizmet, müşteri ve yoğunluk görünümü", en: "Services, clients and capacity view" },
-      { tr: "3.000 AI sorgusu / ay", en: "3,000 AI queries / month" },
+      { tr: "1.000 AI sorgusu / ay", en: "1,000 AI queries / month" },
     ],
   },
 ];
@@ -144,7 +144,7 @@ function PricingScreenWeb() {
         <div className="trial-badge">
           <ShieldCheck size={16} />
           <strong>{tt({ tr: "İlk kurulum ücretsiz", en: "Free first setup" })}</strong>
-          <span>{tt({ tr: "Hesap açınca 20 AI sorgusu dahil · ödeme yok", en: "20 AI queries included when you create an account · no payment" })}</span>
+          <span>{tt({ tr: "Temel planlama ücretsiz · ödeme yok", en: "Core planning is free · no payment" })}</span>
         </div>
       </section>
 

@@ -661,6 +661,11 @@ const t: Record<string, string> = {
  "See and read each one": "عرض كل مستند وقراءته",
  "Terms of Use": "شروط الاستخدام",
  "Refund Policy (optional)": "سياسة الاسترداد (اختياري)",
- "Read": "قراءة"
+ "Read": "قراءة",
+ "Core planning is free · no payment": "التخطيط الأساسي مجاني · بدون دفع",
+ "AI features on paid plans": "ميزات الذكاء الاصطناعي في الخطط المدفوعة",
+ "200 AI queries / month": "200 استعلام ذكاء اصطناعي / شهر",
+ "500 AI queries / month": "500 استعلام ذكاء اصطناعي / شهر",
+ "Everything in Solo": "كل ما في خطة Solo"
 };
 export default t;
