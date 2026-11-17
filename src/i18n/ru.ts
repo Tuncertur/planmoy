@@ -661,6 +661,11 @@ const t: Record<string, string> = {
  "See and read each one": "Посмотреть и прочитать каждый",
  "Terms of Use": "Условия использования",
  "Refund Policy (optional)": "Политика возврата (необязательно)",
- "Read": "Читать"
+ "Read": "Читать",
+ "Core planning is free · no payment": "Базовое планирование бесплатно · без оплаты",
+ "AI features on paid plans": "Функции ИИ в платных тарифах",
+ "200 AI queries / month": "200 запросов ИИ / мес",
+ "500 AI queries / month": "500 запросов ИИ / мес",
+ "Everything in Solo": "Всё из тарифа Solo"
 };
 export default t;

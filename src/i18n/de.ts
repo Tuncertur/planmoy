@@ -661,6 +661,11 @@ const t: Record<string, string> = {
  "See and read each one": "Einzeln ansehen und lesen",
  "Terms of Use": "Nutzungsbedingungen",
  "Refund Policy (optional)": "Rückerstattungsrichtlinie (optional)",
- "Read": "Lesen"
+ "Read": "Lesen",
+ "Core planning is free · no payment": "Grundplanung kostenlos · keine Zahlung",
+ "AI features on paid plans": "KI-Funktionen in bezahlten Tarifen",
+ "200 AI queries / month": "200 KI-Abfragen / Monat",
+ "500 AI queries / month": "500 KI-Abfragen / Monat",
+ "Everything in Solo": "Alles aus Solo"
 };
 export default t;
