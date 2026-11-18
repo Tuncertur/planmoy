@@ -302,5 +302,17 @@ workflows:
           jarsigner -verify "$AAB" | tee /tmp/jarsigner.txt
           grep -q "jar verified" /tmp/jarsigner.txt || { echo "HATA: AAB imzali degil"; exit 1; }
           ! unzip -p "$AAB" base/manifest/AndroidManifest.xml | strings | grep -q "com[.]planmany" || { echo "HATA: planmany kalintisi"; exit 1; }
+      - name: Build APK (RuStore icin imzali APK; ayni planmoy_keystore)
+        script: |
+          cd android
+          ./gradlew assembleRelease -PversionCodeOverride=$((BUILD_NUMBER + 100))
+      - name: APK imzasini dogrula
+        script: |
+          APK=$(ls android/app/build/outputs/apk/release/*.apk | grep -v unsigned | head -1)
+          [ -n "$APK" ] || { echo "HATA: imzali APK bulunamadi"; exit 1; }
+          jarsigner -verify "$APK" | tee /tmp/jarsigner-apk.txt
+          grep -q "jar verified" /tmp/jarsigner-apk.txt || { echo "HATA: APK imzali degil"; exit 1; }
+          ! unzip -p "$APK" AndroidManifest.xml | strings | grep -q "com[.]planmany" || { echo "HATA: planmany kalintisi"; exit 1; }
     artifacts:
       - android/app/build/outputs/bundle/release/*.aab
+      - android/app/build/outputs/apk/release/*.apk
