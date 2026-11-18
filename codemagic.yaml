@@ -310,9 +310,14 @@ workflows:
         script: |
           APK=$(ls android/app/build/outputs/apk/release/*.apk | grep -v unsigned | head -1)
           [ -n "$APK" ] || { echo "HATA: imzali APK bulunamadi"; exit 1; }
-          jarsigner -verify "$APK" | tee /tmp/jarsigner-apk.txt
-          grep -q "jar verified" /tmp/jarsigner-apk.txt || { echo "HATA: APK imzali degil"; exit 1; }
-          ! unzip -p "$APK" AndroidManifest.xml | strings | grep -q "com[.]planmany" || { echo "HATA: planmany kalintisi"; exit 1; }
+          APKSIGNER=$(ls "$ANDROID_SDK_ROOT"/build-tools/*/apksigner "$ANDROID_HOME"/build-tools/*/apksigner 2>/dev/null | sort -V | tail -1)
+          [ -n "$APKSIGNER" ] || { echo "HATA: apksigner bulunamadi"; exit 1; }
+          "$APKSIGNER" verify --verbose --print-certs "$APK" | tee /tmp/apksigner.txt
+          grep -q "Verifies" /tmp/apksigner.txt || { echo "HATA: APK imzali degil"; exit 1; }
+          AAPT=$(ls "$ANDROID_SDK_ROOT"/build-tools/*/aapt "$ANDROID_HOME"/build-tools/*/aapt 2>/dev/null | sort -V | tail -1)
+          if [ -n "$AAPT" ]; then
+            "$AAPT" dump badging "$APK" | grep -q "^package: name='com.planmoy.app'" || { echo "HATA: paket adi com.planmoy.app degil"; exit 1; }
+          fi
     artifacts:
       - android/app/build/outputs/bundle/release/*.aab
       - android/app/build/outputs/apk/release/*.apk
