@@ -302,8 +302,11 @@ workflows:
           jarsigner -verify "$AAB" | tee /tmp/jarsigner.txt
           grep -q "jar verified" /tmp/jarsigner.txt || { echo "HATA: AAB imzali degil"; exit 1; }
           ! unzip -p "$AAB" base/manifest/AndroidManifest.xml | strings | grep -q "com[.]planmany" || { echo "HATA: planmany kalintisi"; exit 1; }
-      - name: Build APK (RuStore icin imzali APK; ayni planmoy_keystore)
+      - name: Build APK (RuStore RU surumu: Google/Apple girisi YOK; ayni planmoy_keystore)
         script: |
+          # RU derlemesi: yabancı kimlik servisiyle giriş kapalı (406-FZ). AAB (dünya sürümü) yukarıda zaten üretildi.
+          VITE_REGION=ru npm run build
+          npx cap sync android
           cd android
           ./gradlew assembleRelease -PversionCodeOverride=$((BUILD_NUMBER + 100))
       - name: APK imzasini dogrula
