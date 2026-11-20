@@ -17,10 +17,22 @@ import {
 function useToast() {
   const [notice, setNotice] = useState("");
   function notify(message: string) {
-    setNotice(message);
+    // Bu paneller örnek veri gösterir; hiçbir işlem gerçekte kaydedilmez.
+    setNotice(`Örnek ekran · ${message} (gerçek kayıt yapılmadı)`);
     window.setTimeout(() => setNotice(""), 2800);
   }
   return { notice, notify };
+}
+
+function SampleBanner() {
+  return (
+    <div
+      role="note"
+      style={{ margin: "0 0 14px", padding: "10px 14px", borderRadius: 10, border: "1px solid #6b5a1e", background: "rgba(255, 214, 102, 0.12)", color: "#ffe9a6", fontSize: 13, lineHeight: 1.45 }}
+    >
+      <strong>Örnek veri.</strong> Bu bölüm tanıtım amaçlıdır; gerçek işletme veya piyasa verinizi göstermez ve yaptığınız işlemler kaydedilmez.
+    </div>
+  );
 }
 
 function Toast({ notice }: { notice: string }) {
@@ -66,6 +78,7 @@ export function StaffPanel() {
   const { notice, notify } = useToast();
   return (
     <div className="business-content">
+      <SampleBanner />
       <PageAction text="Çalışma saatleri, izinler ve performans" label="Personel ekle" onClick={() => notify("Personel ekleme formu örnek oturumda hazır.")} />
       <section className="business-two-column">
         <article className="business-panel data-panel">
@@ -104,6 +117,7 @@ export function InventoryPanel() {
   ];
   return (
     <div className="business-content">
+      <SampleBanner />
       <PageAction text="Ürün, stok seviyesi ve tedarikçi takibi" label="Ürün ekle" onClick={() => notify("Ürün ekleme formu örnek oturumda hazır.")} />
       <article className="business-panel inventory-panel">
         <PanelHead eyebrow="STOK YÖNETİMİ" title="Ürünler" action={<button className="panel-action" onClick={() => notify("Sipariş listesi açıldı.")}>Sipariş listesi <ArrowRight size={14} /></button>} />
@@ -133,6 +147,7 @@ export function ReportsPanel() {
   const { notice, notify } = useToast();
   return (
     <div className="business-content">
+      <SampleBanner />
       <PageAction text="Ciro, doluluk, müşteri ve hizmet performansı" label="Raporu dışa aktar" onClick={() => notify("Rapor dışa aktarma örnek oturumda hazır.")} icon={<FileDown size={16} />} />
       <section className="business-stat-grid report-stats">
         <article className="business-stat"><span className="stat-icon"><Wallet /></span><p>Aylık ciro</p><strong>₺86.400</strong><small>+15% geçen aya göre</small></article>
@@ -174,6 +189,7 @@ export function MarketingPanel() {
   const toggleChannel = (c: string) => setChannels((v) => (v.includes(c) ? v.filter((x) => x !== c) : [...v, c]));
   return (
     <div className="business-content">
+      <SampleBanner />
       <PageAction text="SMS, WhatsApp ve e-posta kampanyalarını planla" label="Kampanya başlat" onClick={() => notify("Kampanya taslağı hazırlandı.")} icon={<Megaphone size={16} />} />
       <section className="marketing-grid">
         <article className="business-panel campaign-composer">
@@ -224,6 +240,7 @@ export function BusinessSettingsPanel() {
   const [section, setSection] = useState("Genel");
   return (
     <div className="business-content">
+      <SampleBanner />
       <PageAction text="İşletme bilgileri, saatler, hizmetler ve ödeme" label="Değişiklikleri kaydet" onClick={() => notify(`${section} ayarları örnek oturumda kaydedildi.`)} icon={<Check size={16} />} />
       <div className="settings-tabs" role="tablist">
         {["Genel", "Hizmetler", "Saatler", "Entegrasyonlar"].map((tab) => (
@@ -281,6 +298,7 @@ export function LoyaltyPanel() {
   const [threshold, setThreshold] = useState("5");
   return (
     <div className="business-content business-new-module">
+      <SampleBanner />
       <PageAction text="Ziyaretleri puana, puanları sadakate dönüştür" label="Kupon oluştur" onClick={() => notify(`%20 indirim kuponu oluşturuldu · ${threshold} ziyaret`)} icon={<BadgePercent size={16} />} />
       <div className="business-module-grid">
         <article className="business-panel business-feature-panel">
@@ -321,12 +339,13 @@ export function CompetitionPanel() {
   const { notice, notify } = useToast();
   return (
     <div className="business-content business-new-module">
-      <PageAction text="Çevrendeki işletmelerin fiyat ve hizmetlerini karşılaştır" label="Analizi yenile" onClick={() => notify("Piyasa analizi güncellendi.")} icon={<SlidersHorizontal size={16} />} />
+      <SampleBanner />
+      <PageAction text="Çevrendeki işletmelerin fiyat ve hizmetlerini karşılaştır" label="Analizi yenile" onClick={() => notify("Piyasa analizi henüz gerçek veriye bağlı değil.")} icon={<SlidersHorizontal size={16} />} />
       <div className="business-module-grid">
         <article className="business-panel competition-map">
           <ModuleHeader icon={<MapPin />} eyebrow="PİYASA GÖRÜNÜMÜ" title="Yakındaki rekabet" copy="Bölgendeki benzer işletmeleri ve konumlarını incele." />
           <div className="map-frame business-map">
-            <iframe title="Rakip işletme haritası" src="https://www.google.com/maps?output=embed" loading="lazy" style={{ width: "100%", height: 240, border: 0, borderRadius: 12 }} />
+            <p style={{ margin: 0, padding: "40px 16px", textAlign: "center", opacity: 0.8 }}>Harita bu sürümde yok. Yakındaki işletmeler gerçek veriyle bağlandığında burada görünecek.</p>
           </div>
         </article>
         <article className="business-panel price-compare">
@@ -336,7 +355,7 @@ export function CompetitionPanel() {
               <div className="compare-row" key={name}>
                 <b>{name}</b>
                 <span>Senin fiyatın <strong>{mine}</strong></span>
-                <span>Piyasa ort. <strong>{market}</strong></span>
+                <span>Örnek piyasa ort. <strong>{market}</strong></span>
                 <em className={verdict === "Gözden geçir" ? "warn" : ""}>{verdict}</em>
               </div>
             ))}
@@ -358,6 +377,7 @@ export function PerformancePanel() {
   ];
   return (
     <div className="business-content business-new-module">
+      <SampleBanner />
       <PageAction text="Randevu, memnuniyet ve satış performansını izle" label="Ayın çalışanını seç" onClick={() => notify("Ali Bey ayın çalışanı olarak işaretlendi.")} icon={<Award size={16} />} />
       <section className="business-panel performance-panel">
         <PanelHead eyebrow="EKİP PERFORMANSI" title="Bu ayın görünümü" />
@@ -384,6 +404,7 @@ export function SupplyPanel() {
   const [automatic, setAutomatic] = useState(true);
   return (
     <div className="business-content business-new-module">
+      <SampleBanner />
       <PageAction text="Tedarikçileri, kritik stokları ve siparişleri tek yerde yönet" label="Sipariş oluştur" onClick={() => notify("Sipariş taslağı oluşturuldu.")} icon={<ShoppingCart size={16} />} />
       <div className="business-module-grid">
         <article className="business-panel supply-panel">
@@ -416,6 +437,7 @@ export function PricingPanel() {
   const { notice, notify } = useToast();
   return (
     <div className="business-content business-new-module">
+      <SampleBanner />
       <PageAction text="Maliyet, satış fiyatı ve kârlılığı birlikte optimize et" label="Önerileri uygula" onClick={() => notify("Saç kesimi fiyat önerisi incelenmek üzere kaydedildi.")} icon={<Coins size={16} />} />
       <section className="business-panel pricing-panel">
         <PanelHead eyebrow="FİYAT OPTİMİZASYONU" title="Hizmet bazlı kar marjı" />
