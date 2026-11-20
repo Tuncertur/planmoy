@@ -18,7 +18,9 @@ function useToast() {
   const [notice, setNotice] = useState("");
   function notify(message: string) {
     // Bu paneller örnek veri gösterir; hiçbir işlem gerçekte kaydedilmez.
-    setNotice(`Örnek ekran · ${message} (gerçek kayıt yapılmadı)`);
+    // Özgün mesaj ("kaydedildi", "oluşturuldu"...) bilerek gösterilmez: çelişkili/yanıltıcı olur.
+    void message;
+    setNotice("Örnek ekran: bu işlem gerçekte yapılmadı, hiçbir şey kaydedilmedi.");
     window.setTimeout(() => setNotice(""), 2800);
   }
   return { notice, notify };
