@@ -5,6 +5,7 @@ import { supabase } from "../lib/supabase";
 import { tt, type Dict } from "../lib/i18n";
 import { isNativeApp } from "../lib/paddle";
 import { SHOT_MODE } from "../lib/shotMode";
+import { IS_RU_REGION } from "../lib/region";
 import { loadConsent, saveConsent, consentOk, consentAll, type Consent } from "../lib/consent";
 import { startNativeOAuth, signInWithAppleNative, appleSignInAvailable, type OAuthProvider } from "../lib/nativeAuth";
 
@@ -211,8 +212,8 @@ export function AuthScreen(_props: { onOpenLegal?: () => void }) {
 
           {screen === "choose" && (
             <div className="auth-choice-grid">
-              <ChooseTile icon={<span className="google-mark">G</span>} label={tt(copy.google)} onClick={() => { if (guard()) void signInWithProvider("google"); }} />
-              {appleSignInAvailable() && <ChooseTile icon={<svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.37 12.64c-.02-2.27 1.86-3.36 1.94-3.41-1.06-1.55-2.7-1.76-3.28-1.79-1.4-.14-2.72.82-3.43.82-.71 0-1.8-.8-2.96-.78-1.52.02-2.93.89-3.71 2.25-1.58 2.74-.4 6.8 1.14 9.03.75 1.09 1.65 2.31 2.82 2.27 1.13-.05 1.56-.73 2.93-.73 1.37 0 1.75.73 2.95.71 1.22-.02 1.99-1.1 2.73-2.2.86-1.26 1.22-2.48 1.24-2.54-.03-.01-2.37-.91-2.4-3.62zM14.12 5.97c.62-.75 1.04-1.8.93-2.84-.9.04-1.99.6-2.64 1.35-.58.67-1.09 1.74-.95 2.76 1 .08 2.03-.51 2.66-1.27z"/></svg>} label={tt(copy.apple)} onClick={() => { if (guard()) void signInWithApple(); }} /> }
+              {!IS_RU_REGION && <ChooseTile icon={<span className="google-mark">G</span>} label={tt(copy.google)} onClick={() => { if (guard()) void signInWithProvider("google"); }} />}
+              {!IS_RU_REGION && appleSignInAvailable() && <ChooseTile icon={<svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.37 12.64c-.02-2.27 1.86-3.36 1.94-3.41-1.06-1.55-2.7-1.76-3.28-1.79-1.4-.14-2.72.82-3.43.82-.71 0-1.8-.8-2.96-.78-1.52.02-2.93.89-3.71 2.25-1.58 2.74-.4 6.8 1.14 9.03.75 1.09 1.65 2.31 2.82 2.27 1.13-.05 1.56-.73 2.93-.73 1.37 0 1.75.73 2.95.71 1.22-.02 1.99-1.1 2.73-2.2.86-1.26 1.22-2.48 1.24-2.54-.03-.01-2.37-.91-2.4-3.62zM14.12 5.97c.62-.75 1.04-1.8.93-2.84-.9.04-1.99.6-2.64 1.35-.58.67-1.09 1.74-.95 2.76 1 .08 2.03-.51 2.66-1.27z"/></svg>} label={tt(copy.apple)} onClick={() => { if (guard()) void signInWithApple(); }} /> }
               <ChooseTile icon={<Mail size={17} />} label={tt(copy.emailBtn)} onClick={() => setScreen("email")} />
               <ChooseTile icon={<Sparkles size={17} />} label={tt(copy.demoBtn)} onClick={() => { if (guard()) void tryDemo(); }} />
             </div>
