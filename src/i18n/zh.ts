@@ -107,7 +107,6 @@ const t: Record<string, string> = {
  "Information comes from Google Places data; Planmoy is not responsible for its accuracy. Please verify with the business directly before booking or contacting them.": "信息来自 Google Places 数据；Planmoy 不对其准确性负责。预订或联系前，请直接向商家核实。",
  "Overview": "概览",
  "Time flow": "时间流",
- "Medication Reminders": "用药提醒",
  "StyleSync": "StyleSync",
  "Discover": "发现",
  "Restaurants": "餐厅",
@@ -243,15 +242,6 @@ const t: Record<string, string> = {
  "AI suggestions": "AI 建议",
  "Get a suggestion": "获取建议",
  "Couldn't get a suggestion.": "无法获取建议。",
- "Add your medications and set daily times.": "添加你的药物并设置每日服用时间。",
- "Medication name": "药物名称",
- "e.g. Vitamin B12": "例如：维生素 B12",
- "Dosage (optional)": "剂量（可选）",
- "e.g. 1 tablet": "例如：1 片",
- "Time(s)": "时间",
- "Add time": "添加时间",
- "Add medication": "添加药物",
- "No medications yet.": "暂无药物。",
  "Search notes": "搜索笔记",
  "Write a note": "写笔记",
  "Title": "标题",
@@ -646,7 +636,6 @@ const t: Record<string, string> = {
  "This month's shared pool of free searches is used up; it resets when your usage period renews. Previously searched areas still show.": "本月共享的免费搜索额度已用完；将在你的使用周期续期时重置。之前搜索过的区域仍会显示。",
  "You've used this month's search allowance; it resets when your usage period renews. Previously searched areas still show.": "你本月的搜索额度已用完；将在你的使用周期续期时重置。之前搜索过的区域仍会显示。",
  "Last updated: November 8, 2026": "最后更新：2026 年 11 月 8 日",
- "Medication reminders (optional): the medication names, doses and times you enter, and whether you mark them as taken": "用药提醒（可选）：你输入的药品名称、剂量和时间，以及你是否标记为已服用",
  "Sign-in data: if you sign in with Google or Apple, the account identifier and email address that provider shares with us": "登录数据：如果你使用 Google 或 Apple 登录，该提供方与我们共享的账号标识和电子邮件地址",
  "Usage counters: the number of AI requests you have used in your plan's usage period": "使用计数：你在套餐使用周期内已使用的 AI 请求次数",
  "Payments: on the web, payments are taken by Paddle; we do not see or store your card details. We keep only your plan and subscription status.": "付款：网页端的付款由 Paddle 收取；我们不会看到或保存你的银行卡信息，只保留你的套餐和订阅状态。",
@@ -655,7 +644,6 @@ const t: Record<string, string> = {
  "website hosting": "网站托管",
  "when a map is shown on a business page": "当企业页面显示地图时",
  "To exercise the rights above, write to destek@planmoy.com with information to verify your identity. Requests are resolved within 30 days at the latest. You can also delete directly in the app: Account > Delete account and data.": "如需行使上述权利，请发送邮件至 destek@planmoy.com，并附上用于核实身份的信息。请求最迟在 30 天内处理。你也可以直接在应用内删除：账户 > 删除账户和数据。",
- "Medication time": "该吃药了",
  "To continue, tick the box above: accepting the Terms and Privacy Policy is required.": "要继续，请勾选上方的复选框：必须接受使用条款和隐私政策。",
  "I have read and accept the Terms of Use, Privacy and Refund Policies.": "我已阅读并接受使用条款、隐私政策和退款政策。",
  "See and read each one": "逐项查看并阅读",
@@ -666,6 +654,7 @@ const t: Record<string, string> = {
  "AI features on paid plans": "AI 功能包含在付费方案中",
  "200 AI queries / month": "每月 200 次 AI 查询",
  "500 AI queries / month": "每月 500 次 AI 查询",
- "Everything in Solo": "包含 Solo 的全部功能"
+ "Everything in Solo": "包含 Solo 的全部功能",
+ "Medication reminders (feature removed): records entered earlier are no longer used or shown; they are kept only until they are deleted and are deleted together with your account": "用药提醒（功能已移除）：之前输入的记录不再使用或显示；仅保存至删除为止，并会随你的账户一同删除"
 };
 export default t;

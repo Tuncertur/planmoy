@@ -107,7 +107,6 @@ const t: Record<string, string> = {
  "Information comes from Google Places data; Planmoy is not responsible for its accuracy. Please verify with the business directly before booking or contacting them.": "La información procede de datos de Google Places; Planmoy no se responsabiliza de su exactitud. Verifícala directamente con el negocio antes de reservar o contactar.",
  "Overview": "Resumen",
  "Time flow": "Flujo del tiempo",
- "Medication Reminders": "Recordatorios de medicación",
  "StyleSync": "StyleSync",
  "Discover": "Descubrir",
  "Restaurants": "Restaurantes",
@@ -243,15 +242,6 @@ const t: Record<string, string> = {
  "AI suggestions": "Sugerencias de IA",
  "Get a suggestion": "Obtener una sugerencia",
  "Couldn't get a suggestion.": "No se pudo obtener una sugerencia.",
- "Add your medications and set daily times.": "Añade tus medicamentos y establece horarios diarios.",
- "Medication name": "Nombre del medicamento",
- "e.g. Vitamin B12": "p. ej. vitamina B12",
- "Dosage (optional)": "Dosis (opcional)",
- "e.g. 1 tablet": "p. ej. 1 comprimido",
- "Time(s)": "Hora(s)",
- "Add time": "Añadir hora",
- "Add medication": "Añadir medicamento",
- "No medications yet.": "Aún no hay medicamentos.",
  "Search notes": "Buscar notas",
  "Write a note": "Escribir una nota",
  "Title": "Título",
@@ -646,7 +636,6 @@ const t: Record<string, string> = {
  "This month's shared pool of free searches is used up; it resets when your usage period renews. Previously searched areas still show.": "El cupo compartido de búsquedas gratuitas de este mes se ha agotado; se restablece al renovarse tu periodo de uso. Las zonas ya buscadas se siguen mostrando.",
  "You've used this month's search allowance; it resets when your usage period renews. Previously searched areas still show.": "Has usado tu cupo de búsquedas de este mes; se restablece al renovarse tu periodo de uso. Las zonas ya buscadas se siguen mostrando.",
  "Last updated: November 8, 2026": "Última actualización: 8 de noviembre de 2026",
- "Medication reminders (optional): the medication names, doses and times you enter, and whether you mark them as taken": "Recordatorios de medicamentos (opcional): los nombres, dosis y horarios de medicamentos que introduces y si los marcas como tomados",
  "Sign-in data: if you sign in with Google or Apple, the account identifier and email address that provider shares with us": "Datos de inicio de sesión: si inicias sesión con Google o Apple, el identificador de cuenta y el correo electrónico que ese proveedor comparte con nosotros",
  "Usage counters: the number of AI requests you have used in your plan's usage period": "Contadores de uso: el número de solicitudes de IA que has usado en el periodo de uso de tu plan",
  "Payments: on the web, payments are taken by Paddle; we do not see or store your card details. We keep only your plan and subscription status.": "Pagos: en la web, los pagos los cobra Paddle; nosotros no vemos ni guardamos los datos de tu tarjeta. Solo conservamos tu plan y el estado de tu suscripción.",
@@ -655,7 +644,6 @@ const t: Record<string, string> = {
  "website hosting": "alojamiento del sitio web",
  "when a map is shown on a business page": "cuando se muestra un mapa en la página de un negocio",
  "To exercise the rights above, write to destek@planmoy.com with information to verify your identity. Requests are resolved within 30 days at the latest. You can also delete directly in the app: Account > Delete account and data.": "Para ejercer los derechos anteriores, escribe a destek@planmoy.com con información para verificar tu identidad. Las solicitudes se resuelven como máximo en 30 días. También puedes eliminar directamente en la app: Cuenta > Eliminar cuenta y datos.",
- "Medication time": "Hora de la medicación",
  "To continue, tick the box above: accepting the Terms and Privacy Policy is required.": "Para continuar, marca la casilla de arriba: es necesario aceptar los Términos de uso y la Política de privacidad.",
  "I have read and accept the Terms of Use, Privacy and Refund Policies.": "He leído y acepto los Términos de uso, la Política de privacidad y la Política de reembolso.",
  "See and read each one": "Ver y leer cada uno",
@@ -666,6 +654,7 @@ const t: Record<string, string> = {
  "AI features on paid plans": "Funciones de IA en los planes de pago",
  "200 AI queries / month": "200 consultas de IA / mes",
  "500 AI queries / month": "500 consultas de IA / mes",
- "Everything in Solo": "Todo lo de Solo"
+ "Everything in Solo": "Todo lo de Solo",
+ "Medication reminders (feature removed): records entered earlier are no longer used or shown; they are kept only until they are deleted and are deleted together with your account": "Recordatorios de medicamentos (función eliminada): los registros introducidos antes ya no se usan ni se muestran; solo se conservan hasta su eliminación y se eliminan junto con tu cuenta"
 };
 export default t;

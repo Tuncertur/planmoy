@@ -57,6 +57,10 @@ echo "S1 anonim okuma"
 for t in businesses professionals services appointments customers notes tasks subscriptions public_profiles events notifications appointment_messages event_participants user_usage_cost ai_usage_log medications emergency_contacts wardrobe_items user_interests user_preferences calendar_reminders moderation_events paid_api_ledger project_cost_month processed_webhook_events checkout_locks account_deletion_log cost_exempt_users subscription_repairs free_pool_cost; do
   isblocked "anon $t okuyamaz" "$(A anon "select count(*) from $t")"
 done
+echo "S1b ilaç modülü kaldırıldı (0035): sahibi bile ilaç tablolarına erişemez"
+isblocked "U2 kendi ilaclarini okuyamaz" "$(A $U2 "select count(*) from medications where user_id='$U2'")"
+isblocked "U2 ilac ekleyemez" "$(A $U2 "insert into medications(user_id,name) values ('$U2','x')")"
+isblocked "U2 ilac kaydi okuyamaz" "$(A $U2 "select count(*) from medication_logs where user_id='$U2'")"
 echo "S2 başka kullanıcı (U1) kurbanın (U2) verisini okuyamaz"
 for t in notes tasks subscriptions public_profiles notifications customers appointments appointment_messages; do
   r=$(A $U1 "select count(*) from $t where $( [ $t = customers ] && echo "business_id='b2000000-0000-4000-8000-000000000002'" || ([ $t = appointments ] && echo "id='a2000000-0000-4000-8000-000000000002'") || ([ $t = appointment_messages ] && echo "id='f1000000-0000-4000-8000-000000000001'") || echo "user_id='$U2'")"); isblocked "U1, U2'nin $t verisini okuyamaz" "$r"
@@ -109,4 +113,15 @@ for i in $(seq 1 40); do
 done
 r=$(q "select count(*) from appointments where customer_name like 'spam%'")
 if [ "$r" -gt 0 ] && [ "$r" -lt 40 ]; then PASS=$((PASS+1)); echo "  PASS  anon toplu randevu spami sinirlandi ($r/40 kabul)"; else FAIL=$((FAIL+1)); echo "  FAIL  anon 40 sahte randevu ekleyebildi (hiz siniri yok)"; fi
+echo "S7 hesap silme: eski ilaç kayıtları kullanıcıyla birlikte silinir (cascade)"
+U3=33333333-3333-4333-8333-333333333333
+P -d t >/dev/null <<SQL
+insert into auth.users(id,email) values ('$U3','c@x');
+insert into medications(id,user_id,name) values ('99000000-0000-4000-8000-000000000003','$U3','eski');
+insert into medication_logs(medication_id,user_id,scheduled_for,status) values ('99000000-0000-4000-8000-000000000003','$U3',now(),'taken');
+SQL
+before=$(P -d t -At -c "select (select count(*) from medications where user_id='$U3')+(select count(*) from medication_logs where user_id='$U3')")
+P -d t -c "delete from auth.users where id='$U3'" >/dev/null
+after=$(P -d t -At -c "select (select count(*) from medications where user_id='$U3')+(select count(*) from medication_logs where user_id='$U3')")
+if [ "$before" = 2 ] && [ "$after" = 0 ]; then PASS=$((PASS+1)); echo "  PASS  hesap silinince ilac kayitlari silindi ($before -> $after)"; else FAIL=$((FAIL+1)); echo "  FAIL  ilac kayitlari hesapla silinmedi ($before -> $after)"; fi
 summary

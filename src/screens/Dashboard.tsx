@@ -6,7 +6,7 @@ import {
   ArrowUpRight, CalendarDays, Check, ChevronRight, ChevronLeft, Menu, Compass, FileText,
   HeartPulse, LayoutDashboard, ListChecks, Plus, Scissors, Settings2,
   Sparkles, Users, WandSparkles, Dumbbell, Brain, StickyNote, MapPin,
-  Lightbulb, Flame, Layers3, UserCog, Plane, Building2, Utensils, Music, UserRound, Phone, Pill,
+  Lightbulb, Flame, Layers3, UserCog, Plane, Building2, Utensils, Music, UserRound, Phone,
 } from "lucide-react";
 import { tt, type Dict } from "../lib/i18n";
 import { NavSearch } from "../components/NavSearch";
@@ -31,7 +31,6 @@ import { TripPlannerScreen } from "./TripPlannerScreen";
 import { TravelPlacesScreen } from "./TravelPlacesScreen";
 import { PersonalizeScreen } from "./PersonalizeScreen";
 import { ProfileShareScreen } from "./ProfileShareScreen";
-import { MedicationsScreen } from "./MedicationsScreen";
 import { EmergencyCallScreen } from "./EmergencyCallScreen";
 import { ComingSoon } from "../components/ComingSoon";
 import {
@@ -46,12 +45,12 @@ import {
 type Mode = "personal" | "business";
 type ViewId =
   | "flow" | "calendar" | "tasks" | "stylesync" | "discover" | "trip" | "hotels" | "restaurants" | "places-to-visit" | "personalize" | "profile-share"
-  | "sports" | "events" | "space" | "notes" | "intelligence" | "personal-tools" | "account" | "categories" | "medications" | "emergency-call"
+  | "sports" | "events" | "space" | "notes" | "intelligence" | "personal-tools" | "account" | "categories" | "emergency-call"
   | "biz-location" | "biz-appointments" | "biz-customers" | "biz-suggestions"
   | "biz-staff" | "biz-inventory" | "biz-reports" | "biz-marketing" | "biz-settings"
   | "biz-loyalty" | "biz-competition" | "biz-performance" | "biz-supply" | "biz-pricing";
 
-// Sıra politikası (2026-10-15): günlük kullanılanlar üstte (genel bakış, zaman, görev, ilaç),
+// Sıra politikası (2026-10-15): günlük kullanılanlar üstte (genel bakış, zaman, görev),
 // sonra keşif/seyahat, sonra kişiselleştirme, en altta plan + hesap. "Acil Arama (112)"
 // sıralamanın dışında, kenar çubuğunun en altına sabitlenir (bkz. PINNED_NAV_ID).
 const PINNED_NAV_ID: ViewId = "emergency-call";
@@ -66,7 +65,6 @@ const personalNavItems: { id: ViewId; icon: React.ReactNode; label: Dict; extern
   { id: "flow", icon: <LayoutDashboard size={17} />, label: { tr: "Genel bakış", en: "Overview" } },
   { id: "calendar", icon: <CalendarDays size={17} />, label: { tr: "Zaman akışı", en: "Time flow" } },
   { id: "tasks", icon: <ListChecks size={17} />, label: { tr: "Yapılacaklar", en: "Tasks" } },
-  { id: "medications", icon: <Pill size={17} />, label: { tr: "İlaç Hatırlatma", en: "Medication Reminders" } },
   { id: "stylesync", icon: <WandSparkles size={17} />, label: { tr: "StyleSync", en: "StyleSync" } },
   { id: "discover", icon: <Compass size={17} />, label: { tr: "Keşfet", en: "Discover" } },
   { id: "restaurants", icon: <Utensils size={17} />, label: { tr: "Restoranlar", en: "Restaurants" } },
@@ -419,7 +417,6 @@ export function Dashboard({ userId, email }: { userId: string; email: string }) 
         {view === "places-to-visit" && <PanelWrap><TravelPlacesScreen userId={userId} category="places" title={tt({ tr: "Gezilecek Yerler", en: "Places to Visit" })} /></PanelWrap>}
         {view === "personalize" && <PanelWrap><PersonalizeScreen userId={userId} /></PanelWrap>}
         {view === "profile-share" && <PanelWrap><ProfileShareScreen userId={userId} /></PanelWrap>}
-        {view === "medications" && <PanelWrap><MedicationsScreen userId={userId} /></PanelWrap>}
         {view === "emergency-call" && <PanelWrap><EmergencyCallScreen userId={userId} /></PanelWrap>}
         {view === "stylesync" && <PanelWrap><StyleSyncScreen userId={userId} /></PanelWrap>}
         {view === "calendar" && <PanelWrap><CalendarScreen userId={userId} /></PanelWrap>}
@@ -446,7 +443,7 @@ export function Dashboard({ userId, email }: { userId: string; email: string }) 
         {![
           "flow", "tasks", "notes", "discover", "stylesync",
           "calendar", "sports", "space", "intelligence", "events", "account", "categories", "trip", "hotels", "restaurants", "places-to-visit", "personalize", "profile-share",
-          "medications", "emergency-call",
+          "emergency-call",
           "biz-location", "biz-appointments", "biz-customers", "biz-suggestions",
           "biz-staff", "biz-inventory", "biz-reports", "biz-marketing", "biz-settings",
           "biz-loyalty", "biz-competition", "biz-performance", "biz-supply", "biz-pricing",
