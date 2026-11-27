@@ -113,4 +113,15 @@ for i in $(seq 1 40); do
 done
 r=$(q "select count(*) from appointments where customer_name like 'spam%'")
 if [ "$r" -gt 0 ] && [ "$r" -lt 40 ]; then PASS=$((PASS+1)); echo "  PASS  anon toplu randevu spami sinirlandi ($r/40 kabul)"; else FAIL=$((FAIL+1)); echo "  FAIL  anon 40 sahte randevu ekleyebildi (hiz siniri yok)"; fi
+echo "S7 hesap silme: eski ilaç kayıtları kullanıcıyla birlikte silinir (cascade)"
+U3=33333333-3333-4333-8333-333333333333
+P -d t >/dev/null <<SQL
+insert into auth.users(id,email) values ('$U3','c@x');
+insert into medications(id,user_id,name) values ('99000000-0000-4000-8000-000000000003','$U3','eski');
+insert into medication_logs(medication_id,user_id,scheduled_for,status) values ('99000000-0000-4000-8000-000000000003','$U3',now(),'taken');
+SQL
+before=$(P -d t -At -c "select (select count(*) from medications where user_id='$U3')+(select count(*) from medication_logs where user_id='$U3')")
+P -d t -c "delete from auth.users where id='$U3'" >/dev/null
+after=$(P -d t -At -c "select (select count(*) from medications where user_id='$U3')+(select count(*) from medication_logs where user_id='$U3')")
+if [ "$before" = 2 ] && [ "$after" = 0 ]; then PASS=$((PASS+1)); echo "  PASS  hesap silinince ilac kayitlari silindi ($before -> $after)"; else FAIL=$((FAIL+1)); echo "  FAIL  ilac kayitlari hesapla silinmedi ($before -> $after)"; fi
 summary
