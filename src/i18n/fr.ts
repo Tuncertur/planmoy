@@ -654,6 +654,7 @@ const t: Record<string, string> = {
  "AI features on paid plans": "Fonctions IA dans les forfaits payants",
  "200 AI queries / month": "200 requêtes IA / mois",
  "500 AI queries / month": "500 requêtes IA / mois",
- "Everything in Solo": "Tout ce qui est inclus dans Solo"
+ "Everything in Solo": "Tout ce qui est inclus dans Solo",
+ "Medication reminders (feature removed): records entered earlier are no longer used or shown; they are kept only until they are deleted and are deleted together with your account": "Rappels de médicaments (fonction supprimée) : les données saisies auparavant ne sont plus utilisées ni affichées ; elles sont conservées uniquement jusqu'à leur suppression et sont supprimées avec ton compte"
 };
 export default t;

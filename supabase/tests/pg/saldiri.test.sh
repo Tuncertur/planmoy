@@ -57,6 +57,10 @@ echo "S1 anonim okuma"
 for t in businesses professionals services appointments customers notes tasks subscriptions public_profiles events notifications appointment_messages event_participants user_usage_cost ai_usage_log medications emergency_contacts wardrobe_items user_interests user_preferences calendar_reminders moderation_events paid_api_ledger project_cost_month processed_webhook_events checkout_locks account_deletion_log cost_exempt_users subscription_repairs free_pool_cost; do
   isblocked "anon $t okuyamaz" "$(A anon "select count(*) from $t")"
 done
+echo "S1b ilaç modülü kaldırıldı (0035): sahibi bile ilaç tablolarına erişemez"
+isblocked "U2 kendi ilaclarini okuyamaz" "$(A $U2 "select count(*) from medications where user_id='$U2'")"
+isblocked "U2 ilac ekleyemez" "$(A $U2 "insert into medications(user_id,name) values ('$U2','x')")"
+isblocked "U2 ilac kaydi okuyamaz" "$(A $U2 "select count(*) from medication_logs where user_id='$U2'")"
 echo "S2 başka kullanıcı (U1) kurbanın (U2) verisini okuyamaz"
 for t in notes tasks subscriptions public_profiles notifications customers appointments appointment_messages; do
   r=$(A $U1 "select count(*) from $t where $( [ $t = customers ] && echo "business_id='b2000000-0000-4000-8000-000000000002'" || ([ $t = appointments ] && echo "id='a2000000-0000-4000-8000-000000000002'") || ([ $t = appointment_messages ] && echo "id='f1000000-0000-4000-8000-000000000001'") || echo "user_id='$U2'")"); isblocked "U1, U2'nin $t verisini okuyamaz" "$r"

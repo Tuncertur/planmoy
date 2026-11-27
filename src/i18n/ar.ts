@@ -654,6 +654,7 @@ const t: Record<string, string> = {
  "AI features on paid plans": "ميزات الذكاء الاصطناعي في الخطط المدفوعة",
  "200 AI queries / month": "200 استعلام ذكاء اصطناعي / شهر",
  "500 AI queries / month": "500 استعلام ذكاء اصطناعي / شهر",
- "Everything in Solo": "كل ما في خطة Solo"
+ "Everything in Solo": "كل ما في خطة Solo",
+ "Medication reminders (feature removed): records entered earlier are no longer used or shown; they are kept only until they are deleted and are deleted together with your account": "تذكيرات الأدوية (تمت إزالة الميزة): لم تعد السجلات التي أدخلتها سابقًا تُستخدم أو تُعرض؛ تُحفظ فقط حتى حذفها وتُحذف مع حسابك"
 };
 export default t;

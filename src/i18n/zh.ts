@@ -654,6 +654,7 @@ const t: Record<string, string> = {
  "AI features on paid plans": "AI 功能包含在付费方案中",
  "200 AI queries / month": "每月 200 次 AI 查询",
  "500 AI queries / month": "每月 500 次 AI 查询",
- "Everything in Solo": "包含 Solo 的全部功能"
+ "Everything in Solo": "包含 Solo 的全部功能",
+ "Medication reminders (feature removed): records entered earlier are no longer used or shown; they are kept only until they are deleted and are deleted together with your account": "用药提醒（功能已移除）：之前输入的记录不再使用或显示；仅保存至删除为止，并会随你的账户一同删除"
 };
 export default t;
